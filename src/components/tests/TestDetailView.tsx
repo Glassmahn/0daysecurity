@@ -1,5 +1,5 @@
+import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import {
   Terminal, Paperclip, Bug, Wrench, Cpu, User, FileText, Download,
   ChevronRight, Shield, Calendar, ExternalLink, Image, File,
 } from 'lucide-react';
+import { testLibraryCatalog, type TestTemplate } from '@/lib/test-library-catalog';
 
 /* ── Test Run Data ───────────────────────────────────── */
 const testRunsMap: Record<string, {
