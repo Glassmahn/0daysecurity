@@ -54,6 +54,7 @@ import { Route as RiskRegisterRiskIdRouteImport } from './routes/risk-register.$
 import { Route as PoliciesPolicyIdRouteImport } from './routes/policies.$policyId'
 import { Route as KnowledgeBaseArticleIdRouteImport } from './routes/knowledge-base.$articleId'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
+import { Route as HooksComplianceSnapshotRouteImport } from './routes/hooks/compliance-snapshot'
 import { Route as EvidenceEvidenceIdRouteImport } from './routes/evidence.$evidenceId'
 import { Route as ControlsControlIdRouteImport } from './routes/controls.$controlId'
 import { Route as AssetsAssetIdRouteImport } from './routes/assets.$assetId'
@@ -283,6 +284,11 @@ const IncidentsIncidentIdRoute = IncidentsIncidentIdRouteImport.update({
   path: '/$incidentId',
   getParentRoute: () => IncidentsRoute,
 } as any)
+const HooksComplianceSnapshotRoute = HooksComplianceSnapshotRouteImport.update({
+  id: '/hooks/compliance-snapshot',
+  path: '/hooks/compliance-snapshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EvidenceEvidenceIdRoute = EvidenceEvidenceIdRouteImport.update({
   id: '/$evidenceId',
   path: '/$evidenceId',
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/assets/$assetId': typeof AssetsAssetIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
+  '/hooks/compliance-snapshot': typeof HooksComplianceSnapshotRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/assets/$assetId': typeof AssetsAssetIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
+  '/hooks/compliance-snapshot': typeof HooksComplianceSnapshotRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
@@ -409,6 +417,7 @@ export interface FileRoutesById {
   '/assets/$assetId': typeof AssetsAssetIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
+  '/hooks/compliance-snapshot': typeof HooksComplianceSnapshotRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
@@ -461,6 +470,7 @@ export interface FileRouteTypes {
     | '/assets/$assetId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
+    | '/hooks/compliance-snapshot'
     | '/incidents/$incidentId'
     | '/knowledge-base/$articleId'
     | '/policies/$policyId'
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/assets/$assetId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
+    | '/hooks/compliance-snapshot'
     | '/incidents/$incidentId'
     | '/knowledge-base/$articleId'
     | '/policies/$policyId'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/assets/$assetId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
+    | '/hooks/compliance-snapshot'
     | '/incidents/$incidentId'
     | '/knowledge-base/$articleId'
     | '/policies/$policyId'
@@ -592,6 +604,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TestsRoute: typeof TestsRouteWithChildren
   VendorsRoute: typeof VendorsRouteWithChildren
+  HooksComplianceSnapshotRoute: typeof HooksComplianceSnapshotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -911,6 +924,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IncidentsIncidentIdRouteImport
       parentRoute: typeof IncidentsRoute
     }
+    '/hooks/compliance-snapshot': {
+      id: '/hooks/compliance-snapshot'
+      path: '/hooks/compliance-snapshot'
+      fullPath: '/hooks/compliance-snapshot'
+      preLoaderRoute: typeof HooksComplianceSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/evidence/$evidenceId': {
       id: '/evidence/$evidenceId'
       path: '/$evidenceId'
@@ -1173,6 +1193,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TestsRoute: TestsRouteWithChildren,
   VendorsRoute: VendorsRouteWithChildren,
+  HooksComplianceSnapshotRoute: HooksComplianceSnapshotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
