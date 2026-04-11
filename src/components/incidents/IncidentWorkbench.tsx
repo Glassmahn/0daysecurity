@@ -1,4 +1,9 @@
 import { useState } from 'react';
+
+function fmtTime(iso: string) {
+  const d = new Date(iso);
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}
 import { Link } from '@tanstack/react-router';
 import { incidents, controls, assets, alerts } from '@/lib/mock-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -242,7 +247,6 @@ export function IncidentWorkbench({ incidentId }: { incidentId: string }) {
                     {details.timeline.map((entry, idx) => {
                       const Icon = timelineTypeIcons[entry.type] || Circle;
                       const color = timelineTypeColors[entry.type] || 'text-muted-foreground';
-                      const time = new Date(entry.time);
                       return (
                         <div key={idx} className="relative flex gap-4 pl-1">
                           <div className={`relative z-10 flex items-center justify-center w-[30px] h-[30px] rounded-full bg-card border border-border ${color}`}>
@@ -251,7 +255,7 @@ export function IncidentWorkbench({ incidentId }: { incidentId: string }) {
                           <div className="flex-1 min-w-0 pt-0.5">
                             <p className="text-sm text-foreground">{entry.event}</p>
                             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                              <span>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} UTC</span>
+                              <span>{fmtTime(entry.time)} UTC</span>
                               <span>·</span>
                               <span>{entry.actor}</span>
                               <span className={`uppercase text-[9px] font-semibold px-1 py-0.5 rounded ${
@@ -296,7 +300,7 @@ export function IncidentWorkbench({ incidentId }: { incidentId: string }) {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{ev.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {ev.type} · {ev.addedBy} · {new Date(ev.addedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                          {ev.type} · {ev.addedBy} · {fmtTime(ev.addedAt)}
                         </p>
                       </div>
                       <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
