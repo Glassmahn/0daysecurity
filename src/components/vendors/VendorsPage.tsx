@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +77,7 @@ function riskScoreColor(score: number) {
 
 export function VendorsPage() {
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   const approved = vendors.filter(v => v.status === 'approved').length;
   const needsAction = vendors.filter(v => v.status === 'needs_action').length;
@@ -143,7 +145,7 @@ export function VendorsPage() {
                 </TableRow></TableHeader>
                 <TableBody>
                   {vendors.filter(v => v.name.toLowerCase().includes(search.toLowerCase())).map(v => (
-                    <TableRow key={v.id} className="cursor-pointer">
+                    <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-bold">{v.name.charAt(0)}</div>
