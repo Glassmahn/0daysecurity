@@ -69,7 +69,7 @@ export function AddFrameworkWizard({ framework, allFrameworks, onComplete, onClo
     if (step === 1) return !!selectedId;
     if (step === 2) return selectedControls.size > 0;
     if (step === 3) return true;
-    if (step === 4) return !!targetDate;
+    if (step === 4) return true; // date is optional
     return false;
   };
 
