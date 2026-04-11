@@ -316,6 +316,7 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
+          search_vector: unknown
           status: string
           tags: string[] | null
           title: string
@@ -327,6 +328,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          search_vector?: unknown
           status?: string
           tags?: string[] | null
           title: string
@@ -338,6 +340,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          search_vector?: unknown
           status?: string
           tags?: string[] | null
           title?: string
