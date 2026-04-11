@@ -225,7 +225,6 @@ function EvidencePage() {
     </div>
   );
 }
-const statusStyles: Record<string, string> = {
   valid: 'bg-status-passing/15 text-status-passing',
   expiring: 'bg-status-warning/15 text-status-warning',
   expired: 'bg-status-failing/15 text-status-failing',
