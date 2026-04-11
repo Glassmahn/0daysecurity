@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,8 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Building2, ShieldCheck, ShieldAlert, AlertTriangle, Clock, Search, Plus,
-  Filter, FileText, ExternalLink, Star, TrendingUp, TrendingDown, Minus,
-  Globe, Lock, Mail, Phone, MapPin, Calendar,
+  FileText, Star, TrendingUp, TrendingDown, Minus,
+  Lock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -75,14 +75,37 @@ function riskScoreColor(score: number) {
   return 'text-destructive';
 }
 
-export function VendorsPage() {
-  const [search, setSearch] = useState('');
-  const navigate = useNavigate();
+interface VendorsPageProps {
+  searchParams: {
+    riskTier: string;
+    status: string;
+    q: string;
+    tab: string;
+  };
+}
+
+export function VendorsPage({ searchParams }: VendorsPageProps) {
+  const navigate = useNavigate({ from: '/vendors/' });
+  const { riskTier: riskTierFilter, status: statusFilter, q: search, tab } = searchParams;
+
+  const updateSearch = (updates: Record<string, string>) => {
+    navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
+  };
+
+  const filtered = useMemo(() => {
+    return vendors.filter(v => {
+      if (riskTierFilter !== 'all' && v.riskTier !== riskTierFilter) return false;
+      if (statusFilter !== 'all' && v.status !== statusFilter) return false;
+      if (search) return v.name.toLowerCase().includes(search.toLowerCase());
+      return true;
+    });
+  }, [riskTierFilter, statusFilter, search]);
 
   const approved = vendors.filter(v => v.status === 'approved').length;
   const needsAction = vendors.filter(v => v.status === 'needs_action').length;
-  const avgScore = Math.round(vendors.reduce((a, v) => a + v.riskScore, 0) / vendors.length);
   const expiringContracts = contractItems.filter(c => c.daysLeft <= 90).length;
+
+  const activeFilterCount = [riskTierFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
   return (
     <div className="space-y-6 p-6">
@@ -93,33 +116,45 @@ export function VendorsPage() {
           <p className="text-sm text-muted-foreground">Third-party vendor risk management, assessments, and contract tracking</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Filter className="h-4 w-4 mr-1" />Filter</Button>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '', tab } })}>
+              Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+            </Button>
+          )}
           <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add Vendor</Button>
         </div>
       </div>
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10"><Building2 className="h-5 w-5 text-primary" /></div>
-          <div><p className="text-2xl font-bold">{vendors.length}</p><p className="text-xs text-muted-foreground">Total Vendors</p></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-green-500/10"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
-          <div><p className="text-2xl font-bold">{approved}</p><p className="text-xs text-muted-foreground">Approved</p></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-destructive/10"><ShieldAlert className="h-5 w-5 text-destructive" /></div>
-          <div><p className="text-2xl font-bold">{needsAction}</p><p className="text-xs text-muted-foreground">Needs Action</p></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-yellow-500/10"><AlertTriangle className="h-5 w-5 text-yellow-500" /></div>
-          <div><p className="text-2xl font-bold">{expiringContracts}</p><p className="text-xs text-muted-foreground">Expiring Soon</p></div>
-        </CardContent></Card>
+        <Card className={`cursor-pointer transition-all hover:border-primary/40 ${statusFilter === 'all' && riskTierFilter === 'all' ? '' : ''}`} onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '', tab } })}>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10"><Building2 className="h-5 w-5 text-primary" /></div>
+            <div><p className="text-2xl font-bold">{vendors.length}</p><p className="text-xs text-muted-foreground">Total Vendors</p></div>
+          </CardContent>
+        </Card>
+        <Card className={`cursor-pointer transition-all hover:border-primary/40 ${statusFilter === 'approved' ? 'border-primary ring-1 ring-primary/30' : ''}`} onClick={() => updateSearch({ status: statusFilter === 'approved' ? 'all' : 'approved' })}>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-500/10"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
+            <div><p className="text-2xl font-bold">{approved}</p><p className="text-xs text-muted-foreground">Approved</p></div>
+          </CardContent>
+        </Card>
+        <Card className={`cursor-pointer transition-all hover:border-primary/40 ${statusFilter === 'needs_action' ? 'border-primary ring-1 ring-primary/30' : ''}`} onClick={() => updateSearch({ status: statusFilter === 'needs_action' ? 'all' : 'needs_action' })}>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-destructive/10"><ShieldAlert className="h-5 w-5 text-destructive" /></div>
+            <div><p className="text-2xl font-bold">{needsAction}</p><p className="text-xs text-muted-foreground">Needs Action</p></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-yellow-500/10"><AlertTriangle className="h-5 w-5 text-yellow-500" /></div>
+            <div><p className="text-2xl font-bold">{expiringContracts}</p><p className="text-xs text-muted-foreground">Expiring Soon</p></div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="directory" className="space-y-4">
+      <Tabs value={tab} onValueChange={(v) => updateSearch({ tab: v })} className="space-y-4">
         <TabsList>
           <TabsTrigger value="directory" className="gap-1"><Building2 className="h-3.5 w-3.5" />Directory</TabsTrigger>
           <TabsTrigger value="assessments" className="gap-1"><FileText className="h-3.5 w-3.5" />Assessments</TabsTrigger>
@@ -131,20 +166,44 @@ export function VendorsPage() {
         <TabsContent value="directory">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <CardTitle className="text-base">Vendor Directory</CardTitle>
-                <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Search vendors..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
+                <div className="flex items-center gap-2">
+                  <div className="relative w-48 sm:w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Search vendors..." className="pl-8 h-9" value={search} onChange={e => updateSearch({ q: e.target.value })} /></div>
+                  <select
+                    value={riskTierFilter}
+                    onChange={e => updateSearch({ riskTier: e.target.value })}
+                    className={`bg-card border rounded-lg px-3 py-1.5 text-sm text-foreground h-9 focus:outline-none focus:ring-2 focus:ring-primary/50 ${riskTierFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+                  >
+                    <option value="all">All Risk Tiers</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                  <select
+                    value={statusFilter}
+                    onChange={e => updateSearch({ status: e.target.value })}
+                    className={`bg-card border rounded-lg px-3 py-1.5 text-sm text-foreground h-9 focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="approved">Approved</option>
+                    <option value="under_review">Under Review</option>
+                    <option value="needs_action">Needs Action</option>
+                  </select>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
+              <p className="text-xs text-muted-foreground mb-3">{filtered.length} vendors matching filters</p>
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Vendor</TableHead><TableHead>Category</TableHead><TableHead>Risk Tier</TableHead>
-                  <TableHead>Score</TableHead><TableHead>Certifications</TableHead><TableHead>Data Access</TableHead>
+                  <TableHead>Score</TableHead><TableHead className="hidden md:table-cell">Certifications</TableHead><TableHead className="hidden lg:table-cell">Data Access</TableHead>
                   <TableHead>Trend</TableHead><TableHead>Status</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {vendors.filter(v => v.name.toLowerCase().includes(search.toLowerCase())).map(v => (
+                  {filtered.map(v => (
                     <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -155,7 +214,7 @@ export function VendorsPage() {
                       <TableCell className="text-sm">{v.category}</TableCell>
                       <TableCell>{riskTierBadge(v.riskTier)}</TableCell>
                       <TableCell><span className={`font-bold ${riskScoreColor(v.riskScore)}`}>{v.riskScore}</span></TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="flex gap-1">
                           {v.soc2 && <Badge variant="outline" className="text-[10px] px-1">SOC 2</Badge>}
                           {v.iso27001 && <Badge variant="outline" className="text-[10px] px-1">ISO</Badge>}
@@ -163,11 +222,19 @@ export function VendorsPage() {
                           {!v.soc2 && !v.iso27001 && !v.hipaa && <span className="text-xs text-muted-foreground">None</span>}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs max-w-[120px] truncate">{v.dataAccess}</TableCell>
+                      <TableCell className="text-xs max-w-[120px] truncate hidden lg:table-cell">{v.dataAccess}</TableCell>
                       <TableCell>{trendIcon(v.trend)}</TableCell>
                       <TableCell>{statusBadge(v.status)}</TableCell>
                     </TableRow>
                   ))}
+                  {filtered.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                        No vendors match the current filters.{' '}
+                        <button onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '', tab: 'directory' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -262,10 +329,14 @@ export function VendorsPage() {
                   const count = vendors.filter(v => v.riskTier === tier).length;
                   const pct = Math.round((count / vendors.length) * 100);
                   return (
-                    <div key={tier} className="space-y-1">
+                    <button
+                      key={tier}
+                      onClick={() => updateSearch({ riskTier: riskTierFilter === tier ? 'all' : tier, tab: 'directory' })}
+                      className="w-full space-y-1 text-left cursor-pointer hover:bg-accent/30 rounded-md p-1 transition-colors"
+                    >
                       <div className="flex justify-between text-sm"><span className="capitalize font-medium">{tier}</span><span>{count} vendors ({pct}%)</span></div>
                       <Progress value={pct} className="h-2" />
-                    </div>
+                    </button>
                   );
                 })}
               </CardContent>
@@ -303,7 +374,7 @@ export function VendorsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {riskTierBadge(v.riskTier)}
-                      <Button variant="outline" size="sm" className="text-xs h-7">Review</Button>
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>Review</Button>
                     </div>
                   </div>
                 ))}

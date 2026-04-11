@@ -1,9 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { alerts } from '@/lib/mock-data';
-import { useState } from 'react';
+import { Search } from 'lucide-react';
+import { zodValidator, fallback } from '@tanstack/zod-adapter';
+import { z } from 'zod';
+
+const alertsSearchSchema = z.object({
+  severity: fallback(z.string(), 'all').default('all'),
+  status: fallback(z.string(), 'all').default('all'),
+  q: fallback(z.string(), '').default(''),
+});
 
 export const Route = createFileRoute('/alerts/')({
   component: AlertsPage,
+  validateSearch: zodValidator(alertsSearchSchema),
   head: () => ({
     meta: [
       { title: 'Alerts — WatchDog Security' },
@@ -29,8 +39,33 @@ const statusStyles: Record<string, string> = {
 };
 
 function AlertsPage() {
-  const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter);
+  const navigate = useNavigate({ from: '/alerts/' });
+  const { severity: severityFilter, status: statusFilter, q: search } = Route.useSearch();
+
+  const filtered = useMemo(() => {
+    return alerts.filter(a => {
+      if (severityFilter !== 'all' && a.severity !== severityFilter) return false;
+      if (statusFilter !== 'all' && a.status !== statusFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return a.title.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.source.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [severityFilter, statusFilter, search]);
+
+  const updateSearch = (updates: Record<string, string>) => {
+    navigate({ search: (prev) => ({ ...prev, ...updates }) });
+  };
+
+  const activeFilterCount = [severityFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
+
+  const severityCounts = {
+    critical: alerts.filter(a => a.severity === 'critical').length,
+    high: alerts.filter(a => a.severity === 'high').length,
+    medium: alerts.filter(a => a.severity === 'medium').length,
+    low: alerts.filter(a => a.severity === 'low').length,
+  };
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -39,20 +74,74 @@ function AlertsPage() {
           <h1 className="text-xl font-bold text-foreground">Alerts</h1>
           <p className="text-sm text-muted-foreground">{alerts.length} total alerts</p>
         </div>
-        <div className="flex gap-1 bg-secondary rounded-md p-0.5">
-          {['all', 'critical', 'high', 'medium', 'low'].map(s => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-3 py-1 text-xs font-medium rounded capitalize transition-colors ${
-                filter === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        {activeFilterCount > 0 && (
+          <button
+            onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })}
+            className="text-xs text-primary hover:underline cursor-pointer"
+          >
+            Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
+
+      {/* Severity KPI cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
+          <button
+            key={sev}
+            onClick={() => updateSearch({ severity: severityFilter === sev ? 'all' : sev })}
+            className={`bg-card border rounded-lg p-4 text-left hover:border-primary/40 transition-all cursor-pointer ${severityFilter === sev ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+          >
+            <div className={`text-2xl font-bold ${severityFilter === sev ? 'text-primary' : ''}`}>
+              {severityCounts[sev]}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${sev === 'critical' ? 'bg-severity-critical' : sev === 'high' ? 'bg-severity-high' : sev === 'medium' ? 'bg-severity-medium' : 'bg-severity-low'}`} />
+              <span className="text-xs text-muted-foreground capitalize">{sev}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search alerts..."
+            value={search}
+            onChange={e => updateSearch({ q: e.target.value })}
+            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
+        <select
+          value={severityFilter}
+          onChange={e => updateSearch({ severity: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${severityFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
+          <option value="all">All Severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={e => updateSearch({ status: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
+          <option value="all">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="acknowledged">Acknowledged</option>
+          <option value="investigating">Investigating</option>
+          <option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+      </div>
+
+      {/* Results */}
+      <p className="text-xs text-muted-foreground">{filtered.length} alerts matching filters</p>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <table className="w-full text-sm">
@@ -61,15 +150,15 @@ function AlertsPage() {
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Severity</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">ID</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Source</th>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Source</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Owner</th>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Owner</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Age</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(alert => (
-              <tr key={alert.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer">
+              <tr key={alert.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer">
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[alert.severity]}`}>
                     {alert.severity}
@@ -77,18 +166,24 @@ function AlertsPage() {
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{alert.id}</td>
                 <td className="px-4 py-3 text-foreground">{alert.title}</td>
-                <td className="px-4 py-3 text-muted-foreground">{alert.source}</td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{alert.source}</td>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[alert.status]}`}>
                     {alert.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{alert.owner || '—'}</td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{alert.owner || '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{alert.age}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No alerts match the current filters.{' '}
+            <button onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
+          </div>
+        )}
       </div>
     </div>
   );
