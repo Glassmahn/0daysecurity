@@ -20,7 +20,7 @@ const navItems = [
   { label: 'Risk Register', icon: AlertOctagon, to: '/risk-register' },
   { label: 'Tests', icon: FlaskConical, to: '/tests' },
   { label: 'Vendors', icon: Building2, to: '/vendors' },
-  { label: 'Audits', icon: ClipboardCheck, to: '/audits' },
+  { label: 'Audit Trail', icon: ClipboardCheck, to: '/audits' },
   { label: 'Knowledge Base', icon: BookOpen, to: '/knowledge-base' },
   { label: 'Reports', icon: BarChart3, to: '/reports' },
   { label: 'Integrations', icon: Plug, to: '/integrations' },
