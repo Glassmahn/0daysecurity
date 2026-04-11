@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
+import { supabase } from '@/integrations/supabase/client';
 import { Search, Loader2, Plus, Pencil, Trash2, Download, BookOpen, Tag } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
