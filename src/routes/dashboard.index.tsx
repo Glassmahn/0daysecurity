@@ -4,6 +4,12 @@ import { KPIStrip } from '@/components/dashboard/KPIStrip';
 import { CompliancePosture } from '@/components/dashboard/CompliancePosture';
 import { PriorityQueue } from '@/components/dashboard/PriorityQueue';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { ComplianceTrendChart } from '@/components/dashboard/ComplianceTrendChart';
+import { RiskHeatmap } from '@/components/dashboard/RiskHeatmap';
+import { ControlStatusDonut } from '@/components/dashboard/ControlStatusDonut';
+import { IncidentTrendChart } from '@/components/dashboard/IncidentTrendChart';
+import { VendorRiskRadar } from '@/components/dashboard/VendorRiskRadar';
+import { FrameworkScoreCards } from '@/components/dashboard/FrameworkScoreCards';
 import { kpiData, frameworkPostureData, priorityQueue, recentActivity } from '@/lib/mock-data';
 
 export const Route = createFileRoute('/dashboard/')({
@@ -49,13 +55,33 @@ function DashboardHome() {
       {/* KPI Strip */}
       <KPIStrip data={kpiData} period={period} />
 
-      {/* Main Grid */}
+      {/* Row 1: Compliance Trend + Control Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <CompliancePosture data={frameworkPostureData} />
+        <div className="lg:col-span-2">
+          <ComplianceTrendChart />
+        </div>
+        <ControlStatusDonut />
+      </div>
+
+      {/* Row 2: Risk Heatmap + Security Radar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RiskHeatmap />
+        <VendorRiskRadar />
+      </div>
+
+      {/* Row 3: Incident Trends + Compliance Posture */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <IncidentTrendChart />
+        <CompliancePosture data={frameworkPostureData} />
+      </div>
+
+      {/* Row 4: Framework Readiness + Priority Queue + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <FrameworkScoreCards />
+        <div className="lg:col-span-1">
           <PriorityQueue items={priorityQueue} />
         </div>
-        <div>
+        <div className="lg:col-span-1">
           <ActivityFeed items={recentActivity} />
         </div>
       </div>
