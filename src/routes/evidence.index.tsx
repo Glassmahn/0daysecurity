@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
-import { Search, Loader2, Upload, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2 } from 'lucide-react';
+import { useBulkSelection } from '@/hooks/use-bulk-selection';
+import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2 } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
+import { BulkActionBar } from '@/components/crud/BulkActionBar';
 
 const evidenceSearchSchema = z.object({
   status: fallback(z.string(), 'all').default('all'),
@@ -57,10 +59,12 @@ const evidenceFields: FieldDef[] = [
   },
 ];
 
+const evidenceStatusOptions = evidenceFields.find(f => f.name === 'status')!.options!;
+
 function EvidencePage() {
   const navigate = useNavigate({ from: '/evidence/' });
   const { status: statusFilter, type: typeFilter, source: sourceFilter, q: search } = Route.useSearch();
-  const { data: evidence, loading, insert, update, remove } = useSupabaseCrud('evidence');
+  const { data: evidence, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('evidence');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -72,13 +76,13 @@ function EvidencePage() {
       if (typeFilter !== 'all' && e.type !== typeFilter) return false;
       if (sourceFilter === 'auto' && e.source !== 'auto') return false;
       if (sourceFilter === 'manual' && e.source !== 'manual') return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return e.title.toLowerCase().includes(q);
-      }
+      if (search) return e.title.toLowerCase().includes(search.toLowerCase());
       return true;
     });
   }, [evidence, search, statusFilter, typeFilter, sourceFilter]);
+
+  const filteredIds = useMemo(() => filtered.map(e => e.id), [filtered]);
+  const bulk = useBulkSelection(filteredIds);
 
   const updateSearch = (updates: Record<string, string>) => {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
@@ -163,10 +167,20 @@ function EvidencePage() {
 
       <p className="text-xs text-muted-foreground">{filtered.length} evidence items matching filters</p>
 
+      <BulkActionBar count={bulk.count} onClear={bulk.clear}
+        onBulkDelete={() => bulkRemove([...bulk.selected])}
+        statusOptions={evidenceStatusOptions}
+        onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })}
+        entityName="evidence item" />
+
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
+              <th className="px-3 py-3 w-10">
+                <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
+                  onChange={bulk.toggleAll} className="rounded border-border" />
+              </th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Type</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Source</th>
@@ -180,8 +194,11 @@ function EvidencePage() {
               const sc = statusConfig[e.status] ?? statusConfig.valid;
               const StatusIcon = sc.icon;
               return (
-                <tr key={e.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                <tr key={e.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(e.id) ? 'bg-primary/5' : ''}`}
                   onClick={() => navigate({ to: '/evidence/$evidenceId', params: { evidenceId: e.id } })}>
+                  <td className="px-3 py-3" onClick={ev => ev.stopPropagation()}>
+                    <input type="checkbox" checked={bulk.isSelected(e.id)} onChange={() => bulk.toggle(e.id)} className="rounded border-border" />
+                  </td>
                   <td className="px-4 py-3 text-foreground">{e.title}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">

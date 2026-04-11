@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { formatDistanceToNow } from 'date-fns';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
+import { BulkActionBar } from '@/components/crud/BulkActionBar';
 
 const alertsSearchSchema = z.object({
   severity: fallback(z.string(), 'all').default('all'),
@@ -60,10 +62,12 @@ const alertFields: FieldDef[] = [
   { name: 'source', label: 'Source', type: 'text', placeholder: 'e.g. security, infrastructure', max: 100 },
 ];
 
+const alertStatusOptions = alertFields.find(f => f.name === 'status')!.options!;
+
 function AlertsPage() {
   const navigate = useNavigate({ from: '/alerts/' });
   const { severity: severityFilter, status: statusFilter, q: search } = Route.useSearch();
-  const { data: alerts, loading, insert, update, remove } = useSupabaseCrud('alerts');
+  const { data: alerts, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('alerts');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -80,6 +84,9 @@ function AlertsPage() {
       return true;
     });
   }, [alerts, severityFilter, statusFilter, search]);
+
+  const filteredIds = useMemo(() => filtered.map(a => a.id), [filtered]);
+  const bulk = useBulkSelection(filteredIds);
 
   const updateSearch = (updates: Record<string, string>) => {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
@@ -154,10 +161,20 @@ function AlertsPage() {
 
       <p className="text-xs text-muted-foreground">{filtered.length} alerts matching filters</p>
 
+      <BulkActionBar count={bulk.count} onClear={bulk.clear}
+        onBulkDelete={() => bulkRemove([...bulk.selected])}
+        statusOptions={alertStatusOptions}
+        onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })}
+        entityName="alert" />
+
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
+              <th className="px-3 py-3 w-10">
+                <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
+                  onChange={bulk.toggleAll} className="rounded border-border" />
+              </th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Severity</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Source</th>
@@ -168,7 +185,10 @@ function AlertsPage() {
           </thead>
           <tbody>
             {filtered.map(alert => (
-              <tr key={alert.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+              <tr key={alert.id} className={`border-b border-border hover:bg-muted/50 transition-colors ${bulk.isSelected(alert.id) ? 'bg-primary/5' : ''}`}>
+                <td className="px-3 py-3">
+                  <input type="checkbox" checked={bulk.isSelected(alert.id)} onChange={() => bulk.toggle(alert.id)} className="rounded border-border" />
+                </td>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[alert.severity] ?? ''}`}>{alert.severity}</span>
                 </td>
