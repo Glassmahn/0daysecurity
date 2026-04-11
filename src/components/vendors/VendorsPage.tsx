@@ -77,6 +77,7 @@ function riskScoreColor(score: number) {
 
 export function VendorsPage() {
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   const approved = vendors.filter(v => v.status === 'approved').length;
   const needsAction = vendors.filter(v => v.status === 'needs_action').length;
