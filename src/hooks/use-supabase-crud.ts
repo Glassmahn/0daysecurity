@@ -66,5 +66,27 @@ export function useSupabaseCrud<T extends CrudTable>(
     return true;
   }, [table, refetch]);
 
-  return { data, loading, error, refetch, insert, update, remove };
+  const bulkRemove = useCallback(async (ids: string[]) => {
+    const { error: err } = await (supabase.from(table).delete() as any).in('id', ids);
+    if (err) {
+      toast.error(`Failed to delete: ${err.message}`);
+      return false;
+    }
+    toast.success(`${ids.length} record${ids.length > 1 ? 's' : ''} deleted`);
+    await refetch();
+    return true;
+  }, [table, refetch]);
+
+  const bulkUpdate = useCallback(async (ids: string[], record: Record<string, unknown>) => {
+    const { error: err } = await (supabase.from(table).update(record as never) as any).in('id', ids);
+    if (err) {
+      toast.error(`Failed to update: ${err.message}`);
+      return false;
+    }
+    toast.success(`${ids.length} record${ids.length > 1 ? 's' : ''} updated`);
+    await refetch();
+    return true;
+  }, [table, refetch]);
+
+  return { data, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate };
 }

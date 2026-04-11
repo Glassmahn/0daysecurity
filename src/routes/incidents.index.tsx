@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
+import { BulkActionBar } from '@/components/crud/BulkActionBar';
 
 const incidentsSearchSchema = z.object({
   severity: fallback(z.string(), 'all').default('all'),
@@ -45,29 +47,27 @@ const incidentFields: FieldDef[] = [
   {
     name: 'severity', label: 'Severity', type: 'select', required: true,
     options: [
-      { value: 'critical', label: 'Critical' },
-      { value: 'high', label: 'High' },
-      { value: 'medium', label: 'Medium' },
-      { value: 'low', label: 'Low' },
+      { value: 'critical', label: 'Critical' }, { value: 'high', label: 'High' },
+      { value: 'medium', label: 'Medium' }, { value: 'low', label: 'Low' },
     ],
   },
   {
     name: 'status', label: 'Status', type: 'select', required: true,
     options: [
-      { value: 'open', label: 'Open' },
-      { value: 'investigating', label: 'Investigating' },
-      { value: 'contained', label: 'Contained' },
-      { value: 'resolved', label: 'Resolved' },
+      { value: 'open', label: 'Open' }, { value: 'investigating', label: 'Investigating' },
+      { value: 'contained', label: 'Contained' }, { value: 'resolved', label: 'Resolved' },
       { value: 'closed', label: 'Closed' },
     ],
   },
   { name: 'root_cause', label: 'Root Cause', type: 'textarea', placeholder: 'Root cause analysis...', max: 2000 },
 ];
 
+const incidentStatusOptions = incidentFields.find(f => f.name === 'status')!.options!;
+
 function IncidentsPage() {
   const navigate = useNavigate({ from: '/incidents/' });
   const { severity: severityFilter, status: statusFilter, q: search } = Route.useSearch();
-  const { data: incidents, loading, insert, update, remove } = useSupabaseCrud('incidents');
+  const { data: incidents, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('incidents');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -85,6 +85,9 @@ function IncidentsPage() {
     });
   }, [incidents, severityFilter, statusFilter, search]);
 
+  const filteredIds = useMemo(() => filtered.map(i => i.id), [filtered]);
+  const bulk = useBulkSelection(filteredIds);
+
   const updateSearch = (updates: Record<string, string>) => {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
   };
@@ -99,11 +102,7 @@ function IncidentsPage() {
   }), [incidents]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
   return (
@@ -162,10 +161,20 @@ function IncidentsPage() {
 
       <p className="text-xs text-muted-foreground">{filtered.length} incidents matching filters</p>
 
+      <BulkActionBar count={bulk.count} onClear={bulk.clear}
+        onBulkDelete={() => bulkRemove([...bulk.selected])}
+        statusOptions={incidentStatusOptions}
+        onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })}
+        entityName="incident" />
+
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
+              <th className="px-3 py-3 w-10">
+                <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
+                  onChange={bulk.toggleAll} className="rounded border-border" />
+              </th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Severity</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
@@ -175,8 +184,11 @@ function IncidentsPage() {
           </thead>
           <tbody>
             {filtered.map(inc => (
-              <tr key={inc.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
+              <tr key={inc.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(inc.id) ? 'bg-primary/5' : ''}`}
                 onClick={() => navigate({ to: '/incidents/$incidentId', params: { incidentId: inc.id } })}>
+                <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                  <input type="checkbox" checked={bulk.isSelected(inc.id)} onChange={() => bulk.toggle(inc.id)} className="rounded border-border" />
+                </td>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[inc.severity] ?? ''}`}>{inc.severity}</span>
                 </td>
