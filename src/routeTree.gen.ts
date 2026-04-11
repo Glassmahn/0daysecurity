@@ -11,14 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as TestsRouteImport } from './routes/tests'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RiskRegisterRouteImport } from './routes/risk-register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as PersonnelRouteImport } from './routes/personnel'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as FrameworksRouteImport } from './routes/frameworks'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ControlsRouteImport } from './routes/controls'
@@ -61,6 +65,11 @@ const TestsRoute = TestsRouteImport.update({
   path: '/tests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -69,6 +78,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RiskRegisterRoute = RiskRegisterRouteImport.update({
   id: '/risk-register',
   path: '/risk-register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -86,6 +100,11 @@ const PersonnelRoute = PersonnelRouteImport.update({
   path: '/personnel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IntegrationsRoute = IntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
@@ -99,6 +118,11 @@ const IncidentsRoute = IncidentsRouteImport.update({
 const FrameworksRoute = FrameworksRouteImport.update({
   id: '/frameworks',
   path: '/frameworks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EvidenceRoute = EvidenceRouteImport.update({
@@ -265,14 +289,18 @@ export interface FileRoutesByFullPath {
   '/controls': typeof ControlsRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/evidence': typeof EvidenceRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/frameworks': typeof FrameworksRouteWithChildren
   '/incidents': typeof IncidentsRouteWithChildren
   '/integrations': typeof IntegrationsRouteWithChildren
+  '/login': typeof LoginRoute
   '/personnel': typeof PersonnelRouteWithChildren
   '/policies': typeof PoliciesRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/signup': typeof SignupRoute
   '/tests': typeof TestsRouteWithChildren
   '/vendors': typeof VendorsRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
@@ -302,6 +330,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/assets/$assetId': typeof AssetsAssetIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
@@ -336,14 +368,18 @@ export interface FileRoutesById {
   '/controls': typeof ControlsRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/evidence': typeof EvidenceRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/frameworks': typeof FrameworksRouteWithChildren
   '/incidents': typeof IncidentsRouteWithChildren
   '/integrations': typeof IntegrationsRouteWithChildren
+  '/login': typeof LoginRoute
   '/personnel': typeof PersonnelRouteWithChildren
   '/policies': typeof PoliciesRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/signup': typeof SignupRoute
   '/tests': typeof TestsRouteWithChildren
   '/vendors': typeof VendorsRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
@@ -381,14 +417,18 @@ export interface FileRouteTypes {
     | '/controls'
     | '/dashboard'
     | '/evidence'
+    | '/forgot-password'
     | '/frameworks'
     | '/incidents'
     | '/integrations'
+    | '/login'
     | '/personnel'
     | '/policies'
     | '/reports'
+    | '/reset-password'
     | '/risk-register'
     | '/settings'
+    | '/signup'
     | '/tests'
     | '/vendors'
     | '/assets/$assetId'
@@ -418,6 +458,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/assets/$assetId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
@@ -451,14 +495,18 @@ export interface FileRouteTypes {
     | '/controls'
     | '/dashboard'
     | '/evidence'
+    | '/forgot-password'
     | '/frameworks'
     | '/incidents'
     | '/integrations'
+    | '/login'
     | '/personnel'
     | '/policies'
     | '/reports'
+    | '/reset-password'
     | '/risk-register'
     | '/settings'
+    | '/signup'
     | '/tests'
     | '/vendors'
     | '/assets/$assetId'
@@ -495,14 +543,18 @@ export interface RootRouteChildren {
   ControlsRoute: typeof ControlsRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   EvidenceRoute: typeof EvidenceRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   FrameworksRoute: typeof FrameworksRouteWithChildren
   IncidentsRoute: typeof IncidentsRouteWithChildren
   IntegrationsRoute: typeof IntegrationsRouteWithChildren
+  LoginRoute: typeof LoginRoute
   PersonnelRoute: typeof PersonnelRouteWithChildren
   PoliciesRoute: typeof PoliciesRouteWithChildren
   ReportsRoute: typeof ReportsRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RiskRegisterRoute: typeof RiskRegisterRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
+  SignupRoute: typeof SignupRoute
   TestsRoute: typeof TestsRouteWithChildren
   VendorsRoute: typeof VendorsRouteWithChildren
 }
@@ -523,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -535,6 +594,13 @@ declare module '@tanstack/react-router' {
       path: '/risk-register'
       fullPath: '/risk-register'
       preLoaderRoute: typeof RiskRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -558,6 +624,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonnelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/integrations': {
       id: '/integrations'
       path: '/integrations'
@@ -577,6 +650,13 @@ declare module '@tanstack/react-router' {
       path: '/frameworks'
       fullPath: '/frameworks'
       preLoaderRoute: typeof FrameworksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/evidence': {
@@ -1008,14 +1088,18 @@ const rootRouteChildren: RootRouteChildren = {
   ControlsRoute: ControlsRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   EvidenceRoute: EvidenceRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   FrameworksRoute: FrameworksRouteWithChildren,
   IncidentsRoute: IncidentsRouteWithChildren,
   IntegrationsRoute: IntegrationsRouteWithChildren,
+  LoginRoute: LoginRoute,
   PersonnelRoute: PersonnelRouteWithChildren,
   PoliciesRoute: PoliciesRouteWithChildren,
   ReportsRoute: ReportsRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   RiskRegisterRoute: RiskRegisterRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
+  SignupRoute: SignupRoute,
   TestsRoute: TestsRouteWithChildren,
   VendorsRoute: VendorsRouteWithChildren,
 }
