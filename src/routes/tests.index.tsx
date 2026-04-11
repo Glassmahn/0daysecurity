@@ -412,6 +412,11 @@ function TestsIndexPage() {
             )}
           </div>
         </TabsContent>
+
+        {/* ═══ Coverage Dashboard Tab ═══ */}
+        <TabsContent value="coverage" className="mt-0">
+          <TestCoverageDashboard />
+        </TabsContent>
       </Tabs>
 
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Test' : 'New Test'} fields={testFields} initialValues={editing ?? undefined}
