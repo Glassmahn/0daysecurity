@@ -60,7 +60,7 @@ function statusBadge(status: string) {
 
 export function TestsPage() {
   const [search, setSearch] = useState('');
-
+  const navigate = useNavigate();
   const passed = testRuns.filter(t => t.status === 'passed').length;
   const failed = testRuns.filter(t => t.status === 'failed').length;
   const inProgress = testRuns.filter(t => t.status === 'in_progress').length;
