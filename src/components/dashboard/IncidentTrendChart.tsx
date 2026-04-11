@@ -9,39 +9,39 @@ const data = [
   { month: 'Apr', critical: 1, high: 2, medium: 5, low: 8 },
 ];
 
-const tooltipStyle = {
-  background: 'oklch(0.2 0.025 260)',
-  border: '1px solid oklch(0.25 0.02 260)',
-  borderRadius: '6px',
-  fontSize: '12px',
-  color: 'oklch(0.93 0.01 250)',
-};
-
 export function IncidentTrendChart() {
   return (
-    <div className="bg-card border border-border rounded-lg p-5">
+    <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Incident Trends</h3>
-          <p className="text-xs text-muted-foreground">Monthly incidents by severity</p>
+          <h3 className="text-foreground">Incident Trends</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Monthly incidents by severity</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'oklch(0.55 0.22 25)' }} />Critical</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'oklch(0.7 0.18 50)' }} />High</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'oklch(0.75 0.15 80)' }} />Medium</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'oklch(0.45 0.02 250)' }} />Low</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-critical" />Critical</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-high" />High</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-medium" />Medium</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-low" />Low</span>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} barCategoryGap="20%">
-          <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.25 0.02 260)" />
-          <XAxis dataKey="month" tick={{ fill: 'oklch(0.6 0.02 250)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: 'oklch(0.6 0.02 250)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <Tooltip contentStyle={tooltipStyle} />
-          <Bar dataKey="critical" name="Critical" fill="oklch(0.55 0.22 25)" radius={[0, 0, 0, 0]} stackId="a" />
-          <Bar dataKey="high" name="High" fill="oklch(0.7 0.18 50)" stackId="a" />
-          <Bar dataKey="medium" name="Medium" fill="oklch(0.75 0.15 80)" stackId="a" />
-          <Bar dataKey="low" name="Low" fill="oklch(0.45 0.02 250)" radius={[3, 3, 0, 0]} stackId="a" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <XAxis dataKey="month" tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <Tooltip
+            contentStyle={{
+              background: 'var(--color-popover)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              fontSize: '12px',
+              color: 'var(--color-popover-foreground)',
+            }}
+          />
+          <Bar dataKey="critical" name="Critical" fill="var(--color-severity-critical)" radius={[0, 0, 0, 0]} stackId="a" />
+          <Bar dataKey="high" name="High" fill="var(--color-severity-high)" stackId="a" />
+          <Bar dataKey="medium" name="Medium" fill="var(--color-severity-medium)" stackId="a" />
+          <Bar dataKey="low" name="Low" fill="var(--color-severity-low)" radius={[3, 3, 0, 0]} stackId="a" />
         </BarChart>
       </ResponsiveContainer>
     </div>
