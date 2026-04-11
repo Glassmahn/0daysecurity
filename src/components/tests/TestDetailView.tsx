@@ -248,7 +248,7 @@ export function TestDetailView({ testId }: { testId: string }) {
     if (!test) return [];
     // Try to match by control ref
     const controlRef = test.control;
-    return testLibraryCatalogImported.filter(t => t.controlRefs.includes(controlRef));
+    return testLibraryCatalog.filter((t: TestTemplate) => t.controlRefs.includes(controlRef));
   }, [test]);
 
   if (!test) {
