@@ -19,19 +19,6 @@ const tabs = [
   { id: 'billing', label: 'Billing', icon: CreditCard },
 ];
 
-const roleStyles: Record<string, string> = {
-  admin: 'bg-severity-critical/15 text-severity-critical',
-  analyst: 'bg-status-in-progress/15 text-status-in-progress',
-  auditor: 'bg-chart-5/15 text-chart-5',
-  executive: 'bg-status-warning/15 text-status-warning',
-  viewer: 'bg-muted text-muted-foreground',
-};
-
-const memberStatusStyles: Record<string, string> = {
-  active: 'bg-status-passing/15 text-status-passing',
-  invited: 'bg-status-warning/15 text-status-warning',
-  deactivated: 'bg-muted text-muted-foreground',
-};
 
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState('team');
