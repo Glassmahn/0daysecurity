@@ -9,38 +9,462 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RiskRegisterRouteImport } from './routes/risk-register'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PoliciesRouteImport } from './routes/policies'
+import { Route as PersonnelRouteImport } from './routes/personnel'
+import { Route as IntegrationsRouteImport } from './routes/integrations'
+import { Route as IncidentsRouteImport } from './routes/incidents'
+import { Route as FrameworksRouteImport } from './routes/frameworks'
+import { Route as EvidenceRouteImport } from './routes/evidence'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ControlsRouteImport } from './routes/controls'
+import { Route as AuditsRouteImport } from './routes/audits'
+import { Route as AssetsRouteImport } from './routes/assets'
+import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as RiskRegisterIndexRouteImport } from './routes/risk-register.index'
+import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as PoliciesIndexRouteImport } from './routes/policies.index'
+import { Route as PersonnelIndexRouteImport } from './routes/personnel.index'
+import { Route as IntegrationsIndexRouteImport } from './routes/integrations.index'
+import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
+import { Route as FrameworksIndexRouteImport } from './routes/frameworks.index'
+import { Route as EvidenceIndexRouteImport } from './routes/evidence.index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as ControlsIndexRouteImport } from './routes/controls.index'
+import { Route as AuditsIndexRouteImport } from './routes/audits.index'
+import { Route as AssetsIndexRouteImport } from './routes/assets.index'
+import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiskRegisterRoute = RiskRegisterRouteImport.update({
+  id: '/risk-register',
+  path: '/risk-register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliciesRoute = PoliciesRouteImport.update({
+  id: '/policies',
+  path: '/policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonnelRoute = PersonnelRouteImport.update({
+  id: '/personnel',
+  path: '/personnel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntegrationsRoute = IntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IncidentsRoute = IncidentsRouteImport.update({
+  id: '/incidents',
+  path: '/incidents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FrameworksRoute = FrameworksRouteImport.update({
+  id: '/frameworks',
+  path: '/frameworks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvidenceRoute = EvidenceRouteImport.update({
+  id: '/evidence',
+  path: '/evidence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ControlsRoute = ControlsRouteImport.update({
+  id: '/controls',
+  path: '/controls',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditsRoute = AuditsRouteImport.update({
+  id: '/audits',
+  path: '/audits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssetsRoute = AssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const RiskRegisterIndexRoute = RiskRegisterIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RiskRegisterRoute,
+} as any)
+const ReportsIndexRoute = ReportsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ReportsRoute,
+} as any)
+const PoliciesIndexRoute = PoliciesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PoliciesRoute,
+} as any)
+const PersonnelIndexRoute = PersonnelIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PersonnelRoute,
+} as any)
+const IntegrationsIndexRoute = IntegrationsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => IntegrationsRoute,
+} as any)
+const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => IncidentsRoute,
+} as any)
+const FrameworksIndexRoute = FrameworksIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FrameworksRoute,
+} as any)
+const EvidenceIndexRoute = EvidenceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EvidenceRoute,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const ControlsIndexRoute = ControlsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ControlsRoute,
+} as any)
+const AuditsIndexRoute = AuditsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuditsRoute,
+} as any)
+const AssetsIndexRoute = AssetsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AssetsRoute,
+} as any)
+const AlertsIndexRoute = AlertsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AlertsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRouteWithChildren
+  '/assets': typeof AssetsRouteWithChildren
+  '/audits': typeof AuditsRouteWithChildren
+  '/controls': typeof ControlsRouteWithChildren
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/evidence': typeof EvidenceRouteWithChildren
+  '/frameworks': typeof FrameworksRouteWithChildren
+  '/incidents': typeof IncidentsRouteWithChildren
+  '/integrations': typeof IntegrationsRouteWithChildren
+  '/personnel': typeof PersonnelRouteWithChildren
+  '/policies': typeof PoliciesRouteWithChildren
+  '/reports': typeof ReportsRouteWithChildren
+  '/risk-register': typeof RiskRegisterRouteWithChildren
+  '/settings': typeof SettingsRouteWithChildren
+  '/alerts/': typeof AlertsIndexRoute
+  '/assets/': typeof AssetsIndexRoute
+  '/audits/': typeof AuditsIndexRoute
+  '/controls/': typeof ControlsIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/evidence/': typeof EvidenceIndexRoute
+  '/frameworks/': typeof FrameworksIndexRoute
+  '/incidents/': typeof IncidentsIndexRoute
+  '/integrations/': typeof IntegrationsIndexRoute
+  '/personnel/': typeof PersonnelIndexRoute
+  '/policies/': typeof PoliciesIndexRoute
+  '/reports/': typeof ReportsIndexRoute
+  '/risk-register/': typeof RiskRegisterIndexRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsIndexRoute
+  '/assets': typeof AssetsIndexRoute
+  '/audits': typeof AuditsIndexRoute
+  '/controls': typeof ControlsIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/evidence': typeof EvidenceIndexRoute
+  '/frameworks': typeof FrameworksIndexRoute
+  '/incidents': typeof IncidentsIndexRoute
+  '/integrations': typeof IntegrationsIndexRoute
+  '/personnel': typeof PersonnelIndexRoute
+  '/policies': typeof PoliciesIndexRoute
+  '/reports': typeof ReportsIndexRoute
+  '/risk-register': typeof RiskRegisterIndexRoute
+  '/settings': typeof SettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRouteWithChildren
+  '/assets': typeof AssetsRouteWithChildren
+  '/audits': typeof AuditsRouteWithChildren
+  '/controls': typeof ControlsRouteWithChildren
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/evidence': typeof EvidenceRouteWithChildren
+  '/frameworks': typeof FrameworksRouteWithChildren
+  '/incidents': typeof IncidentsRouteWithChildren
+  '/integrations': typeof IntegrationsRouteWithChildren
+  '/personnel': typeof PersonnelRouteWithChildren
+  '/policies': typeof PoliciesRouteWithChildren
+  '/reports': typeof ReportsRouteWithChildren
+  '/risk-register': typeof RiskRegisterRouteWithChildren
+  '/settings': typeof SettingsRouteWithChildren
+  '/alerts/': typeof AlertsIndexRoute
+  '/assets/': typeof AssetsIndexRoute
+  '/audits/': typeof AuditsIndexRoute
+  '/controls/': typeof ControlsIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/evidence/': typeof EvidenceIndexRoute
+  '/frameworks/': typeof FrameworksIndexRoute
+  '/incidents/': typeof IncidentsIndexRoute
+  '/integrations/': typeof IntegrationsIndexRoute
+  '/personnel/': typeof PersonnelIndexRoute
+  '/policies/': typeof PoliciesIndexRoute
+  '/reports/': typeof ReportsIndexRoute
+  '/risk-register/': typeof RiskRegisterIndexRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/alerts'
+    | '/assets'
+    | '/audits'
+    | '/controls'
+    | '/dashboard'
+    | '/evidence'
+    | '/frameworks'
+    | '/incidents'
+    | '/integrations'
+    | '/personnel'
+    | '/policies'
+    | '/reports'
+    | '/risk-register'
+    | '/settings'
+    | '/alerts/'
+    | '/assets/'
+    | '/audits/'
+    | '/controls/'
+    | '/dashboard/'
+    | '/evidence/'
+    | '/frameworks/'
+    | '/incidents/'
+    | '/integrations/'
+    | '/personnel/'
+    | '/policies/'
+    | '/reports/'
+    | '/risk-register/'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/alerts'
+    | '/assets'
+    | '/audits'
+    | '/controls'
+    | '/dashboard'
+    | '/evidence'
+    | '/frameworks'
+    | '/incidents'
+    | '/integrations'
+    | '/personnel'
+    | '/policies'
+    | '/reports'
+    | '/risk-register'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/alerts'
+    | '/assets'
+    | '/audits'
+    | '/controls'
+    | '/dashboard'
+    | '/evidence'
+    | '/frameworks'
+    | '/incidents'
+    | '/integrations'
+    | '/personnel'
+    | '/policies'
+    | '/reports'
+    | '/risk-register'
+    | '/settings'
+    | '/alerts/'
+    | '/assets/'
+    | '/audits/'
+    | '/controls/'
+    | '/dashboard/'
+    | '/evidence/'
+    | '/frameworks/'
+    | '/incidents/'
+    | '/integrations/'
+    | '/personnel/'
+    | '/policies/'
+    | '/reports/'
+    | '/risk-register/'
+    | '/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlertsRoute: typeof AlertsRouteWithChildren
+  AssetsRoute: typeof AssetsRouteWithChildren
+  AuditsRoute: typeof AuditsRouteWithChildren
+  ControlsRoute: typeof ControlsRouteWithChildren
+  DashboardRoute: typeof DashboardRouteWithChildren
+  EvidenceRoute: typeof EvidenceRouteWithChildren
+  FrameworksRoute: typeof FrameworksRouteWithChildren
+  IncidentsRoute: typeof IncidentsRouteWithChildren
+  IntegrationsRoute: typeof IntegrationsRouteWithChildren
+  PersonnelRoute: typeof PersonnelRouteWithChildren
+  PoliciesRoute: typeof PoliciesRouteWithChildren
+  ReportsRoute: typeof ReportsRouteWithChildren
+  RiskRegisterRoute: typeof RiskRegisterRouteWithChildren
+  SettingsRoute: typeof SettingsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/risk-register': {
+      id: '/risk-register'
+      path: '/risk-register'
+      fullPath: '/risk-register'
+      preLoaderRoute: typeof RiskRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/policies': {
+      id: '/policies'
+      path: '/policies'
+      fullPath: '/policies'
+      preLoaderRoute: typeof PoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personnel': {
+      id: '/personnel'
+      path: '/personnel'
+      fullPath: '/personnel'
+      preLoaderRoute: typeof PersonnelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integrations': {
+      id: '/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/incidents': {
+      id: '/incidents'
+      path: '/incidents'
+      fullPath: '/incidents'
+      preLoaderRoute: typeof IncidentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/frameworks': {
+      id: '/frameworks'
+      path: '/frameworks'
+      fullPath: '/frameworks'
+      preLoaderRoute: typeof FrameworksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evidence': {
+      id: '/evidence'
+      path: '/evidence'
+      fullPath: '/evidence'
+      preLoaderRoute: typeof EvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/controls': {
+      id: '/controls'
+      path: '/controls'
+      fullPath: '/controls'
+      preLoaderRoute: typeof ControlsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audits': {
+      id: '/audits'
+      path: '/audits'
+      fullPath: '/audits'
+      preLoaderRoute: typeof AuditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assets': {
+      id: '/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AssetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +472,287 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/risk-register/': {
+      id: '/risk-register/'
+      path: '/'
+      fullPath: '/risk-register/'
+      preLoaderRoute: typeof RiskRegisterIndexRouteImport
+      parentRoute: typeof RiskRegisterRoute
+    }
+    '/reports/': {
+      id: '/reports/'
+      path: '/'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof ReportsIndexRouteImport
+      parentRoute: typeof ReportsRoute
+    }
+    '/policies/': {
+      id: '/policies/'
+      path: '/'
+      fullPath: '/policies/'
+      preLoaderRoute: typeof PoliciesIndexRouteImport
+      parentRoute: typeof PoliciesRoute
+    }
+    '/personnel/': {
+      id: '/personnel/'
+      path: '/'
+      fullPath: '/personnel/'
+      preLoaderRoute: typeof PersonnelIndexRouteImport
+      parentRoute: typeof PersonnelRoute
+    }
+    '/integrations/': {
+      id: '/integrations/'
+      path: '/'
+      fullPath: '/integrations/'
+      preLoaderRoute: typeof IntegrationsIndexRouteImport
+      parentRoute: typeof IntegrationsRoute
+    }
+    '/incidents/': {
+      id: '/incidents/'
+      path: '/'
+      fullPath: '/incidents/'
+      preLoaderRoute: typeof IncidentsIndexRouteImport
+      parentRoute: typeof IncidentsRoute
+    }
+    '/frameworks/': {
+      id: '/frameworks/'
+      path: '/'
+      fullPath: '/frameworks/'
+      preLoaderRoute: typeof FrameworksIndexRouteImport
+      parentRoute: typeof FrameworksRoute
+    }
+    '/evidence/': {
+      id: '/evidence/'
+      path: '/'
+      fullPath: '/evidence/'
+      preLoaderRoute: typeof EvidenceIndexRouteImport
+      parentRoute: typeof EvidenceRoute
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/controls/': {
+      id: '/controls/'
+      path: '/'
+      fullPath: '/controls/'
+      preLoaderRoute: typeof ControlsIndexRouteImport
+      parentRoute: typeof ControlsRoute
+    }
+    '/audits/': {
+      id: '/audits/'
+      path: '/'
+      fullPath: '/audits/'
+      preLoaderRoute: typeof AuditsIndexRouteImport
+      parentRoute: typeof AuditsRoute
+    }
+    '/assets/': {
+      id: '/assets/'
+      path: '/'
+      fullPath: '/assets/'
+      preLoaderRoute: typeof AssetsIndexRouteImport
+      parentRoute: typeof AssetsRoute
+    }
+    '/alerts/': {
+      id: '/alerts/'
+      path: '/'
+      fullPath: '/alerts/'
+      preLoaderRoute: typeof AlertsIndexRouteImport
+      parentRoute: typeof AlertsRoute
+    }
   }
 }
 
+interface AlertsRouteChildren {
+  AlertsIndexRoute: typeof AlertsIndexRoute
+}
+
+const AlertsRouteChildren: AlertsRouteChildren = {
+  AlertsIndexRoute: AlertsIndexRoute,
+}
+
+const AlertsRouteWithChildren =
+  AlertsRoute._addFileChildren(AlertsRouteChildren)
+
+interface AssetsRouteChildren {
+  AssetsIndexRoute: typeof AssetsIndexRoute
+}
+
+const AssetsRouteChildren: AssetsRouteChildren = {
+  AssetsIndexRoute: AssetsIndexRoute,
+}
+
+const AssetsRouteWithChildren =
+  AssetsRoute._addFileChildren(AssetsRouteChildren)
+
+interface AuditsRouteChildren {
+  AuditsIndexRoute: typeof AuditsIndexRoute
+}
+
+const AuditsRouteChildren: AuditsRouteChildren = {
+  AuditsIndexRoute: AuditsIndexRoute,
+}
+
+const AuditsRouteWithChildren =
+  AuditsRoute._addFileChildren(AuditsRouteChildren)
+
+interface ControlsRouteChildren {
+  ControlsIndexRoute: typeof ControlsIndexRoute
+}
+
+const ControlsRouteChildren: ControlsRouteChildren = {
+  ControlsIndexRoute: ControlsIndexRoute,
+}
+
+const ControlsRouteWithChildren = ControlsRoute._addFileChildren(
+  ControlsRouteChildren,
+)
+
+interface DashboardRouteChildren {
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
+interface EvidenceRouteChildren {
+  EvidenceIndexRoute: typeof EvidenceIndexRoute
+}
+
+const EvidenceRouteChildren: EvidenceRouteChildren = {
+  EvidenceIndexRoute: EvidenceIndexRoute,
+}
+
+const EvidenceRouteWithChildren = EvidenceRoute._addFileChildren(
+  EvidenceRouteChildren,
+)
+
+interface FrameworksRouteChildren {
+  FrameworksIndexRoute: typeof FrameworksIndexRoute
+}
+
+const FrameworksRouteChildren: FrameworksRouteChildren = {
+  FrameworksIndexRoute: FrameworksIndexRoute,
+}
+
+const FrameworksRouteWithChildren = FrameworksRoute._addFileChildren(
+  FrameworksRouteChildren,
+)
+
+interface IncidentsRouteChildren {
+  IncidentsIndexRoute: typeof IncidentsIndexRoute
+}
+
+const IncidentsRouteChildren: IncidentsRouteChildren = {
+  IncidentsIndexRoute: IncidentsIndexRoute,
+}
+
+const IncidentsRouteWithChildren = IncidentsRoute._addFileChildren(
+  IncidentsRouteChildren,
+)
+
+interface IntegrationsRouteChildren {
+  IntegrationsIndexRoute: typeof IntegrationsIndexRoute
+}
+
+const IntegrationsRouteChildren: IntegrationsRouteChildren = {
+  IntegrationsIndexRoute: IntegrationsIndexRoute,
+}
+
+const IntegrationsRouteWithChildren = IntegrationsRoute._addFileChildren(
+  IntegrationsRouteChildren,
+)
+
+interface PersonnelRouteChildren {
+  PersonnelIndexRoute: typeof PersonnelIndexRoute
+}
+
+const PersonnelRouteChildren: PersonnelRouteChildren = {
+  PersonnelIndexRoute: PersonnelIndexRoute,
+}
+
+const PersonnelRouteWithChildren = PersonnelRoute._addFileChildren(
+  PersonnelRouteChildren,
+)
+
+interface PoliciesRouteChildren {
+  PoliciesIndexRoute: typeof PoliciesIndexRoute
+}
+
+const PoliciesRouteChildren: PoliciesRouteChildren = {
+  PoliciesIndexRoute: PoliciesIndexRoute,
+}
+
+const PoliciesRouteWithChildren = PoliciesRoute._addFileChildren(
+  PoliciesRouteChildren,
+)
+
+interface ReportsRouteChildren {
+  ReportsIndexRoute: typeof ReportsIndexRoute
+}
+
+const ReportsRouteChildren: ReportsRouteChildren = {
+  ReportsIndexRoute: ReportsIndexRoute,
+}
+
+const ReportsRouteWithChildren =
+  ReportsRoute._addFileChildren(ReportsRouteChildren)
+
+interface RiskRegisterRouteChildren {
+  RiskRegisterIndexRoute: typeof RiskRegisterIndexRoute
+}
+
+const RiskRegisterRouteChildren: RiskRegisterRouteChildren = {
+  RiskRegisterIndexRoute: RiskRegisterIndexRoute,
+}
+
+const RiskRegisterRouteWithChildren = RiskRegisterRoute._addFileChildren(
+  RiskRegisterRouteChildren,
+)
+
+interface SettingsRouteChildren {
+  SettingsIndexRoute: typeof SettingsIndexRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsIndexRoute: SettingsIndexRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertsRoute: AlertsRouteWithChildren,
+  AssetsRoute: AssetsRouteWithChildren,
+  AuditsRoute: AuditsRouteWithChildren,
+  ControlsRoute: ControlsRouteWithChildren,
+  DashboardRoute: DashboardRouteWithChildren,
+  EvidenceRoute: EvidenceRouteWithChildren,
+  FrameworksRoute: FrameworksRouteWithChildren,
+  IncidentsRoute: IncidentsRouteWithChildren,
+  IntegrationsRoute: IntegrationsRouteWithChildren,
+  PersonnelRoute: PersonnelRouteWithChildren,
+  PoliciesRoute: PoliciesRouteWithChildren,
+  ReportsRoute: ReportsRouteWithChildren,
+  RiskRegisterRoute: RiskRegisterRouteWithChildren,
+  SettingsRoute: SettingsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
