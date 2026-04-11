@@ -107,7 +107,7 @@ function EvidencePage() {
                 <td className="px-4 py-3 text-xs text-muted-foreground">{e.collectedAt}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{e.expiresAt}</td>
                 <td className="px-4 py-3">
-                  {e.autoCollected && <Zap className="h-3.5 w-3.5 text-status-warning" title="Auto-collected" />}
+                  {e.autoCollected && <span title="Auto-collected"><Zap className="h-3.5 w-3.5 text-status-warning" /></span>}
                 </td>
               </tr>
             ))}
