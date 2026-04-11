@@ -12,6 +12,7 @@ import {
   ChevronRight, Shield, Calendar, ExternalLink, Image, File,
 } from 'lucide-react';
 import { testLibraryCatalog, type TestTemplate } from '@/lib/test-library-catalog';
+import { enrichedControls } from '@/lib/framework-catalog';
 
 /* ── Test Run Data ───────────────────────────────────── */
 const testRunsMap: Record<string, {
@@ -540,9 +541,16 @@ export function TestDetailView({ testId }: { testId: string }) {
                     <div>
                       <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Mapped Controls</p>
                       <div className="flex flex-wrap gap-1">
-                        {tmpl.controlRefs.map(ref => (
-                          <Badge key={ref} variant="secondary" className="text-[10px] font-mono">{ref}</Badge>
-                        ))}
+                        {tmpl.controlRefs.map(ref => {
+                          const ec = enrichedControls.find(c => c.ref === ref);
+                          return ec ? (
+                            <Link key={ref} to="/controls/$controlId" params={{ controlId: ec.id }}>
+                              <Badge variant="secondary" className="text-[10px] font-mono hover:bg-primary/20 cursor-pointer transition-colors">{ref}</Badge>
+                            </Link>
+                          ) : (
+                            <Badge key={ref} variant="secondary" className="text-[10px] font-mono">{ref}</Badge>
+                          );
+                        })}
                       </div>
                     </div>
                     <div>
