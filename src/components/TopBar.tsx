@@ -1,17 +1,28 @@
-import { Search, Bell, User, Sun, Moon, Menu } from 'lucide-react';
+import { Search, Bell, User, Sun, Moon, Menu, LogOut } from 'lucide-react';
 import { CommandSearch } from './CommandSearch';
 import { useThemeStore } from '@/hooks/use-theme';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function TopBar() {
   const { theme, toggleTheme } = useThemeStore();
   const sidebarToggle = useSidebarStore((s) => s.toggle);
+  const { user, signOut } = useAuth();
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <>
       <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 bg-card">
         <div className="flex items-center gap-3">
-          {/* Mobile hamburger */}
           <button
             onClick={sidebarToggle}
             className="p-2 rounded-lg hover:bg-accent transition-colors lg:hidden"
@@ -19,7 +30,6 @@ export function TopBar() {
             <Menu className="h-5 w-5 text-foreground" />
           </button>
 
-          {/* Search trigger */}
           <button
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
             className="flex items-center gap-2 bg-input rounded-md px-3 py-1.5 w-48 sm:w-80 cursor-pointer hover:bg-accent transition-colors"
@@ -32,11 +42,7 @@ export function TopBar() {
           </button>
         </div>
 
-        {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-xs text-muted-foreground hidden md:block">Meridian Health Tech</span>
-
-          {/* Theme toggle */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-accent transition-colors group"
@@ -56,12 +62,29 @@ export function TopBar() {
             </span>
           </button>
 
-          <button className="flex items-center gap-2 hover:bg-accent rounded-lg px-2 py-1.5 transition-colors">
-            <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
-              <User className="h-3.5 w-3.5 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-medium text-foreground hidden sm:block">Sarah Chen</span>
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 hover:bg-accent rounded-lg px-2 py-1.5 transition-colors">
+                <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary-foreground">{initials}</span>
+                </div>
+                <span className="text-sm font-medium text-foreground hidden sm:block truncate max-w-[120px]">
+                  {displayName}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium text-foreground">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <CommandSearch />
