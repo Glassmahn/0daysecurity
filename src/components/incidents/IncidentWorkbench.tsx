@@ -247,7 +247,6 @@ export function IncidentWorkbench({ incidentId }: { incidentId: string }) {
                     {details.timeline.map((entry, idx) => {
                       const Icon = timelineTypeIcons[entry.type] || Circle;
                       const color = timelineTypeColors[entry.type] || 'text-muted-foreground';
-                      const time = new Date(entry.time);
                       return (
                         <div key={idx} className="relative flex gap-4 pl-1">
                           <div className={`relative z-10 flex items-center justify-center w-[30px] h-[30px] rounded-full bg-card border border-border ${color}`}>
