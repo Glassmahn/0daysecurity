@@ -68,9 +68,18 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: { staleTime: 60_000, retry: 1 },
+    },
+  }));
+
   return (
-    <ThemeProvider>
-      <Outlet />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Outlet />
+        <Toaster />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
