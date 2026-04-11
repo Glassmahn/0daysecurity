@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, AlertTriangle, XCircle, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 
 const frameworks = [
   { name: 'SOC 2 Type II', score: 87, change: 3, controls: { pass: 38, fail: 4, pending: 8 }, nextAudit: '2026-07-15', status: 'on_track' },
@@ -22,7 +23,7 @@ export function FrameworkScoreCards() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Framework Readiness</h3>
-          <p className="text-xs text-muted-foreground">Audit readiness by framework</p>
+          <p className="text-xs text-muted-foreground">Click a framework to drill down</p>
         </div>
       </div>
       <div className="space-y-3">
@@ -30,7 +31,11 @@ export function FrameworkScoreCards() {
           const total = fw.controls.pass + fw.controls.fail + fw.controls.pending;
           const passPct = Math.round((fw.controls.pass / total) * 100);
           return (
-            <div key={fw.name} className="border rounded-lg p-3 space-y-2">
+            <Link
+              key={fw.name}
+              to="/frameworks"
+              className="block border rounded-lg p-3 space-y-2 hover:border-primary/40 hover:bg-accent/30 transition-all cursor-pointer"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{fw.name}</span>
@@ -55,7 +60,7 @@ export function FrameworkScoreCards() {
                 </div>
                 <span>Audit: {fw.nextAudit}</span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

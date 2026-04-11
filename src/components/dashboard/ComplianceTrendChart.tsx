@@ -1,4 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useNavigate } from '@tanstack/react-router';
 
 const data = [
   { month: 'Oct', score: 72, controls: 68, evidence: 75 },
@@ -11,6 +12,14 @@ const data = [
 ];
 
 export function ComplianceTrendChart() {
+  const navigate = useNavigate();
+
+  const handleClick = (dataKey?: string) => {
+    if (dataKey === 'controls') navigate({ to: '/controls' });
+    else if (dataKey === 'evidence') navigate({ to: '/evidence' });
+    else navigate({ to: '/frameworks' });
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
@@ -19,13 +28,13 @@ export function ComplianceTrendChart() {
           <p className="text-xs text-muted-foreground mt-0.5">6-month compliance score progression</p>
         </div>
         <div className="flex items-center gap-4 text-xs">
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-status-passing" />Overall</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" />Controls</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-status-warning" />Evidence</span>
+          <button onClick={() => handleClick('score')} className="flex items-center gap-1.5 hover:underline cursor-pointer"><span className="h-2 w-2 rounded-full bg-status-passing" />Overall</button>
+          <button onClick={() => handleClick('controls')} className="flex items-center gap-1.5 hover:underline cursor-pointer"><span className="h-2 w-2 rounded-full bg-primary" />Controls</button>
+          <button onClick={() => handleClick('evidence')} className="flex items-center gap-1.5 hover:underline cursor-pointer"><span className="h-2 w-2 rounded-full bg-status-warning" />Evidence</button>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={240}>
-        <AreaChart data={data}>
+        <AreaChart data={data} onClick={() => handleClick()}>
           <defs>
             <linearGradient id="gradScore" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="var(--color-status-passing)" stopOpacity={0.3} />
@@ -53,11 +62,12 @@ export function ComplianceTrendChart() {
             }}
             formatter={(value: number) => [`${value}%`, '']}
           />
-          <Area type="monotone" dataKey="score" name="Overall" stroke="var(--color-status-passing)" fill="url(#gradScore)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-status-passing)' }} />
-          <Area type="monotone" dataKey="controls" name="Controls" stroke="var(--color-primary)" fill="url(#gradControls)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-primary)' }} />
-          <Area type="monotone" dataKey="evidence" name="Evidence" stroke="var(--color-status-warning)" fill="url(#gradEvidence)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-status-warning)' }} />
+          <Area type="monotone" dataKey="score" name="Overall" stroke="var(--color-status-passing)" fill="url(#gradScore)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-status-passing)' }} className="cursor-pointer" />
+          <Area type="monotone" dataKey="controls" name="Controls" stroke="var(--color-primary)" fill="url(#gradControls)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-primary)' }} className="cursor-pointer" />
+          <Area type="monotone" dataKey="evidence" name="Evidence" stroke="var(--color-status-warning)" fill="url(#gradEvidence)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-status-warning)' }} className="cursor-pointer" />
         </AreaChart>
       </ResponsiveContainer>
+      <p className="text-[10px] text-muted-foreground mt-2 text-center">Click chart to view frameworks · Click legend to drill down</p>
     </div>
   );
 }

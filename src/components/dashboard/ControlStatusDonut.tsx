@@ -1,10 +1,11 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useNavigate } from '@tanstack/react-router';
 
 const controlData = [
-  { name: 'Implemented', value: 34, color: 'oklch(0.65 0.19 155)' },
-  { name: 'In Progress', value: 8, color: 'oklch(0.65 0.19 250)' },
-  { name: 'Planned', value: 5, color: 'oklch(0.7 0.15 60)' },
-  { name: 'Not Started', value: 3, color: 'oklch(0.4 0.02 250)' },
+  { name: 'Implemented', value: 34, color: 'oklch(0.65 0.19 155)', filter: 'implemented' },
+  { name: 'In Progress', value: 8, color: 'oklch(0.65 0.19 250)', filter: 'in_progress' },
+  { name: 'Planned', value: 5, color: 'oklch(0.7 0.15 60)', filter: 'not_implemented' },
+  { name: 'Not Started', value: 3, color: 'oklch(0.4 0.02 250)', filter: 'not_implemented' },
 ];
 
 const total = controlData.reduce((s, d) => s + d.value, 0);
@@ -19,6 +20,12 @@ const tooltipStyle = {
 };
 
 export function ControlStatusDonut() {
+  const navigate = useNavigate();
+
+  const handleClick = (_: unknown, index: number) => {
+    navigate({ to: '/controls' });
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg p-5">
       <div className="flex items-center justify-between mb-2">
@@ -39,6 +46,8 @@ export function ControlStatusDonut() {
               paddingAngle={3}
               dataKey="value"
               strokeWidth={0}
+              onClick={handleClick}
+              className="cursor-pointer"
             >
               {controlData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
@@ -56,13 +65,18 @@ export function ControlStatusDonut() {
       </div>
       <div className="grid grid-cols-2 gap-2 mt-2">
         {controlData.map(d => (
-          <div key={d.name} className="flex items-center gap-2 text-xs">
+          <button
+            key={d.name}
+            onClick={() => navigate({ to: '/controls' })}
+            className="flex items-center gap-2 text-xs hover:bg-accent/50 rounded px-1 py-0.5 transition-colors cursor-pointer"
+          >
             <span className="h-2 w-2 rounded-full shrink-0" style={{ background: d.color }} />
             <span className="text-muted-foreground">{d.name}</span>
             <span className="font-medium text-foreground ml-auto">{d.value}</span>
-          </div>
+          </button>
         ))}
       </div>
+      <p className="text-[10px] text-muted-foreground mt-2 text-center">Click to view controls</p>
     </div>
   );
 }
