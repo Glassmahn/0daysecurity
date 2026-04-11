@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { teamMembers } from '@/lib/mock-data-extended';
 import { useState } from 'react';
-import { Settings as SettingsIcon, Users, Bell, Key, CreditCard, Building2, UserPlus, Shield } from 'lucide-react';
+import { Users, Bell, Key, CreditCard, Building2, Shield } from 'lucide-react';
 import { RBACManager } from '@/components/settings/RBACManager';
+import { UserManagement } from '@/components/settings/UserManagement';
 import { AdminGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/settings/')({
@@ -99,51 +99,7 @@ function SettingsPage() {
         </div>
       )}
 
-      {activeTab === 'team' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{teamMembers.length} members</span>
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
-              <UserPlus className="h-4 w-4" /> Invite Member
-            </button>
-          </div>
-          <div className="bg-card border border-border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Name</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Role</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Last Active</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamMembers.map(m => (
-                  <tr key={m.id} className="border-b border-border hover:bg-surface transition-colors">
-                    <td className="px-4 py-3">
-                      <div>
-                        <div className="font-medium text-foreground">{m.name}</div>
-                        <div className="text-xs text-muted-foreground">{m.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${roleStyles[m.role]}`}>{m.role}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${memberStatusStyles[m.status]}`}>{m.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{m.lastActive}</td>
-                    <td className="px-4 py-3">
-                      <button className="text-xs text-primary font-medium hover:underline">Edit</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {activeTab === 'team' && <UserManagement />}
 
       {activeTab === 'roles' && <RBACManager />}
 
