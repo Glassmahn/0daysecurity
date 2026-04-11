@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useNavigate } from '@tanstack/react-router';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PostureData {
   name: string;
@@ -9,8 +10,12 @@ interface PostureData {
   na: number;
 }
 
-export function CompliancePosture({ data }: { data: PostureData[] }) {
+export function CompliancePosture({ data, isLoading }: { data: PostureData[]; isLoading?: boolean }) {
   const navigate = useNavigate();
+
+  if (isLoading || data.length === 0) {
+    return <Skeleton className="h-[320px] rounded-xl" />;
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
@@ -21,27 +26,10 @@ export function CompliancePosture({ data }: { data: PostureData[] }) {
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} layout="vertical" barGap={2} onClick={() => navigate({ to: '/frameworks' })}>
           <XAxis type="number" hide />
-          <YAxis
-            type="category"
-            dataKey="name"
-            width={110}
-            tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12, cursor: 'pointer' }}
-          />
-          <Tooltip
-            contentStyle={{
-              background: 'var(--color-popover)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: 'var(--color-popover-foreground)',
-            }}
-          />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: '11px', color: 'var(--color-muted-foreground)' }}
-          />
-          <Bar dataKey="passing" name="Passing" fill="var(--color-status-passing)" radius={[0, 0, 0, 0]} stackId="a" className="cursor-pointer" />
+          <YAxis type="category" dataKey="name" width={110} tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12, cursor: 'pointer' }} />
+          <Tooltip contentStyle={{ background: 'var(--color-popover)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--color-popover-foreground)' }} />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: 'var(--color-muted-foreground)' }} />
+          <Bar dataKey="passing" name="Passing" fill="var(--color-status-passing)" stackId="a" className="cursor-pointer" />
           <Bar dataKey="inProgress" name="In Progress" fill="var(--color-primary)" stackId="a" className="cursor-pointer" />
           <Bar dataKey="failing" name="Failing" fill="var(--color-severity-critical)" stackId="a" className="cursor-pointer" />
           <Bar dataKey="na" name="N/A" fill="var(--color-status-na)" radius={[0, 4, 4, 0]} stackId="a" className="cursor-pointer" />

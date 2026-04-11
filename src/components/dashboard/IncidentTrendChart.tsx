@@ -1,25 +1,21 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useNavigate } from '@tanstack/react-router';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const data = [
-  { month: 'Nov', critical: 2, high: 5, medium: 8, low: 12 },
-  { month: 'Dec', critical: 1, high: 4, medium: 10, low: 9 },
-  { month: 'Jan', critical: 3, high: 6, medium: 7, low: 11 },
-  { month: 'Feb', critical: 1, high: 3, medium: 9, low: 14 },
-  { month: 'Mar', critical: 2, high: 4, medium: 6, low: 10 },
-  { month: 'Apr', critical: 1, high: 2, medium: 5, low: 8 },
-];
+interface TrendItem {
+  month: string;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
 
-export function IncidentTrendChart() {
+export function IncidentTrendChart({ data, isLoading }: { data?: TrendItem[]; isLoading?: boolean }) {
   const navigate = useNavigate();
 
-  const handleBarClick = (data: Record<string, unknown>, dataKey?: string) => {
-    if (dataKey && ['critical', 'high', 'medium', 'low'].includes(dataKey)) {
-      navigate({ to: '/incidents', search: { severity: dataKey } });
-    } else {
-      navigate({ to: '/incidents' });
-    }
-  };
+  if (isLoading || !data) {
+    return <Skeleton className="h-[320px] rounded-xl" />;
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
@@ -30,11 +26,7 @@ export function IncidentTrendChart() {
         </div>
         <div className="flex items-center gap-3 text-xs">
           {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
-            <button
-              key={sev}
-              onClick={() => navigate({ to: '/incidents', search: { severity: sev } })}
-              className="flex items-center gap-1.5 hover:underline cursor-pointer"
-            >
+            <button key={sev} onClick={() => navigate({ to: '/incidents', search: { severity: sev } })} className="flex items-center gap-1.5 hover:underline cursor-pointer">
               <span className={`h-2 w-2 rounded-full bg-severity-${sev}`} />
               <span className="capitalize">{sev}</span>
             </button>
@@ -46,16 +38,8 @@ export function IncidentTrendChart() {
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis dataKey="month" tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <Tooltip
-            contentStyle={{
-              background: 'var(--color-popover)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: 'var(--color-popover-foreground)',
-            }}
-          />
-          <Bar dataKey="critical" name="Critical" fill="var(--color-severity-critical)" radius={[0, 0, 0, 0]} stackId="a" className="cursor-pointer" />
+          <Tooltip contentStyle={{ background: 'var(--color-popover)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--color-popover-foreground)' }} />
+          <Bar dataKey="critical" name="Critical" fill="var(--color-severity-critical)" stackId="a" className="cursor-pointer" />
           <Bar dataKey="high" name="High" fill="var(--color-severity-high)" stackId="a" className="cursor-pointer" />
           <Bar dataKey="medium" name="Medium" fill="var(--color-severity-medium)" stackId="a" className="cursor-pointer" />
           <Bar dataKey="low" name="Low" fill="var(--color-severity-low)" radius={[3, 3, 0, 0]} stackId="a" className="cursor-pointer" />
