@@ -225,11 +225,6 @@ function EvidencePage() {
     </div>
   );
 }
-export const Route = createFileRoute('/evidence/')({
-  component: EvidencePage,
-  head: () => ({ meta: [{ title: 'Evidence — WatchDog Security' }] }),
-});
-
 const statusStyles: Record<string, string> = {
   valid: 'bg-status-passing/15 text-status-passing',
   expiring: 'bg-status-warning/15 text-status-warning',
