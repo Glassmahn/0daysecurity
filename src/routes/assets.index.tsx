@@ -6,7 +6,7 @@ export const Route = createFileRoute('/assets/')({
   component: AssetsPage,
   head: () => ({
     meta: [
-      { title: 'Assets — WatchDog Security' },
+      { title: 'Assets — ZeroDay Security' },
       { name: 'description', content: 'Monitored assets inventory' },
     ],
   }),

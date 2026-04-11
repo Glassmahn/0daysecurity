@@ -5,7 +5,7 @@ export const Route = createFileRoute('/frameworks/')({
   component: FrameworksPage,
   head: () => ({
     meta: [
-      { title: 'Frameworks — WatchDog Security' },
+      { title: 'Frameworks — ZeroDay Security' },
       { name: 'description', content: 'Compliance frameworks marketplace and management' },
     ],
   }),

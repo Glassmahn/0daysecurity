@@ -12,7 +12,7 @@ const MarkdownPreview = lazy(() => import('@uiw/react-md-editor').then(mod => ({
 export const Route = createFileRoute('/knowledge-base/$articleId')({
   component: KBArticleDetail,
   head: () => ({
-    meta: [{ title: 'Article — WatchDog Security' }],
+    meta: [{ title: 'Article — ZeroDay Security' }],
   }),
 });
 

@@ -4,7 +4,7 @@ import { Plug, RefreshCw, AlertCircle, CheckCircle, XCircle } from 'lucide-react
 
 export const Route = createFileRoute('/integrations/')({
   component: IntegrationsPage,
-  head: () => ({ meta: [{ title: 'Integrations — WatchDog Security' }] }),
+  head: () => ({ meta: [{ title: 'Integrations — ZeroDay Security' }] }),
 });
 
 const statusConfig: Record<string, { icon: React.ElementType; style: string }> = {

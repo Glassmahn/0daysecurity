@@ -4,7 +4,7 @@ import { FileText, Plus } from 'lucide-react';
 
 export const Route = createFileRoute('/policies/')({
   component: PoliciesPage,
-  head: () => ({ meta: [{ title: 'Policies — WatchDog Security' }] }),
+  head: () => ({ meta: [{ title: 'Policies — ZeroDay Security' }] }),
 });
 
 const statusStyles: Record<string, string> = {

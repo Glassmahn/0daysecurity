@@ -5,7 +5,7 @@ import { Users, Mail, ShieldAlert, GraduationCap } from 'lucide-react';
 
 export const Route = createFileRoute('/personnel/')({
   component: PersonnelPage,
-  head: () => ({ meta: [{ title: 'Personnel — WatchDog Security' }] }),
+  head: () => ({ meta: [{ title: 'Personnel — ZeroDay Security' }] }),
 });
 
 const reviewStyles: Record<string, string> = {

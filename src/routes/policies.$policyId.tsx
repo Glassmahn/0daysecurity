@@ -5,7 +5,7 @@ export const Route = createFileRoute('/policies/$policyId')({
   component: PolicyDetailPage,
   head: () => ({
     meta: [
-      { title: 'Policy Detail — WatchDog Security' },
+      { title: 'Policy Detail — ZeroDay Security' },
       { name: 'description', content: 'Policy detail with version history, approval workflow, and linked controls' },
     ],
   }),

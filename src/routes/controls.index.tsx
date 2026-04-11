@@ -26,7 +26,7 @@ export const Route = createFileRoute('/controls/')({
   validateSearch: zodValidator(controlsSearchSchema),
   head: () => ({
     meta: [
-      { title: 'Controls — WatchDog Security' },
+      { title: 'Controls — ZeroDay Security' },
       { name: 'description', content: 'Security controls management' },
     ],
   }),

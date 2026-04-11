@@ -56,7 +56,7 @@ function LoginPage() {
             <div className="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-display font-bold tracking-tight text-white">WatchDog</span>
+            <span className="text-xl font-display font-bold tracking-tight text-white">ZeroDay</span>
           </div>
 
           <div className="max-w-md space-y-6">
@@ -72,7 +72,7 @@ function LoginPage() {
             </p>
           </div>
 
-          <p className="text-sm text-white/40">© 2026 WatchDog Security</p>
+          <p className="text-sm text-white/40">© 2026 ZeroDay Security</p>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ function LoginPage() {
             <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center">
               <Shield className="h-4.5 w-4.5 text-white" />
             </div>
-            <span className="font-display font-bold text-foreground">WatchDog</span>
+            <span className="font-display font-bold text-foreground">ZeroDay</span>
           </div>
 
           <div>

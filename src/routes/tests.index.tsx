@@ -14,7 +14,7 @@ import { BulkActionBar } from '@/components/crud/BulkActionBar';
 import { WriteGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/tests/')({ component: TestsIndexPage,
-  head: () => ({ meta: [{ title: 'Tests — WatchDog Security' }, { name: 'description', content: 'Compliance test management' }] }) });
+  head: () => ({ meta: [{ title: 'Tests — ZeroDay Security' }, { name: 'description', content: 'Compliance test management' }] }) });
 
 const statusStyles: Record<string, string> = { passing: 'bg-status-passing/15 text-status-passing', failing: 'bg-status-failing/15 text-status-failing', pending: 'bg-status-in-progress/15 text-status-in-progress', error: 'bg-severity-high/15 text-severity-high', disabled: 'bg-muted text-muted-foreground' };
 

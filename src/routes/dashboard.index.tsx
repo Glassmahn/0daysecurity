@@ -17,7 +17,7 @@ export const Route = createFileRoute('/dashboard/')({
   component: DashboardHome,
   head: () => ({
     meta: [
-      { title: 'Dashboard — WatchDog Security' },
+      { title: 'Dashboard — ZeroDay Security' },
       { name: 'description', content: 'Compliance monitoring dashboard overview' },
     ],
   }),

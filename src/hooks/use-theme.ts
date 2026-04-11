@@ -17,6 +17,6 @@ export const useThemeStore = create<ThemeStore>()(
       toggleTheme: () =>
         set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
     }),
-    { name: 'watchdog-theme' }
+    { name: 'zeroday-theme' }
   )
 );
