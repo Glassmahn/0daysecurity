@@ -75,7 +75,7 @@ function KBArticleDetail() {
       .select('*')
       .eq('article_id', articleId)
       .order('version_number', { ascending: false });
-    setVersions((data ?? []) as ArticleVersion[]);
+    setVersions((data ?? []) as unknown as ArticleVersion[]);
     setVersionsLoading(false);
   }, [articleId]);
 
