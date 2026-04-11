@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import { alerts } from '@/lib/mock-data';
-import { Search } from 'lucide-react';
+import { useSupabaseTable } from '@/hooks/use-supabase-data';
+import { Search, Loader2 } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
+import { formatDistanceToNow } from 'date-fns';
 
 const alertsSearchSchema = z.object({
   severity: fallback(z.string(), 'all').default('all'),
@@ -31,6 +32,7 @@ const severityStyles: Record<string, string> = {
 };
 
 const statusStyles: Record<string, string> = {
+  new: 'bg-status-failing/15 text-status-failing',
   open: 'bg-status-failing/15 text-status-failing',
   acknowledged: 'bg-status-warning/15 text-status-warning',
   investigating: 'bg-status-in-progress/15 text-status-in-progress',
@@ -41,6 +43,7 @@ const statusStyles: Record<string, string> = {
 function AlertsPage() {
   const navigate = useNavigate({ from: '/alerts/' });
   const { severity: severityFilter, status: statusFilter, q: search } = Route.useSearch();
+  const { data: alerts, loading } = useSupabaseTable('alerts');
 
   const filtered = useMemo(() => {
     return alerts.filter(a => {
@@ -48,11 +51,11 @@ function AlertsPage() {
       if (statusFilter !== 'all' && a.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
-        return a.title.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.source.toLowerCase().includes(q);
+        return a.title.toLowerCase().includes(q) || (a.source ?? '').toLowerCase().includes(q);
       }
       return true;
     });
-  }, [severityFilter, statusFilter, search]);
+  }, [alerts, severityFilter, statusFilter, search]);
 
   const updateSearch = (updates: Record<string, string>) => {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
@@ -60,12 +63,20 @@ function AlertsPage() {
 
   const activeFilterCount = [severityFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
-  const severityCounts = {
+  const severityCounts = useMemo(() => ({
     critical: alerts.filter(a => a.severity === 'critical').length,
     high: alerts.filter(a => a.severity === 'high').length,
     medium: alerts.filter(a => a.severity === 'medium').length,
     low: alerts.filter(a => a.severity === 'low').length,
-  };
+  }), [alerts]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -84,7 +95,6 @@ function AlertsPage() {
         )}
       </div>
 
-      {/* Severity KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
           <button
@@ -103,7 +113,6 @@ function AlertsPage() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -132,7 +141,7 @@ function AlertsPage() {
           className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
         >
           <option value="all">All Statuses</option>
-          <option value="open">Open</option>
+          <option value="new">New</option>
           <option value="acknowledged">Acknowledged</option>
           <option value="investigating">Investigating</option>
           <option value="resolved">Resolved</option>
@@ -140,7 +149,6 @@ function AlertsPage() {
         </select>
       </div>
 
-      {/* Results */}
       <p className="text-xs text-muted-foreground">{filtered.length} alerts matching filters</p>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -148,11 +156,9 @@ function AlertsPage() {
           <thead>
             <tr className="border-b border-border text-left">
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Severity</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">ID</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Source</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Owner</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Age</th>
             </tr>
           </thead>
@@ -160,20 +166,20 @@ function AlertsPage() {
             {filtered.map(alert => (
               <tr key={alert.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer">
                 <td className="px-4 py-3">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[alert.severity]}`}>
+                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[alert.severity] ?? ''}`}>
                     {alert.severity}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{alert.id}</td>
                 <td className="px-4 py-3 text-foreground">{alert.title}</td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{alert.source}</td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{alert.source ?? '—'}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[alert.status]}`}>
+                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[alert.status] ?? ''}`}>
                     {alert.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{alert.owner || '—'}</td>
-                <td className="px-4 py-3 text-muted-foreground">{alert.age}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">
+                  {formatDistanceToNow(new Date(alert.created_at), { addSuffix: false })}
+                </td>
               </tr>
             ))}
           </tbody>

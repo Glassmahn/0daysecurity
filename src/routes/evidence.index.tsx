@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import { evidenceItems } from '@/lib/mock-data-extended';
-import { evidenceTypes } from '@/lib/framework-catalog';
-import { Search, Upload, Zap, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Image, Settings, PenTool, ScrollText, Scan, GraduationCap, UserCheck, ShieldAlert, Building2, GitPullRequest, Database, Network, Ticket, CloudDownload } from 'lucide-react';
+import { useSupabaseTable } from '@/hooks/use-supabase-data';
+import { Search, Upload, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 
@@ -19,7 +18,7 @@ export const Route = createFileRoute('/evidence/')({
   head: () => ({
     meta: [
       { title: 'Evidence — WatchDog Security' },
-      { name: 'description', content: 'Evidence management with 16 collection types' },
+      { name: 'description', content: 'Evidence management and collection' },
     ],
   }),
 });
@@ -31,63 +30,57 @@ const statusConfig: Record<string, { style: string; icon: React.ElementType; lab
   rejected: { style: 'bg-muted text-muted-foreground', icon: AlertTriangle, label: 'Rejected' },
 };
 
-const typeIcons: Record<string, React.ElementType> = {
-  screenshot: Image,
-  document: FileText,
-  api_pull: CloudDownload,
-  config_export: Settings,
-  attestation: PenTool,
-  log: ScrollText,
-  scan_result: Scan,
-  training_record: GraduationCap,
-  access_review: UserCheck,
-  pen_test: ShieldAlert,
-  risk_assessment: AlertTriangle,
-  vendor_report: Building2,
-  code_review: GitPullRequest,
-  backup_verification: Database,
-  network_diagram: Network,
-  change_ticket: Ticket,
-};
-
 function EvidencePage() {
   const navigate = useNavigate({ from: '/evidence/' });
-  const { status: statusFilter, type: typeFilter, source: autoFilter, q: search } = Route.useSearch();
+  const { status: statusFilter, type: typeFilter, source: sourceFilter, q: search } = Route.useSearch();
+  const { data: evidence, loading } = useSupabaseTable('evidence');
 
   const filtered = useMemo(() => {
-    return evidenceItems.filter(e => {
+    return evidence.filter(e => {
       if (statusFilter !== 'all' && e.status !== statusFilter) return false;
       if (typeFilter !== 'all' && e.type !== typeFilter) return false;
-      if (autoFilter === 'auto' && !e.autoCollected) return false;
-      if (autoFilter === 'manual' && e.autoCollected) return false;
+      if (sourceFilter === 'auto' && e.source !== 'auto') return false;
+      if (sourceFilter === 'manual' && e.source !== 'manual') return false;
       if (search) {
         const q = search.toLowerCase();
-        return e.title.toLowerCase().includes(q) || e.controlRef.toLowerCase().includes(q) || e.source.toLowerCase().includes(q);
+        return e.title.toLowerCase().includes(q) || (e.source ?? '').toLowerCase().includes(q);
       }
       return true;
     });
-  }, [search, statusFilter, typeFilter, autoFilter]);
+  }, [evidence, search, statusFilter, typeFilter, sourceFilter]);
 
   const updateSearch = (updates: Record<string, string>) => {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
   };
 
-  const activeFilterCount = [statusFilter, typeFilter, autoFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
+  const activeFilterCount = [statusFilter, typeFilter, sourceFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
-  const stats = {
-    total: evidenceItems.length,
-    valid: evidenceItems.filter(e => e.status === 'valid').length,
-    expiring: evidenceItems.filter(e => e.status === 'expiring').length,
-    expired: evidenceItems.filter(e => e.status === 'expired').length,
-    auto: evidenceItems.filter(e => e.autoCollected).length,
-  };
+  const stats = useMemo(() => ({
+    total: evidence.length,
+    valid: evidence.filter(e => e.status === 'valid').length,
+    expiring: evidence.filter(e => e.status === 'expiring').length,
+    expired: evidence.filter(e => e.status === 'expired').length,
+  }), [evidence]);
+
+  const usedTypes = useMemo(
+    () => [...new Set(evidence.map(e => e.type))].sort(),
+    [evidence]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-slide-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Evidence</h1>
-          <p className="text-sm text-muted-foreground">{evidenceItems.length} items · {evidenceTypes.length} collection types supported</p>
+          <p className="text-sm text-muted-foreground">{evidence.length} items</p>
         </div>
         <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
@@ -128,7 +121,7 @@ function EvidencePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {([
           { key: 'all', label: 'Total', value: stats.total, color: '' },
           { key: 'valid', label: 'Valid', value: stats.valid, color: 'text-status-passing' },
@@ -144,36 +137,6 @@ function EvidencePage() {
             <div className="text-[10px] text-muted-foreground">{item.label}</div>
           </button>
         ))}
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <div className="flex items-center justify-center gap-1">
-            <Zap className="h-3.5 w-3.5 text-chart-1" />
-            <span className="text-xl font-bold text-foreground">{stats.auto}</span>
-          </div>
-          <div className="text-[10px] text-muted-foreground">Auto-Collected</div>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Supported Evidence Types</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-          {evidenceTypes.map(et => {
-            const Icon = typeIcons[et.id] || FileText;
-            const count = evidenceItems.filter(e => e.type === et.id).length;
-            return (
-              <button
-                key={et.id}
-                onClick={() => updateSearch({ type: typeFilter === et.id ? 'all' : et.id })}
-                className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border transition-all text-center cursor-pointer ${
-                  typeFilter === et.id ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'border-border hover:border-primary/40'
-                }`}
-              >
-                <Icon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-[10px] font-medium text-foreground leading-tight">{et.label}</span>
-                <span className="text-[9px] text-muted-foreground">{count}</span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -198,10 +161,20 @@ function EvidencePage() {
           <option value="expired">Expired</option>
           <option value="rejected">Rejected</option>
         </select>
+        {usedTypes.length > 1 && (
+          <select
+            value={typeFilter}
+            onChange={e => updateSearch({ type: e.target.value })}
+            className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${typeFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+          >
+            <option value="all">All Types</option>
+            {usedTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+          </select>
+        )}
         <select
-          value={autoFilter}
+          value={sourceFilter}
           onChange={e => updateSearch({ source: e.target.value })}
-          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${autoFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${sourceFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
         >
           <option value="all">All Sources</option>
           <option value="auto">Auto-Collected</option>
@@ -216,7 +189,6 @@ function EvidencePage() {
           <thead>
             <tr className="border-b border-border text-left">
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Control</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Type</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Source</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
@@ -226,35 +198,30 @@ function EvidencePage() {
           </thead>
           <tbody>
             {filtered.map(e => {
-              const sc = statusConfig[e.status];
+              const sc = statusConfig[e.status] ?? statusConfig.valid;
               const StatusIcon = sc.icon;
-              const TypeIcon = typeIcons[e.type] || FileText;
               return (
                 <tr key={e.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate({ to: '/evidence/$evidenceId', params: { evidenceId: e.id } })}>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-foreground">{e.title}</span>
-                      {e.autoCollected && <Zap className="h-3 w-3 text-chart-1 shrink-0" />}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="font-mono text-xs text-primary">{e.controlRef}</span>
-                  </td>
+                  <td className="px-4 py-3 text-foreground">{e.title}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <TypeIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground capitalize">{e.type.replace(/_/g, ' ')}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{e.source}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{e.source ?? '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${sc.style}`}>
                       <StatusIcon className="h-3 w-3" />
                       {sc.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">{e.collectedAt}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">{e.expiresAt}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                    {e.collected_at ? new Date(e.collected_at).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                    {e.expires_at ? new Date(e.expires_at).toLocaleDateString() : '—'}
+                  </td>
                 </tr>
               );
             })}

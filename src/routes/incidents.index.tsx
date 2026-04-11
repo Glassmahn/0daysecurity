@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import { incidents } from '@/lib/mock-data';
-import { Search } from 'lucide-react';
+import { useSupabaseTable } from '@/hooks/use-supabase-data';
+import { Search, Loader2 } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 
@@ -40,6 +40,7 @@ const statusStyles: Record<string, string> = {
 function IncidentsPage() {
   const navigate = useNavigate({ from: '/incidents/' });
   const { severity: severityFilter, status: statusFilter, q: search } = Route.useSearch();
+  const { data: incidents, loading } = useSupabaseTable('incidents');
 
   const filtered = useMemo(() => {
     return incidents.filter(inc => {
@@ -51,7 +52,7 @@ function IncidentsPage() {
       }
       return true;
     });
-  }, [severityFilter, statusFilter, search]);
+  }, [incidents, severityFilter, statusFilter, search]);
 
   const updateSearch = (updates: Record<string, string>) => {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
@@ -59,16 +60,23 @@ function IncidentsPage() {
 
   const activeFilterCount = [severityFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
-  const severityCounts = {
+  const severityCounts = useMemo(() => ({
     critical: incidents.filter(i => i.severity === 'critical').length,
     high: incidents.filter(i => i.severity === 'high').length,
     medium: incidents.filter(i => i.severity === 'medium').length,
     low: incidents.filter(i => i.severity === 'low').length,
-  };
+  }), [incidents]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-slide-in">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Incidents</h1>
@@ -84,7 +92,6 @@ function IncidentsPage() {
         )}
       </div>
 
-      {/* Severity KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
           <button
@@ -103,7 +110,6 @@ function IncidentsPage() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -140,7 +146,6 @@ function IncidentsPage() {
         </select>
       </div>
 
-      {/* Results */}
       <p className="text-xs text-muted-foreground">{filtered.length} incidents matching filters</p>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -148,26 +153,28 @@ function IncidentsPage() {
           <thead>
             <tr className="border-b border-border text-left">
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Severity</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">ID</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Priority</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Owner</th>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Created</th>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Resolved</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(inc => (
               <tr key={inc.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate({ to: '/incidents/$incidentId', params: { incidentId: inc.id } })}>
                 <td className="px-4 py-3">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[inc.severity]}`}>{inc.severity}</span>
+                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[inc.severity] ?? ''}`}>{inc.severity}</span>
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inc.id}</td>
                 <td className="px-4 py-3 text-foreground">{inc.title}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[inc.status]}`}>{inc.status}</span>
+                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[inc.status] ?? ''}`}>{inc.status}</span>
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground uppercase hidden sm:table-cell">{inc.priority}</td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{inc.owner}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs hidden md:table-cell">
+                  {new Date(inc.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                  {inc.resolved_at ? new Date(inc.resolved_at).toLocaleDateString() : '—'}
+                </td>
               </tr>
             ))}
           </tbody>
