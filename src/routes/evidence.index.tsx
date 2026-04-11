@@ -192,7 +192,7 @@ function EvidencePage() {
               const StatusIcon = sc.icon;
               const TypeIcon = typeIcons[e.type] || FileText;
               return (
-                <tr key={e.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                <tr key={e.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate({ to: '/evidence/$evidenceId', params: { evidenceId: e.id } })}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-foreground">{e.title}</span>
