@@ -45,7 +45,7 @@ const statusStyles: Record<string, string> = {
 
 const kbFields: FieldDef[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Article title', max: 255 },
-  { name: 'content', label: 'Content (Markdown)', type: 'textarea', placeholder: 'Write your article content in Markdown...', max: 50000 },
+  { name: 'content', label: 'Content', type: 'markdown' as const, placeholder: 'Write your article content in Markdown...', max: 50000 },
   {
     name: 'category', label: 'Category', type: 'select', required: true,
     options: [
