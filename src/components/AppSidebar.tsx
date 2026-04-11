@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import {
   LayoutDashboard, Shield, ListChecks, Paperclip, AlertTriangle, Flame,
   Monitor, Users, FileText, AlertOctagon, ClipboardCheck, BarChart3,
-  Plug, Settings, ChevronLeft, ChevronRight, Dog,
+  Plug, Settings, ChevronLeft, ChevronRight, Dog, FlaskConical, Building2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -17,9 +17,12 @@ const navItems = [
   { label: 'Personnel', icon: Users, to: '/personnel' },
   { label: 'Policies', icon: FileText, to: '/policies' },
   { label: 'Risk Register', icon: AlertOctagon, to: '/risk-register' },
+  { label: 'Tests', icon: FlaskConical, to: '/tests' },
+  { label: 'Vendors', icon: Building2, to: '/vendors' },
   { label: 'Audits', icon: ClipboardCheck, to: '/audits' },
   { label: 'Reports', icon: BarChart3, to: '/reports' },
   { label: 'Integrations', icon: Plug, to: '/integrations' },
+  { label: 'Settings', icon: Settings, to: '/settings' },
   { label: 'Settings', icon: Settings, to: '/settings' },
 ];
 
