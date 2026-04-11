@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { incidents } from '@/lib/mock-data';
 
 export const Route = createFileRoute('/incidents/')({
@@ -27,6 +27,7 @@ const statusStyles: Record<string, string> = {
 };
 
 function IncidentsPage() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6 animate-slide-in">
       <div>
