@@ -45,7 +45,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   }, [table, refetch]);
 
   const update = useCallback(async (id: string, record: Record<string, unknown>) => {
-    const { error: err } = await supabase.from(table).update(record as never).eq('id', id as never);
+    const { error: err } = await (supabase.from(table).update(record as never) as any).eq('id', id);
     if (err) {
       toast.error(`Failed to update: ${err.message}`);
       return false;
@@ -56,7 +56,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   }, [table, refetch]);
 
   const remove = useCallback(async (id: string) => {
-    const { error: err } = await supabase.from(table).delete().eq('id', id as never);
+    const { error: err } = await (supabase.from(table).delete() as any).eq('id', id);
     if (err) {
       toast.error(`Failed to delete: ${err.message}`);
       return false;
