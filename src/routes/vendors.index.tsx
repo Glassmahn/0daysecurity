@@ -130,8 +130,8 @@ function VendorsIndexPage() {
             </TableBody>
           </Table>
           <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
-            </TableBody>
-          </Table>
+        </CardContent>
+      </Card>
         </CardContent>
       </Card>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Vendor' : 'Add Vendor'} fields={vendorFields} initialValues={editing ?? undefined}
