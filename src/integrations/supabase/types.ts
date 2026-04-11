@@ -309,12 +309,60 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_article_versions: {
+        Row: {
+          article_id: string
+          category: string | null
+          change_summary: string | null
+          changed_by: string | null
+          content: string | null
+          created_at: string
+          id: string
+          status: string | null
+          title: string
+          version_number: number
+        }
+        Insert: {
+          article_id: string
+          category?: string | null
+          change_summary?: string | null
+          changed_by?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          status?: string | null
+          title: string
+          version_number?: number
+        }
+        Update: {
+          article_id?: string
+          category?: string | null
+          change_summary?: string | null
+          changed_by?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          status?: string | null
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_article_versions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           author_id: string | null
           category: string | null
           content: string | null
           created_at: string
+          current_version: number
           id: string
           search_vector: unknown
           status: string
@@ -327,6 +375,7 @@ export type Database = {
           category?: string | null
           content?: string | null
           created_at?: string
+          current_version?: number
           id?: string
           search_vector?: unknown
           status?: string
@@ -339,6 +388,7 @@ export type Database = {
           category?: string | null
           content?: string | null
           created_at?: string
+          current_version?: number
           id?: string
           search_vector?: unknown
           status?: string
