@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
-type SupabaseTable = 'controls' | 'incidents' | 'evidence' | 'alerts' | 'vendors' | 'frameworks';
+type SupabaseTable = 'controls' | 'incidents' | 'evidence' | 'alerts' | 'vendors' | 'frameworks' | 'knowledge_base';
 
 export function useSupabaseTable<T extends SupabaseTable>(
   table: T,
