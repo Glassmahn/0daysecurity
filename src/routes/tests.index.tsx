@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap } from 'lucide-react';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap, Target } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
