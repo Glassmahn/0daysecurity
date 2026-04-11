@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { teamMembers } from '@/lib/mock-data-extended';
 import { useState } from 'react';
 import { Settings as SettingsIcon, Users, Bell, Key, CreditCard, Building2, UserPlus, Shield } from 'lucide-react';
+import { RBACManager } from '@/components/settings/RBACManager';
 
 export const Route = createFileRoute('/settings/')({
   component: SettingsPage,
@@ -134,28 +135,7 @@ function SettingsPage() {
         </div>
       )}
 
-      {activeTab === 'roles' && (
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">Role Permissions</h3>
-          <div className="space-y-3">
-            {[
-              { role: 'Admin', desc: 'Full access to all modules, settings, and team management', modules: 'All' },
-              { role: 'Analyst', desc: 'Dashboard, Alerts, Incidents, Assets, Controls — full write access', modules: 'Dashboard, Alerts, Incidents, Assets, Controls' },
-              { role: 'Auditor', desc: 'Read-only access to Frameworks, Controls, Evidence, Policies, Audits', modules: 'Frameworks, Controls, Evidence, Policies, Audits' },
-              { role: 'Executive', desc: 'Dashboard, Reports, Risk Register — read-only', modules: 'Dashboard, Reports, Risk Register' },
-              { role: 'Viewer', desc: 'Dashboard read-only', modules: 'Dashboard' },
-            ].map(r => (
-              <div key={r.role} className="px-4 py-3 bg-surface rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-foreground">{r.role}</span>
-                  <button className="text-xs text-primary font-medium hover:underline">Customize</button>
-                </div>
-                <p className="text-xs text-muted-foreground">{r.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {activeTab === 'roles' && <RBACManager />}
 
       {activeTab === 'notifications' && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
