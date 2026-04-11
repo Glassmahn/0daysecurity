@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useSupabaseData } from '@/hooks/use-supabase-data';
+import { useSupabaseTable } from '@/hooks/use-supabase-data';
 import { Loader2, ArrowLeft, BookOpen, Calendar, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
@@ -40,11 +40,11 @@ const kbFields: FieldDef[] = [
 
 function KBArticleDetail() {
   const { articleId } = Route.useParams();
-  const { data: articles, loading } = useSupabaseData('knowledge_base');
+  const { data: articles, loading } = useSupabaseTable('knowledge_base');
   const { update } = useSupabaseCrud('knowledge_base');
   const [formOpen, setFormOpen] = useState(false);
 
-  const article = articles.find(a => a.id === articleId);
+  const article = (articles as any[]).find((a: any) => a.id === articleId);
 
   if (loading) {
     return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
