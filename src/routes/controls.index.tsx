@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
-import { useSupabaseTable } from '@/hooks/use-supabase-data';
-import { Search, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
+import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
+import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 
 const controlsSearchSchema = z.object({
   status: fallback(z.string(), 'all').default('all'),
@@ -24,16 +26,39 @@ export const Route = createFileRoute('/controls/')({
 
 const statusStyles: Record<string, string> = {
   implemented: 'bg-status-passing/15 text-status-passing',
-  in_progress: 'bg-status-in-progress/15 text-status-in-progress',
+  partially_implemented: 'bg-status-in-progress/15 text-status-in-progress',
   failing: 'bg-status-failing/15 text-status-failing',
   not_started: 'bg-muted text-muted-foreground',
   not_applicable: 'bg-muted text-muted-foreground',
+  not_implemented: 'bg-status-failing/15 text-status-failing',
 };
+
+const controlFields: FieldDef[] = [
+  { name: 'code', label: 'Code', type: 'text', required: true, placeholder: 'e.g. CC6.1', max: 50 },
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Control title', max: 255 },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Describe this control...', max: 2000 },
+  { name: 'category', label: 'Category', type: 'text', placeholder: 'e.g. Access Control', max: 100 },
+  {
+    name: 'status', label: 'Status', type: 'select', required: true,
+    options: [
+      { value: 'not_started', label: 'Not Started' },
+      { value: 'partially_implemented', label: 'Partially Implemented' },
+      { value: 'implemented', label: 'Implemented' },
+      { value: 'not_implemented', label: 'Not Implemented' },
+      { value: 'not_applicable', label: 'Not Applicable' },
+      { value: 'failing', label: 'Failing' },
+    ],
+  },
+];
 
 function ControlsPage() {
   const navigate = useNavigate({ from: '/controls/' });
   const { status: statusFilter, category: categoryFilter, q: search } = Route.useSearch();
-  const { data: controls, loading } = useSupabaseTable('controls');
+  const { data: controls, loading, insert, update, remove } = useSupabaseCrud('controls');
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const usedCategories = useMemo(
     () => [...new Set(controls.map(c => c.category).filter(Boolean))].sort() as string[],
@@ -56,7 +81,7 @@ function ControlsPage() {
     total: controls.length,
     implemented: controls.filter(c => c.status === 'implemented').length,
     failing: controls.filter(c => c.status === 'failing').length,
-    in_progress: controls.filter(c => c.status === 'in_progress').length,
+    in_progress: controls.filter(c => c.status === 'partially_implemented').length,
   }), [controls]);
 
   const updateSearch = (updates: Record<string, string>) => {
@@ -80,14 +105,22 @@ function ControlsPage() {
           <h1 className="text-xl font-bold text-foreground">Controls</h1>
           <p className="text-sm text-muted-foreground">{controls.length} controls</p>
         </div>
-        {activeFilterCount > 0 && (
+        <div className="flex items-center gap-2">
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => navigate({ search: { status: 'all', category: 'all', q: '' } })}
+              className="text-xs text-primary hover:underline cursor-pointer"
+            >
+              Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+            </button>
+          )}
           <button
-            onClick={() => navigate({ search: { status: 'all', category: 'all', q: '' } })}
-            className="text-xs text-primary hover:underline cursor-pointer"
+            onClick={() => { setEditing(null); setFormOpen(true); }}
+            className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
           >
-            Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+            <Plus className="h-4 w-4" /> Add Control
           </button>
-        )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -103,7 +136,7 @@ function ControlsPage() {
           <div className="text-2xl font-bold text-status-failing">{stats.failing}</div>
           <div className="text-xs text-muted-foreground">Failing</div>
         </button>
-        <button onClick={() => updateSearch({ status: 'in_progress' })} className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/40 transition-colors cursor-pointer">
+        <button onClick={() => updateSearch({ status: 'partially_implemented' })} className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/40 transition-colors cursor-pointer">
           <div className="text-2xl font-bold text-status-in-progress">{stats.in_progress}</div>
           <div className="text-xs text-muted-foreground">In Progress</div>
         </button>
@@ -127,7 +160,7 @@ function ControlsPage() {
         >
           <option value="all">All Statuses</option>
           <option value="implemented">Implemented</option>
-          <option value="in_progress">In Progress</option>
+          <option value="partially_implemented">Partially Implemented</option>
           <option value="failing">Failing</option>
           <option value="not_started">Not Started</option>
         </select>
@@ -152,6 +185,7 @@ function ControlsPage() {
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Category</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Last Reviewed</th>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -172,6 +206,18 @@ function ControlsPage() {
                 <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
                   {c.last_reviewed ? new Date(c.last_reviewed).toLocaleDateString() : '—'}
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => { setEditing({ code: c.code, title: c.title, description: c.description, category: c.category, status: c.status, _id: c.id }); setFormOpen(true); }}
+                      className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setDeleteTarget({ id: c.id, title: c.title })}
+                      className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -183,6 +229,26 @@ function ControlsPage() {
           </div>
         )}
       </div>
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editing ? 'Edit Control' : 'New Control'}
+        fields={controlFields}
+        initialValues={editing ?? undefined}
+        onSubmit={async (vals) => {
+          const { _id, ...data } = vals as Record<string, unknown> & { _id?: string };
+          if (_id) return update(String(_id), data);
+          return insert(data);
+        }}
+      />
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title={deleteTarget?.title ?? 'control'}
+        onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false}
+      />
     </div>
   );
 }
