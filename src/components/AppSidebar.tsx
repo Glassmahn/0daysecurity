@@ -6,31 +6,48 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
+import { useRole } from '@/hooks/use-role-context';
+import type { AppRole } from '@/hooks/use-user-role';
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: typeof LayoutDashboard;
+  to: string;
+  /** Roles that can see this nav item. Undefined = all roles. */
+  roles?: AppRole[];
+}
+
+const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Frameworks', icon: Shield, to: '/frameworks' },
   { label: 'Controls', icon: ListChecks, to: '/controls' },
   { label: 'Evidence', icon: Paperclip, to: '/evidence' },
-  { label: 'Alerts', icon: AlertTriangle, to: '/alerts' },
-  { label: 'Incidents', icon: Flame, to: '/incidents' },
-  { label: 'Assets', icon: Monitor, to: '/assets' },
-  { label: 'Personnel', icon: Users, to: '/personnel' },
+  { label: 'Alerts', icon: AlertTriangle, to: '/alerts', roles: ['admin', 'analyst'] },
+  { label: 'Incidents', icon: Flame, to: '/incidents', roles: ['admin', 'analyst'] },
+  { label: 'Assets', icon: Monitor, to: '/assets', roles: ['admin', 'analyst'] },
+  { label: 'Personnel', icon: Users, to: '/personnel', roles: ['admin'] },
   { label: 'Policies', icon: FileText, to: '/policies' },
   { label: 'Risk Register', icon: AlertOctagon, to: '/risk-register' },
-  { label: 'Tests', icon: FlaskConical, to: '/tests' },
-  { label: 'Vendors', icon: Building2, to: '/vendors' },
+  { label: 'Tests', icon: FlaskConical, to: '/tests', roles: ['admin', 'analyst'] },
+  { label: 'Vendors', icon: Building2, to: '/vendors', roles: ['admin', 'analyst'] },
   { label: 'Audit Trail', icon: ClipboardCheck, to: '/audits' },
   { label: 'Knowledge Base', icon: BookOpen, to: '/knowledge-base' },
   { label: 'Reports', icon: BarChart3, to: '/reports' },
-  { label: 'Integrations', icon: Plug, to: '/integrations' },
-  { label: 'Settings', icon: Settings, to: '/settings' },
+  { label: 'Integrations', icon: Plug, to: '/integrations', roles: ['admin'] },
+  { label: 'Settings', icon: Settings, to: '/settings', roles: ['admin'] },
 ];
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const setOpen = useSidebarStore((s) => s.setOpen);
+  const { role } = useRole();
+
+  const visibleItems = navItems.filter(item => {
+    if (!item.roles) return true;
+    if (!role) return false;
+    return item.roles.includes(role);
+  });
 
   return (
     <aside
@@ -48,7 +65,7 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + '/');
           return (
             <Link
@@ -69,7 +86,16 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle - hidden on mobile */}
+      {/* Role badge */}
+      {!collapsed && role && (
+        <div className="px-4 py-2 border-t border-sidebar-border">
+          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-primary/15 text-primary">
+            {role}
+          </span>
+        </div>
+      )}
+
+      {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="hidden lg:flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/40 transition-colors"
