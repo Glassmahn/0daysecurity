@@ -5,7 +5,7 @@ import { useState, lazy, Suspense } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 
-const MDEditor = lazy(() => import('@uiw/react-md-editor'));
+const MarkdownPreview = lazy(() => import('@uiw/react-md-editor').then(mod => ({ default: mod.default.Markdown })));
 
 export const Route = createFileRoute('/knowledge-base/$articleId')({
   component: KBArticleDetail,
@@ -97,7 +97,7 @@ function KBArticleDetail() {
         <div data-color-mode="auto">
           {article.content ? (
             <Suspense fallback={<div className="h-32 bg-muted rounded animate-pulse" />}>
-              <MDEditor.Markdown source={article.content} style={{ background: 'transparent' }} />
+              <MarkdownPreview source={article.content} style={{ background: 'transparent' }} />
             </Suspense>
           ) : (
             <p className="text-sm text-muted-foreground italic">No content yet.</p>
