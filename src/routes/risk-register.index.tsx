@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Download } from 'lucide-react';
+import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
 import { useTableSort } from '@/hooks/use-table-sort';
@@ -66,6 +67,12 @@ function RiskRegisterPage() {
             <button onClick={() => setView('matrix')} className={`px-3 py-1 text-xs font-medium rounded transition-colors ${view === 'matrix' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Matrix</button>
             <button onClick={() => setView('table')} className={`px-3 py-1 text-xs font-medium rounded transition-colors ${view === 'table' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Table</button>
           </div>
+          <button onClick={() => exportToCsv('risks', risks as Record<string, unknown>[], [
+              { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'risk_score', label: 'Score' },
+              { key: 'likelihood', label: 'Likelihood' }, { key: 'impact', label: 'Impact' }, { key: 'status', label: 'Status' }, { key: 'mitigation_plan', label: 'Mitigation' },
+            ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
+            <Download className="h-4 w-4" /> Export
+          </button>
           <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Add Risk</button>
         </div>
       </div>
