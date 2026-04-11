@@ -67,7 +67,7 @@ function RiskRegisterPage() {
             <button onClick={() => setView('matrix')} className={`px-3 py-1 text-xs font-medium rounded transition-colors ${view === 'matrix' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Matrix</button>
             <button onClick={() => setView('table')} className={`px-3 py-1 text-xs font-medium rounded transition-colors ${view === 'table' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Table</button>
           </div>
-          <button onClick={() => exportToCsv('risks', filtered as Record<string, unknown>[], [
+          <button onClick={() => exportToCsv('risks', risks as Record<string, unknown>[], [
               { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'risk_score', label: 'Score' },
               { key: 'likelihood', label: 'Likelihood' }, { key: 'impact', label: 'Impact' }, { key: 'status', label: 'Status' }, { key: 'mitigation_plan', label: 'Mitigation' },
             ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
