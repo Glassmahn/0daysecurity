@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { KPIStrip } from '@/components/dashboard/KPIStrip';
 import { CompliancePosture } from '@/components/dashboard/CompliancePosture';
 import { PriorityQueue } from '@/components/dashboard/PriorityQueue';
@@ -10,7 +9,8 @@ import { ControlStatusDonut } from '@/components/dashboard/ControlStatusDonut';
 import { IncidentTrendChart } from '@/components/dashboard/IncidentTrendChart';
 import { VendorRiskRadar } from '@/components/dashboard/VendorRiskRadar';
 import { FrameworkScoreCards } from '@/components/dashboard/FrameworkScoreCards';
-import { kpiData, frameworkPostureData, priorityQueue, recentActivity } from '@/lib/mock-data';
+import { useDashboardData } from '@/hooks/use-dashboard-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const Route = createFileRoute('/dashboard/')({
   component: DashboardHome,
@@ -22,10 +22,8 @@ export const Route = createFileRoute('/dashboard/')({
   }),
 });
 
-const periods = ['24h', '7d', '30d', '90d'] as const;
-
 function DashboardHome() {
-  const [period, setPeriod] = useState<string>('7d');
+  const { kpi, controlDonut, frameworkPosture, incidentTrend, riskHeatmap, priorityQueue, activityFeed } = useDashboardData();
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -33,63 +31,54 @@ function DashboardHome() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Meridian Health Tech — Compliance Overview</p>
-        </div>
-        <div className="flex items-center gap-1 bg-secondary rounded-md p-0.5">
-          {periods.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                period === p
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+          <p className="text-sm text-muted-foreground">Compliance Overview</p>
         </div>
       </div>
 
       {/* KPI Strip */}
-      <KPIStrip data={kpiData} period={period} />
+      {kpi.isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+      ) : (
+        <KPIStrip data={kpi.data ?? []} period="" />
+      )}
 
       {/* Row 1: Compliance Trend + Control Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <ComplianceTrendChart />
         </div>
-        <ControlStatusDonut />
+        <ControlStatusDonut data={controlDonut.data} isLoading={controlDonut.isLoading} />
       </div>
 
       {/* Row 2: Risk Heatmap + Security Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RiskHeatmap />
+        <RiskHeatmap data={riskHeatmap.data} isLoading={riskHeatmap.isLoading} />
         <VendorRiskRadar />
       </div>
 
       {/* Row 3: Incident Trends + Compliance Posture */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <IncidentTrendChart />
-        <CompliancePosture data={frameworkPostureData} />
+        <IncidentTrendChart data={incidentTrend.data} isLoading={incidentTrend.isLoading} />
+        <CompliancePosture data={frameworkPosture.data ?? []} isLoading={frameworkPosture.isLoading} />
       </div>
 
       {/* Row 4: Framework Readiness + Priority Queue + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <FrameworkScoreCards />
+        <FrameworkScoreCards data={frameworkPosture.data} isLoading={frameworkPosture.isLoading} />
         <div className="lg:col-span-1">
-          <PriorityQueue items={priorityQueue} />
+          <PriorityQueue items={priorityQueue.data ?? []} />
         </div>
         <div className="lg:col-span-1">
-          <ActivityFeed items={recentActivity} />
+          <ActivityFeed items={activityFeed.data ?? []} />
         </div>
       </div>
 
       {/* Freshness */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <div className="h-1.5 w-1.5 rounded-full bg-status-passing animate-pulse-glow" />
-        Last synced: 3 minutes ago
+        Live data from database
       </div>
     </div>
   );
