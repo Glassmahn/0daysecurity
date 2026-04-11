@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, type FormEvent } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
-import { Dog, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Shield, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +54,7 @@ function SignupPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-primary p-12 text-primary-foreground">
         <div className="flex items-center gap-3">
-          <Dog className="h-8 w-8" />
+          <Shield className="h-8 w-8" />
           <span className="text-xl font-bold tracking-tight">ZeroDay Security</span>
         </div>
         <div className="max-w-md">
@@ -72,7 +72,7 @@ function SignupPage() {
       <div className="flex flex-1 items-center justify-center p-6 md:p-12 bg-background">
         <div className="w-full max-w-sm space-y-8">
           <div className="lg:hidden flex items-center gap-2.5 mb-4">
-            <Dog className="h-6 w-6 text-primary" />
+            <Shield className="h-6 w-6 text-primary" />
             <span className="font-bold text-foreground">ZeroDay Security</span>
           </div>
 
