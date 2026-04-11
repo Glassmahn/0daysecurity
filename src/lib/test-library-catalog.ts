@@ -385,6 +385,40 @@ export const testLibraryCatalog: TestTemplate[] = [
     expectedEvidence: ['sast_compliance_report.json', 'pr_review_audit.csv'],
     suggestedTools: ['SonarQube', 'Snyk', 'GitHub'], prerequisites: ['CI/CD pipeline with SAST integration'],
   },
+
+  // ─── Risk Assessment (1) ──────────────────────────────
+  {
+    id: 'TL-RA-01', name: 'Enterprise Risk Assessment Review', description: 'Evaluates the formal risk identification, analysis, and evaluation methodology against organizational threat landscape.', category: 'Configuration & Development', method: 'manual', frequency: 'Quarterly', estimatedDuration: '3 hours', complexity: 'high',
+    controlRefs: ['RA-1'], frameworks: ['SOC2', 'ISO27001', 'NIST_CSF', 'HIPAA'],
+    steps: ['Review current risk register completeness', 'Validate risk scoring methodology (likelihood × impact)', 'Assess emerging threats against existing risk inventory', 'Verify risk treatment plans are current and tracked', 'Confirm risk appetite statement alignment with board directives'],
+    expectedEvidence: ['risk_assessment_report.pdf', 'risk_register_export.csv', 'risk_treatment_plans.pdf'],
+    suggestedTools: ['ServiceNow GRC', 'Archer', 'LogicGate'], prerequisites: ['Risk register maintained', 'Risk appetite statement approved'],
+  },
+
+  // ─── Penetration Testing (1) ──────────────────────────
+  {
+    id: 'TL-SA-PT', name: 'Penetration Test Coordination & Review', description: 'Coordinates annual third-party penetration testing engagement, validates scope, and tracks remediation of findings.', category: 'Configuration & Development', method: 'manual', frequency: 'Annual', estimatedDuration: '8 hours', complexity: 'high',
+    controlRefs: ['SA-3'], frameworks: ['SOC2', 'PCI_DSS', 'ISO27001'],
+    steps: ['Define scope and rules of engagement with vendor', 'Coordinate testing window with operations', 'Monitor testing progress and triage critical findings', 'Review final report and validate finding severity', 'Create remediation tickets with SLA deadlines', 'Verify remediation and request retest of critical items'],
+    expectedEvidence: ['pentest_report.pdf', 'remediation_tracker.csv', 'retest_results.json'],
+    suggestedTools: ['Cobalt', 'HackerOne', 'Synack'], prerequisites: ['Penetration testing vendor contracted', 'Scope document approved'],
+  },
+
+  // ─── HIPAA-Specific (2) ───────────────────────────────
+  {
+    id: 'TL-HP-01', name: 'PHI Access Control Validation', description: 'Validates that access to Protected Health Information (PHI) is restricted to authorized personnel with appropriate minimum necessary access.', category: 'Privacy', method: 'hybrid', frequency: 'Monthly', estimatedDuration: '45 min', complexity: 'high',
+    controlRefs: ['HP-1'], frameworks: ['HIPAA'],
+    steps: ['Export list of users with PHI access', 'Verify each user has documented business need', 'Check access aligns with minimum necessary standard', 'Review break-glass access logs for appropriateness', 'Validate role-based PHI access tiers'],
+    expectedEvidence: ['phi_access_audit.csv', 'minimum_necessary_review.pdf', 'break_glass_log.json'],
+    suggestedTools: ['Epic', 'Okta', 'AWS CloudTrail'], prerequisites: ['PHI system inventory', 'Minimum necessary policy documented'],
+  },
+  {
+    id: 'TL-HP-02', name: 'PHI Encryption Compliance Scan', description: 'Scans all systems storing or transmitting PHI to verify HIPAA-required encryption standards are met for data at rest and in transit.', category: 'Privacy', method: 'automated', frequency: 'Weekly', estimatedDuration: '15 min', complexity: 'medium',
+    controlRefs: ['HP-2'], frameworks: ['HIPAA'],
+    steps: ['Enumerate all PHI data stores (databases, file shares, backups)', 'Verify AES-256 encryption at rest on each store', 'Scan PHI transmission endpoints for TLS 1.2+', 'Check encryption key management compliance', 'Flag any unencrypted or weakly encrypted PHI locations'],
+    expectedEvidence: ['phi_encryption_scan.json', 'encryption_gaps.csv'],
+    suggestedTools: ['AWS Config', 'Prowler', 'Qualys'], prerequisites: ['PHI data store inventory', 'Encryption policy documented'],
+  },
 ];
 
 // Helper: get all unique categories from the catalog
