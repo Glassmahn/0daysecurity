@@ -49,7 +49,7 @@ function IncidentsPage() {
           </thead>
           <tbody>
             {incidents.map(inc => (
-              <tr key={inc.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => window.location.href = `/incidents/${inc.id}`}>
+              <tr key={inc.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => navigate({ to: '/incidents/$incidentId', params: { incidentId: inc.id } })}>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[inc.severity]}`}>{inc.severity}</span>
                 </td>
