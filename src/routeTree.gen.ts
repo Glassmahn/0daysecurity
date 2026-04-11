@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorsRouteImport } from './routes/vendors'
+import { Route as TestsRouteImport } from './routes/tests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RiskRegisterRouteImport } from './routes/risk-register'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -24,6 +26,8 @@ import { Route as AuditsRouteImport } from './routes/audits'
 import { Route as AssetsRouteImport } from './routes/assets'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VendorsIndexRouteImport } from './routes/vendors.index'
+import { Route as TestsIndexRouteImport } from './routes/tests.index'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as RiskRegisterIndexRouteImport } from './routes/risk-register.index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
@@ -45,6 +49,16 @@ import { Route as EvidenceEvidenceIdRouteImport } from './routes/evidence.$evide
 import { Route as ControlsControlIdRouteImport } from './routes/controls.$controlId'
 import { Route as AssetsAssetIdRouteImport } from './routes/assets.$assetId'
 
+const VendorsRoute = VendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestsRoute = TestsRouteImport.update({
+  id: '/tests',
+  path: '/tests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -119,6 +133,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const VendorsIndexRoute = VendorsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VendorsRoute,
+} as any)
+const TestsIndexRoute = TestsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TestsRoute,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
@@ -237,6 +261,8 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/tests': typeof TestsRouteWithChildren
+  '/vendors': typeof VendorsRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
@@ -257,6 +283,8 @@ export interface FileRoutesByFullPath {
   '/reports/': typeof ReportsIndexRoute
   '/risk-register/': typeof RiskRegisterIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/tests/': typeof TestsIndexRoute
+  '/vendors/': typeof VendorsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -280,6 +308,8 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsIndexRoute
   '/risk-register': typeof RiskRegisterIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/tests': typeof TestsIndexRoute
+  '/vendors': typeof VendorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -298,6 +328,8 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/tests': typeof TestsRouteWithChildren
+  '/vendors': typeof VendorsRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
@@ -318,6 +350,8 @@ export interface FileRoutesById {
   '/reports/': typeof ReportsIndexRoute
   '/risk-register/': typeof RiskRegisterIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/tests/': typeof TestsIndexRoute
+  '/vendors/': typeof VendorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -337,6 +371,8 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/tests'
+    | '/vendors'
     | '/assets/$assetId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
@@ -357,6 +393,8 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/risk-register/'
     | '/settings/'
+    | '/tests/'
+    | '/vendors/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -380,6 +418,8 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/tests'
+    | '/vendors'
   id:
     | '__root__'
     | '/'
@@ -397,6 +437,8 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/tests'
+    | '/vendors'
     | '/assets/$assetId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
@@ -417,6 +459,8 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/risk-register/'
     | '/settings/'
+    | '/tests/'
+    | '/vendors/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -435,10 +479,26 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRouteWithChildren
   RiskRegisterRoute: typeof RiskRegisterRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
+  TestsRoute: typeof TestsRouteWithChildren
+  VendorsRoute: typeof VendorsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendors': {
+      id: '/vendors'
+      path: '/vendors'
+      fullPath: '/vendors'
+      preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tests': {
+      id: '/tests'
+      path: '/tests'
+      fullPath: '/tests'
+      preLoaderRoute: typeof TestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -543,6 +603,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/vendors/': {
+      id: '/vendors/'
+      path: '/'
+      fullPath: '/vendors/'
+      preLoaderRoute: typeof VendorsIndexRouteImport
+      parentRoute: typeof VendorsRoute
+    }
+    '/tests/': {
+      id: '/tests/'
+      path: '/'
+      fullPath: '/tests/'
+      preLoaderRoute: typeof TestsIndexRouteImport
+      parentRoute: typeof TestsRoute
     }
     '/settings/': {
       id: '/settings/'
@@ -863,6 +937,27 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
 
+interface TestsRouteChildren {
+  TestsIndexRoute: typeof TestsIndexRoute
+}
+
+const TestsRouteChildren: TestsRouteChildren = {
+  TestsIndexRoute: TestsIndexRoute,
+}
+
+const TestsRouteWithChildren = TestsRoute._addFileChildren(TestsRouteChildren)
+
+interface VendorsRouteChildren {
+  VendorsIndexRoute: typeof VendorsIndexRoute
+}
+
+const VendorsRouteChildren: VendorsRouteChildren = {
+  VendorsIndexRoute: VendorsIndexRoute,
+}
+
+const VendorsRouteWithChildren =
+  VendorsRoute._addFileChildren(VendorsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsRoute: AlertsRouteWithChildren,
@@ -879,6 +974,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRouteWithChildren,
   RiskRegisterRoute: RiskRegisterRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
+  TestsRoute: TestsRouteWithChildren,
+  VendorsRoute: VendorsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
