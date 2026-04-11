@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { assets } from '@/lib/mock-data';
 
 export const Route = createFileRoute('/assets/')({
