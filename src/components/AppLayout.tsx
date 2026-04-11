@@ -5,7 +5,7 @@ import { TopBar } from './TopBar';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { useAuth } from '@/hooks/use-auth';
 import { RoleProvider } from '@/hooks/use-role-context';
-import { Dog, Loader2 } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 
 export function AppLayout() {
   const { open, setOpen } = useSidebarStore();
@@ -21,9 +21,14 @@ export function AppLayout() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Dog className="h-10 w-10 text-primary animate-pulse" />
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="flex flex-col items-center gap-5 animate-fade-up">
+          <div className="h-14 w-14 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+            <Shield className="h-7 w-7 text-white" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Loading WatchDog…</span>
+          </div>
         </div>
       </div>
     );
@@ -35,10 +40,10 @@ export function AppLayout() {
 
   return (
     <RoleProvider>
-      <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex h-screen w-full overflow-hidden bg-background">
         {open && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setOpen(false)}
           />
         )}
@@ -51,7 +56,7 @@ export function AppLayout() {
         </div>
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             <Outlet />
           </main>
         </div>
