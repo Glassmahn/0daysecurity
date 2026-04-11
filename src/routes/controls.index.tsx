@@ -22,6 +22,7 @@ const statusStyles: Record<string, string> = {
 };
 
 function ControlsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
