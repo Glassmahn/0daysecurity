@@ -18,6 +18,7 @@ const statusStyles: Record<string, string> = {
 const statusOrder = ['draft', 'review', 'approved', 'published', 'archived'];
 
 function PoliciesPage() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6 animate-slide-in">
       <div className="flex items-center justify-between">
