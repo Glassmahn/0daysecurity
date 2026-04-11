@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap } from 'lucide-react';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap, Target } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { testLibraryCatalog, getTestCategories, getTestFrameworks, type TestTemplate } from '@/lib/test-library-catalog';
 import { enrichedControls } from '@/lib/framework-catalog';
+import { TestCoverageDashboard } from '@/components/tests/TestCoverageDashboard';
 
 export const Route = createFileRoute('/tests/')({ component: TestsIndexPage,
   head: () => ({ meta: [{ title: 'Tests — ZeroDay Security' }, { name: 'description', content: 'Compliance test management' }] }) });
@@ -154,6 +155,7 @@ function TestsIndexPage() {
         <TabsList className="bg-surface/50 border border-border/60">
           <TabsTrigger value="active" className="gap-1.5 data-[state=active]:shadow-glow"><FlaskConical className="h-3.5 w-3.5" />Active Tests</TabsTrigger>
           <TabsTrigger value="library" className="gap-1.5 data-[state=active]:shadow-glow"><Library className="h-3.5 w-3.5" />Test Library ({testLibraryCatalog.length})</TabsTrigger>
+          <TabsTrigger value="coverage" className="gap-1.5 data-[state=active]:shadow-glow"><Target className="h-3.5 w-3.5" />Coverage</TabsTrigger>
         </TabsList>
 
         {/* ═══ Active Tests Tab ═══ */}
@@ -409,6 +411,11 @@ function TestsIndexPage() {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        {/* ═══ Coverage Dashboard Tab ═══ */}
+        <TabsContent value="coverage" className="mt-0">
+          <TestCoverageDashboard />
         </TabsContent>
       </Tabs>
 
