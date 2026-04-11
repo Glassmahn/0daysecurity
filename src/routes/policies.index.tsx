@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { policies } from '@/lib/mock-data-extended';
 import { FileText, Plus } from 'lucide-react';
 
@@ -18,6 +18,7 @@ const statusStyles: Record<string, string> = {
 const statusOrder = ['draft', 'review', 'approved', 'published', 'archived'];
 
 function PoliciesPage() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6 animate-slide-in">
       <div className="flex items-center justify-between">
@@ -59,7 +60,7 @@ function PoliciesPage() {
           </thead>
           <tbody>
             {policies.map(p => (
-              <tr key={p.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer">
+              <tr key={p.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => navigate({ to: '/policies/$policyId', params: { policyId: p.id } })}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
