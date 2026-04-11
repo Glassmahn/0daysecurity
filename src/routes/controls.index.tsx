@@ -58,7 +58,7 @@ function ControlsPage() {
   };
 
   const updateSearch = (updates: Record<string, string>) => {
-    navigate({ search: (prev) => ({ ...prev, ...updates }) });
+    navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
   };
 
   const activeFilterCount = [statusFilter, categoryFilter, frameworkFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
