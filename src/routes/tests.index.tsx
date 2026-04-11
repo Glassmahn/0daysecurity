@@ -155,6 +155,7 @@ function TestsIndexPage() {
         <TabsList className="bg-surface/50 border border-border/60">
           <TabsTrigger value="active" className="gap-1.5 data-[state=active]:shadow-glow"><FlaskConical className="h-3.5 w-3.5" />Active Tests</TabsTrigger>
           <TabsTrigger value="library" className="gap-1.5 data-[state=active]:shadow-glow"><Library className="h-3.5 w-3.5" />Test Library ({testLibraryCatalog.length})</TabsTrigger>
+          <TabsTrigger value="coverage" className="gap-1.5 data-[state=active]:shadow-glow"><Target className="h-3.5 w-3.5" />Coverage</TabsTrigger>
         </TabsList>
 
         {/* ═══ Active Tests Tab ═══ */}
