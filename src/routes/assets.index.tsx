@@ -51,7 +51,7 @@ function AssetsPage() {
           </thead>
           <tbody>
             {assets.map(a => (
-              <tr key={a.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer">
+              <tr key={a.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => navigate({ to: '/assets/$assetId', params: { assetId: a.id } })}>
                 <td className="px-4 py-3 font-medium text-foreground">{a.name}</td>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${typeStyles[a.type] || 'bg-muted text-muted-foreground'}`}>
