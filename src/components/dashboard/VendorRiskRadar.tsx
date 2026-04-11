@@ -1,4 +1,5 @@
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { useNavigate } from '@tanstack/react-router';
 
 const data = [
   { category: 'Data Security', score: 82, benchmark: 75 },
@@ -11,13 +12,26 @@ const data = [
   { category: 'Change Mgmt', score: 84, benchmark: 75 },
 ];
 
+const categoryRoutes: Record<string, string> = {
+  'Data Security': '/controls',
+  'Access Control': '/controls',
+  'Incident Response': '/incidents',
+  'Business Continuity': '/risk-register',
+  'Vendor Mgmt': '/vendors',
+  'Personnel': '/personnel',
+  'Physical Security': '/controls',
+  'Change Mgmt': '/controls',
+};
+
 export function VendorRiskRadar() {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="text-foreground">Security Posture Radar</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Your score vs. industry benchmark</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Click a category to drill down</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-status-passing" />You</span>
@@ -25,9 +39,14 @@ export function VendorRiskRadar() {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={280}>
-        <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
+        <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%" onClick={(e) => {
+          if (e?.activeLabel) {
+            const route = categoryRoutes[e.activeLabel];
+            if (route) navigate({ to: route as '/' });
+          }
+        }}>
           <PolarGrid stroke="var(--color-border)" />
-          <PolarAngleAxis dataKey="category" tick={{ fill: 'var(--color-muted-foreground)', fontSize: 10 }} />
+          <PolarAngleAxis dataKey="category" tick={{ fill: 'var(--color-muted-foreground)', fontSize: 10, cursor: 'pointer' }} />
           <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
           <Tooltip
             contentStyle={{

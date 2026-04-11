@@ -1,4 +1,5 @@
 import { AlertTriangle, ListChecks, FileWarning, Users, ChevronRight } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import type { PriorityItem } from '@/lib/mock-data';
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -6,6 +7,13 @@ const typeIcons: Record<string, React.ElementType> = {
   control: ListChecks,
   evidence: FileWarning,
   review: Users,
+};
+
+const typeRoutes: Record<string, string> = {
+  alert: '/alerts',
+  control: '/controls',
+  evidence: '/evidence',
+  review: '/personnel',
 };
 
 const severityStyles: Record<string, string> = {
@@ -24,10 +32,12 @@ export function PriorityQueue({ items }: { items: PriorityItem[] }) {
       <div className="space-y-2">
         {items.map((item) => {
           const Icon = typeIcons[item.type] || AlertTriangle;
+          const route = typeRoutes[item.type] || '/alerts';
           return (
-            <div
+            <Link
               key={item.id}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-surface hover:bg-surface-raised transition-colors group cursor-pointer"
+              to={route as '/'}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-surface hover:bg-surface-raised hover:border-primary/30 transition-colors group"
             >
               <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${severityStyles[item.severity]}`}>
@@ -35,10 +45,10 @@ export function PriorityQueue({ items }: { items: PriorityItem[] }) {
               </span>
               <span className="text-sm text-foreground truncate flex-1">{item.title}</span>
               <span className="text-xs text-muted-foreground shrink-0">{item.age}</span>
-              <button className="text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity shrink-0 flex items-center gap-0.5">
+              <span className="text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity shrink-0 flex items-center gap-0.5">
                 {item.action} <ChevronRight className="h-3 w-3" />
-              </button>
-            </div>
+              </span>
+            </Link>
           );
         })}
       </div>
