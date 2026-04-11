@@ -13,18 +13,32 @@ const data = [
 export function IncidentTrendChart() {
   const navigate = useNavigate();
 
+  const handleBarClick = (data: Record<string, unknown>, dataKey?: string) => {
+    if (dataKey && ['critical', 'high', 'medium', 'low'].includes(dataKey)) {
+      navigate({ to: '/incidents', search: { severity: dataKey } });
+    } else {
+      navigate({ to: '/incidents' });
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-foreground">Incident Trends</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Click a bar to view incidents</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Click a severity in the legend to filter</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-critical" />Critical</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-high" />High</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-medium" />Medium</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-severity-low" />Low</span>
+          {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
+            <button
+              key={sev}
+              onClick={() => navigate({ to: '/incidents', search: { severity: sev } })}
+              className="flex items-center gap-1.5 hover:underline cursor-pointer"
+            >
+              <span className={`h-2 w-2 rounded-full bg-severity-${sev}`} />
+              <span className="capitalize">{sev}</span>
+            </button>
+          ))}
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
