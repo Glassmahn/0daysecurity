@@ -30,7 +30,7 @@ function cellLabel(value: number): string {
 
 export function RiskHeatmap() {
   return (
-    <div className="bg-card border border-border rounded-lg p-5">
+    <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Risk Heatmap</h3>
