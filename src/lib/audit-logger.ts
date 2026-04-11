@@ -18,11 +18,11 @@ export async function logAudit(entry: AuditLogEntry) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('audit_logs').insert({
+  await supabase.from('audit_logs').insert([{
     action: entry.action,
     entity_type: entry.entity_type,
     entity_id: entry.entity_id ?? null,
     user_id: user.id,
-    details: entry.details as Record<string, unknown> ?? null,
-  });
+    details: (entry.details as Record<string, unknown>) ?? null,
+  }]);
 }
