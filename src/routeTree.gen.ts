@@ -38,6 +38,7 @@ import { Route as ControlsIndexRouteImport } from './routes/controls.index'
 import { Route as AuditsIndexRouteImport } from './routes/audits.index'
 import { Route as AssetsIndexRouteImport } from './routes/assets.index'
 import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
+import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -184,6 +185,11 @@ const AlertsIndexRoute = AlertsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AlertsRoute,
 } as any)
+const IncidentsIncidentIdRoute = IncidentsIncidentIdRouteImport.update({
+  id: '/$incidentId',
+  path: '/$incidentId',
+  getParentRoute: () => IncidentsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/alerts/': typeof AlertsIndexRoute
   '/assets/': typeof AssetsIndexRoute
   '/audits/': typeof AuditsIndexRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/alerts': typeof AlertsIndexRoute
   '/assets': typeof AssetsIndexRoute
   '/audits': typeof AuditsIndexRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/alerts/': typeof AlertsIndexRoute
   '/assets/': typeof AssetsIndexRoute
   '/audits/': typeof AuditsIndexRoute
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/incidents/$incidentId'
     | '/alerts/'
     | '/assets/'
     | '/audits/'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/incidents/$incidentId'
     | '/alerts'
     | '/assets'
     | '/audits'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/incidents/$incidentId'
     | '/alerts/'
     | '/assets/'
     | '/audits/'
@@ -570,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsIndexRouteImport
       parentRoute: typeof AlertsRoute
     }
+    '/incidents/$incidentId': {
+      id: '/incidents/$incidentId'
+      path: '/$incidentId'
+      fullPath: '/incidents/$incidentId'
+      preLoaderRoute: typeof IncidentsIncidentIdRouteImport
+      parentRoute: typeof IncidentsRoute
+    }
   }
 }
 
@@ -655,10 +674,12 @@ const FrameworksRouteWithChildren = FrameworksRoute._addFileChildren(
 )
 
 interface IncidentsRouteChildren {
+  IncidentsIncidentIdRoute: typeof IncidentsIncidentIdRoute
   IncidentsIndexRoute: typeof IncidentsIndexRoute
 }
 
 const IncidentsRouteChildren: IncidentsRouteChildren = {
+  IncidentsIncidentIdRoute: IncidentsIncidentIdRoute,
   IncidentsIndexRoute: IncidentsIndexRoute,
 }
 

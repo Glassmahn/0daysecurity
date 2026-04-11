@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { incidents } from '@/lib/mock-data';
 
 export const Route = createFileRoute('/incidents/')({
@@ -27,6 +27,7 @@ const statusStyles: Record<string, string> = {
 };
 
 function IncidentsPage() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6 animate-slide-in">
       <div>
@@ -48,7 +49,7 @@ function IncidentsPage() {
           </thead>
           <tbody>
             {incidents.map(inc => (
-              <tr key={inc.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer">
+              <tr key={inc.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => navigate({ to: '/incidents/$incidentId', params: { incidentId: inc.id } })}>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[inc.severity]}`}>{inc.severity}</span>
                 </td>
