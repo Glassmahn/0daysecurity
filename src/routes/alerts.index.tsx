@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2, Download } from 'lucide-react';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, AlertTriangle, Filter } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -34,17 +34,17 @@ export const Route = createFileRoute('/alerts/')({
 });
 
 const severityStyles: Record<string, string> = {
-  critical: 'bg-severity-critical/15 text-severity-critical',
-  high: 'bg-severity-high/15 text-severity-high',
-  medium: 'bg-severity-medium/15 text-severity-medium',
-  low: 'bg-severity-low/15 text-severity-low',
-  info: 'bg-severity-info/15 text-severity-info',
+  critical: 'bg-severity-critical/12 text-severity-critical',
+  high: 'bg-severity-high/12 text-severity-high',
+  medium: 'bg-severity-medium/12 text-severity-medium',
+  low: 'bg-severity-low/12 text-severity-low',
+  info: 'bg-severity-info/12 text-severity-info',
 };
 
 const statusStyles: Record<string, string> = {
-  new: 'bg-status-failing/15 text-status-failing',
-  acknowledged: 'bg-status-warning/15 text-status-warning',
-  resolved: 'bg-status-passing/15 text-status-passing',
+  new: 'bg-status-failing/12 text-status-failing',
+  acknowledged: 'bg-status-warning/12 text-status-warning',
+  resolved: 'bg-status-passing/12 text-status-passing',
   dismissed: 'bg-muted text-muted-foreground',
 };
 
@@ -110,63 +110,80 @@ function AlertsPage() {
   }), [alerts]);
 
   if (loading) {
-    return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+        <p className="text-sm text-muted-foreground">Loading alerts…</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 animate-slide-in">
+    <div className="space-y-5 animate-fade-up">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Alerts</h1>
-          <p className="text-sm text-muted-foreground">{alerts.length} total alerts</p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+            <AlertTriangle className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Alerts</h1>
+            <p className="text-sm text-muted-foreground">{alerts.length} total alerts</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
             <button onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })}
-              className="text-xs text-primary hover:underline cursor-pointer">
+              className="text-xs text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
           )}
           <button onClick={() => exportToCsv('alerts', filtered as Record<string, unknown>[], [
               { key: 'title', label: 'Title' }, { key: 'severity', label: 'Severity' }, { key: 'status', label: 'Status' },
               { key: 'source', label: 'Source' }, { key: 'message', label: 'Message' }, { key: 'created_at', label: 'Created' },
-            ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
+            ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <WriteGuard><button onClick={() => { setEditing(null); setFormOpen(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus className="h-4 w-4" /> New Alert
-          </button></WriteGuard>
+          <WriteGuard>
+            <button onClick={() => { setEditing(null); setFormOpen(true); }}
+              className="flex items-center gap-1.5 px-4 py-2 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 shadow-glow transition-all">
+              <Plus className="h-4 w-4" /> New Alert
+            </button>
+          </WriteGuard>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
         {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
           <button key={sev} onClick={() => updateSearch({ severity: severityFilter === sev ? 'all' : sev })}
-            className={`bg-card border rounded-lg p-4 text-left hover:border-primary/40 transition-all cursor-pointer ${severityFilter === sev ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
-            <div className={`text-2xl font-bold ${severityFilter === sev ? 'text-primary' : ''}`}>{severityCounts[sev]}</div>
-            <div className="flex items-center gap-1.5">
+            className={`bg-card border rounded-xl p-4 text-left hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer ${severityFilter === sev ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+            <div className={`text-2xl font-display font-bold ${severityFilter === sev ? 'text-primary' : ''}`}>{severityCounts[sev]}</div>
+            <div className="flex items-center gap-1.5 mt-1">
               <span className={`h-2 w-2 rounded-full ${sev === 'critical' ? 'bg-severity-critical' : sev === 'high' ? 'bg-severity-high' : sev === 'medium' ? 'bg-severity-medium' : 'bg-severity-low'}`} />
-              <span className="text-xs text-muted-foreground capitalize">{sev}</span>
+              <span className="text-[11px] text-muted-foreground font-medium capitalize">{sev}</span>
             </div>
           </button>
         ))}
       </div>
 
+      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input type="text" placeholder="Search alerts..." value={search} onChange={e => updateSearch({ q: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" />
         </div>
         <select value={severityFilter} onChange={e => updateSearch({ severity: e.target.value })}
-          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${severityFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
+          className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${severityFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Severities</option>
           <option value="critical">Critical</option><option value="high">High</option>
           <option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option>
         </select>
         <select value={statusFilter} onChange={e => updateSearch({ status: e.target.value })}
-          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
+          className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${statusFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Statuses</option>
           <option value="new">New</option><option value="acknowledged">Acknowledged</option>
           <option value="resolved">Resolved</option><option value="dismissed">Dismissed</option>
@@ -181,43 +198,46 @@ function AlertsPage() {
         onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })}
         entityName="alert" />
 
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      {/* Table */}
+      <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-card">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left">
-              <th className="px-3 py-3 w-10">
+            <tr className="border-b border-border/60 text-left bg-surface/50">
+              <th className="px-3 py-3.5 w-10">
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
-                  onChange={bulk.toggleAll} className="rounded border-border" />
+                  onChange={bulk.toggleAll} className="rounded-md border-border" />
               </th>
               <SortableHeader label="Severity" column="severity" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Source" column="source" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
               <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Age" column="created_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+              <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
             {pagination.paged.map(alert => (
-              <tr key={alert.id} className={`border-b border-border hover:bg-muted/50 transition-colors ${bulk.isSelected(alert.id) ? 'bg-primary/5' : ''}`}>
-                <td className="px-3 py-3">
-                  <input type="checkbox" checked={bulk.isSelected(alert.id)} onChange={() => bulk.toggle(alert.id)} className="rounded border-border" />
+              <tr key={alert.id} className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors ${bulk.isSelected(alert.id) ? 'bg-primary/5' : ''}`}>
+                <td className="px-3 py-3.5">
+                  <input type="checkbox" checked={bulk.isSelected(alert.id)} onChange={() => bulk.toggle(alert.id)} className="rounded-md border-border" />
                 </td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${severityStyles[alert.severity] ?? ''}`}>{alert.severity}</span>
+                <td className="px-4 py-3.5">
+                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${severityStyles[alert.severity] ?? ''}`}>{alert.severity}</span>
                 </td>
-                <td className="px-4 py-3 text-foreground">{alert.title}</td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{alert.source ?? '—'}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[alert.status] ?? ''}`}>{alert.status}</span>
+                <td className="px-4 py-3.5 text-foreground font-medium">{alert.title}</td>
+                <td className="px-4 py-3.5 text-muted-foreground hidden md:table-cell">{alert.source ?? '—'}</td>
+                <td className="px-4 py-3.5">
+                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusStyles[alert.status] ?? ''}`}>{alert.status}</span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">{formatDistanceToNow(new Date(alert.created_at), { addSuffix: false })}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3.5 text-muted-foreground text-xs">{formatDistanceToNow(new Date(alert.created_at), { addSuffix: false })}</td>
+                <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1">
-                    <button onClick={() => { setEditing({ title: alert.title, message: alert.message, severity: alert.severity, status: alert.status, source: alert.source, _id: alert.id }); setFormOpen(true); }}
-                      className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-<WriteGuard>                    <button onClick={() => setDeleteTarget({ id: alert.id, title: alert.title })}
-                      className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
+                    <WriteGuard>
+                      <button onClick={() => { setEditing({ title: alert.title, message: alert.message, severity: alert.severity, status: alert.status, source: alert.source, _id: alert.id }); setFormOpen(true); }}
+                        className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDeleteTarget({ id: alert.id, title: alert.title })}
+                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </WriteGuard>
                   </div>
                 </td>
               </tr>
@@ -225,9 +245,12 @@ function AlertsPage() {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            No alerts match the current filters.{' '}
-            <button onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-3">
+            <div className="h-12 w-12 rounded-xl bg-muted/50 flex items-center justify-center">
+              <Filter className="h-5 w-5 text-muted-foreground/50" />
+            </div>
+            <p>No alerts match the current filters.</p>
+            <button onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })} className="text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium text-xs">Clear filters</button>
           </div>
         )}
         <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
