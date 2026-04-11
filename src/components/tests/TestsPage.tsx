@@ -127,7 +127,7 @@ export function TestsPage() {
                 </TableRow></TableHeader>
                 <TableBody>
                   {testRuns.filter(t => t.name.toLowerCase().includes(search.toLowerCase())).map(run => (
-                    <TableRow key={run.id} className="cursor-pointer">
+                    <TableRow key={run.id} className="cursor-pointer" onClick={() => navigate({ to: '/tests/$testId', params: { testId: run.id } })}>
                       <TableCell className="font-mono text-xs">{run.id}</TableCell>
                       <TableCell className="font-medium">{run.name}</TableCell>
                       <TableCell><Badge variant="outline">{run.control}</Badge></TableCell>
