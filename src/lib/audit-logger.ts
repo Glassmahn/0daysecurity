@@ -23,6 +23,6 @@ export async function logAudit(entry: AuditLogEntry) {
     entity_type: entry.entity_type,
     entity_id: entry.entity_id ?? null,
     user_id: user.id,
-    details: (entry.details as Record<string, unknown>) ?? null,
+    details: (entry.details ?? null) as import('@/integrations/supabase/types').Json,
   }]);
 }
