@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Search, Loader2, Plus, Pencil, Trash2, Download } from 'lucide-react';
+import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
 import { useTableSort } from '@/hooks/use-table-sort';
@@ -60,7 +61,15 @@ function TestsIndexPage() {
     <div className="space-y-6 animate-slide-in">
       <div className="flex items-center justify-between">
         <div><h1 className="text-xl font-bold text-foreground">Tests</h1><p className="text-sm text-muted-foreground">{tests.length} tests configured</p></div>
-        <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> New Test</button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCsv('tests', filtered as Record<string, unknown>[], [
+              { key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }, { key: 'result', label: 'Result' },
+              { key: 'schedule', label: 'Schedule' }, { key: 'last_run', label: 'Last Run' }, { key: 'description', label: 'Description' },
+            ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
+            <Download className="h-4 w-4" /> Export
+          </button>
+          <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> New Test</button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

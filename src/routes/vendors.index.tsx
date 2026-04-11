@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2, Download } from 'lucide-react';
+import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
 import { useTableSort } from '@/hooks/use-table-sort';
@@ -79,6 +80,10 @@ function VendorsIndexPage() {
         <div><h1 className="text-2xl font-bold text-foreground">Vendors</h1><p className="text-sm text-muted-foreground">Third-party vendor risk management</p></div>
         <div className="flex gap-2">
           {activeFilterCount > 0 && <Button variant="ghost" size="sm" onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })}>Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</Button>}
+          <Button variant="outline" size="sm" onClick={() => exportToCsv('vendors', filtered as Record<string, unknown>[], [
+              { key: 'name', label: 'Name' }, { key: 'risk_tier', label: 'Risk Tier' }, { key: 'status', label: 'Status' },
+              { key: 'contact_email', label: 'Email' }, { key: 'contract_value', label: 'Contract Value' }, { key: 'contract_expiry', label: 'Contract Expiry' },
+            ])}><Download className="h-4 w-4 mr-1" />Export</Button>
           <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Vendor</Button>
         </div>
       </div>

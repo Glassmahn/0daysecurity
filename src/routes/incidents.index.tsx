@@ -126,6 +126,12 @@ function IncidentsPage() {
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
           )}
+          <button onClick={() => exportToCsv('incidents', filtered as Record<string, unknown>[], [
+              { key: 'title', label: 'Title' }, { key: 'severity', label: 'Severity' }, { key: 'status', label: 'Status' },
+              { key: 'description', label: 'Description' }, { key: 'root_cause', label: 'Root Cause' }, { key: 'created_at', label: 'Created' },
+            ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
+            <Download className="h-4 w-4" /> Export
+          </button>
           <button onClick={() => { setEditing(null); setFormOpen(true); }}
             className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Report Incident
