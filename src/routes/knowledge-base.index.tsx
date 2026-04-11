@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
+import { supabase } from '@/integrations/supabase/client';
 import { Search, Loader2, Plus, Pencil, Trash2, Download, BookOpen, Tag } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -67,22 +68,48 @@ const kbStatusOptions = kbFields.find(f => f.name === 'status')!.options!;
 function KnowledgeBasePage() {
   const navigate = useNavigate({ from: '/knowledge-base/' });
   const { category: categoryFilter, q: search } = Route.useSearch();
-  const { data: articles, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('knowledge_base');
+  const { data: articles, loading, insert, update, remove, bulkRemove, bulkUpdate, refetch } = useSupabaseCrud('knowledge_base');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
+  // Full-text search results
+  const [ftsResults, setFtsResults] = useState<Set<string> | null>(null);
+  const [ftsLoading, setFtsLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const runFts = useCallback(async (q: string) => {
+    if (!q || q.length < 2) { setFtsResults(null); return; }
+    setFtsLoading(true);
+    // Convert user query to tsquery format (prefix match on each word)
+    const tsQuery = q.trim().split(/\s+/).map(w => `${w}:*`).join(' & ');
+    const { data } = await supabase
+      .from('knowledge_base' as any)
+      .select('id')
+      .textSearch('search_vector', tsQuery);
+    setFtsResults(new Set((data ?? []).map((r: any) => r.id)));
+    setFtsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    if (!search || search.length < 2) { setFtsResults(null); return; }
+    debounceRef.current = setTimeout(() => runFts(search), 250);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, runFts]);
+
   const filtered = useMemo(() => {
-    return articles.filter(a => {
+    return articles.filter((a: any) => {
       if (categoryFilter !== 'all' && a.category !== categoryFilter) return false;
-      if (search) {
+      if (search && search.length >= 2 && ftsResults !== null) return ftsResults.has(a.id);
+      if (search && search.length < 2) {
         const q = search.toLowerCase();
-        return a.title.toLowerCase().includes(q) || (a.content ?? '').toLowerCase().includes(q);
+        return a.title.toLowerCase().includes(q);
       }
       return true;
     });
-  }, [articles, categoryFilter, search]);
+  }, [articles, categoryFilter, search, ftsResults]);
 
   const { sorted, sort, toggle: toggleSort } = useTableSort(filtered, 'updated_at', 'desc');
   const pagination = usePagination(sorted);
