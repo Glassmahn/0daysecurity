@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 
+const MDEditor = lazy(() => import('@uiw/react-md-editor'));
+
 export interface FieldDef {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'number' | 'email';
+  type: 'text' | 'textarea' | 'select' | 'number' | 'email' | 'markdown';
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
@@ -32,6 +34,8 @@ export function EntityFormDialog({ open, onOpenChange, title, fields, initialVal
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const hasMarkdown = fields.some(f => f.type === 'markdown');
+
   useEffect(() => {
     if (open) {
       setValues(initialValues ?? {});
@@ -46,7 +50,7 @@ export function EntityFormDialog({ open, onOpenChange, title, fields, initialVal
       if (f.required && (v === undefined || v === null || v === '')) {
         newErrors[f.name] = `${f.label} is required`;
       }
-      if (f.type === 'text' || f.type === 'textarea') {
+      if (f.type === 'text' || f.type === 'textarea' || f.type === 'markdown') {
         const s = String(v ?? '');
         if (f.max && s.length > f.max) newErrors[f.name] = `Max ${f.max} characters`;
       }
@@ -81,7 +85,7 @@ export function EntityFormDialog({ open, onOpenChange, title, fields, initialVal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className={hasMarkdown ? 'max-w-3xl max-h-[90vh] overflow-y-auto' : 'max-w-md max-h-[85vh] overflow-y-auto'}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -101,6 +105,18 @@ export function EntityFormDialog({ open, onOpenChange, title, fields, initialVal
                   <option value="">Select...</option>
                   {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
+              ) : f.type === 'markdown' ? (
+                <Suspense fallback={<div className="h-64 bg-muted rounded-md animate-pulse" />}>
+                  <div data-color-mode="auto">
+                    <MDEditor
+                      value={String(values[f.name] ?? '')}
+                      onChange={(val) => setValue(f.name, val ?? '')}
+                      height={350}
+                      preview="edit"
+                      textareaProps={{ placeholder: f.placeholder }}
+                    />
+                  </div>
+                </Suspense>
               ) : f.type === 'textarea' ? (
                 <textarea
                   id={f.name}
