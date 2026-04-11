@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
+import { WriteGuard } from '@/components/guards/RoleGuards';
 
 const incidentsSearchSchema = z.object({
   severity: fallback(z.string(), 'all').default('all'),
@@ -132,10 +133,10 @@ function IncidentsPage() {
             ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <button onClick={() => { setEditing(null); setFormOpen(true); }}
+          <WriteGuard><button onClick={() => { setEditing(null); setFormOpen(true); }}
             className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Report Incident
-          </button>
+          </button></WriteGuard>
         </div>
       </div>
 
@@ -216,8 +217,8 @@ function IncidentsPage() {
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <button onClick={() => { setEditing({ title: inc.title, description: inc.description, severity: inc.severity, status: inc.status, root_cause: inc.root_cause, _id: inc.id }); setFormOpen(true); }}
                       className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setDeleteTarget({ id: inc.id, title: inc.title })}
-                      className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+<WriteGuard>                    <button onClick={() => setDeleteTarget({ id: inc.id, title: inc.title })}
+                      className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
                   </div>
                 </td>
               </tr>
