@@ -225,8 +225,7 @@ function EvidencePage() {
     </div>
   );
 }
-  valid: 'bg-status-passing/15 text-status-passing',
-  expiring: 'bg-status-warning/15 text-status-warning',
+// end of file
   expired: 'bg-status-failing/15 text-status-failing',
   rejected: 'bg-severity-critical/15 text-severity-critical',
 };
