@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
@@ -85,6 +87,7 @@ function IncidentsPage() {
     });
   }, [incidents, severityFilter, statusFilter, search]);
 
+  const pagination = usePagination(filtered);
   const filteredIds = useMemo(() => filtered.map(i => i.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -183,7 +186,7 @@ function IncidentsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(inc => (
+            {pagination.paged.map(inc => (
               <tr key={inc.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(inc.id) ? 'bg-primary/5' : ''}`}
                 onClick={() => navigate({ to: '/incidents/$incidentId', params: { incidentId: inc.id } })}>
                 <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
@@ -217,6 +220,7 @@ function IncidentsPage() {
             <button onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
           </div>
         )}
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
 
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}

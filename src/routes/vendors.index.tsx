@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +60,7 @@ function VendorsIndexPage() {
     return true;
   }), [vendors, riskTierFilter, statusFilter, search]);
 
+  const pagination = usePagination(filtered);
   const filteredIds = useMemo(() => filtered.map(v => v.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
   const activeCount = vendors.filter(v => v.status === 'active').length;
@@ -109,7 +112,7 @@ function VendorsIndexPage() {
               <TableHead>Vendor</TableHead><TableHead>Risk Tier</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead className="hidden lg:table-cell">Contract Expiry</TableHead><TableHead>Status</TableHead><TableHead className="w-20">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {filtered.map(v => (
+              {pagination.paged.map(v => (
                 <TableRow key={v.id} className={`cursor-pointer ${bulk.isSelected(v.id) ? 'bg-primary/5' : ''}`} onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>
                   <TableCell onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(v.id)} onChange={() => bulk.toggle(v.id)} className="rounded border-border" /></TableCell>
                   <TableCell><div className="flex items-center gap-2"><div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-bold">{v.name.charAt(0)}</div><p className="font-medium text-sm">{v.name}</p></div></TableCell>
@@ -124,6 +127,9 @@ function VendorsIndexPage() {
                 </TableRow>
               ))}
               {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No vendors match filters. <button onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear</button></TableCell></TableRow>}
+            </TableBody>
+          </Table>
+          <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
             </TableBody>
           </Table>
         </CardContent>

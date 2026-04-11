@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
@@ -81,6 +83,7 @@ function ControlsPage() {
     });
   }, [controls, search, statusFilter, categoryFilter]);
 
+  const pagination = usePagination(filtered);
   const filteredIds = useMemo(() => filtered.map(c => c.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -190,7 +193,7 @@ function ControlsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(c => (
+            {pagination.paged.map(c => (
               <tr key={c.id}
                 className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}
                 onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.id } })}>
@@ -226,6 +229,7 @@ function ControlsPage() {
             <button onClick={() => navigate({ search: { status: 'all', category: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
           </div>
         )}
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
 
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}
