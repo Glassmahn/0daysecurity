@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import {
   LayoutDashboard, Shield, ListChecks, Paperclip, AlertTriangle, Flame,
   Monitor, Users, FileText, AlertOctagon, ClipboardCheck, BarChart3,
-  Plug, Settings, ChevronLeft, ChevronRight, Dog, FlaskConical, Building2,
+  Plug, Settings, ChevronLeft, ChevronRight, Dog, FlaskConical, Building2, BookOpen,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
@@ -21,6 +21,7 @@ const navItems = [
   { label: 'Tests', icon: FlaskConical, to: '/tests' },
   { label: 'Vendors', icon: Building2, to: '/vendors' },
   { label: 'Audits', icon: ClipboardCheck, to: '/audits' },
+  { label: 'Knowledge Base', icon: BookOpen, to: '/knowledge-base' },
   { label: 'Reports', icon: BarChart3, to: '/reports' },
   { label: 'Integrations', icon: Plug, to: '/integrations' },
   { label: 'Settings', icon: Settings, to: '/settings' },

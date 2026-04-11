@@ -19,6 +19,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as PersonnelRouteImport } from './routes/personnel'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as KnowledgeBaseRouteImport } from './routes/knowledge-base'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as FrameworksRouteImport } from './routes/frameworks'
@@ -37,6 +38,7 @@ import { Route as RiskRegisterIndexRouteImport } from './routes/risk-register.in
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as PoliciesIndexRouteImport } from './routes/policies.index'
 import { Route as PersonnelIndexRouteImport } from './routes/personnel.index'
+import { Route as KnowledgeBaseIndexRouteImport } from './routes/knowledge-base.index'
 import { Route as IntegrationsIndexRouteImport } from './routes/integrations.index'
 import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
 import { Route as FrameworksIndexRouteImport } from './routes/frameworks.index'
@@ -50,6 +52,7 @@ import { Route as VendorsVendorIdRouteImport } from './routes/vendors.$vendorId'
 import { Route as TestsTestIdRouteImport } from './routes/tests.$testId'
 import { Route as RiskRegisterRiskIdRouteImport } from './routes/risk-register.$riskId'
 import { Route as PoliciesPolicyIdRouteImport } from './routes/policies.$policyId'
+import { Route as KnowledgeBaseArticleIdRouteImport } from './routes/knowledge-base.$articleId'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as EvidenceEvidenceIdRouteImport } from './routes/evidence.$evidenceId'
 import { Route as ControlsControlIdRouteImport } from './routes/controls.$controlId'
@@ -103,6 +106,11 @@ const PersonnelRoute = PersonnelRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeBaseRoute = KnowledgeBaseRouteImport.update({
+  id: '/knowledge-base',
+  path: '/knowledge-base',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IntegrationsRoute = IntegrationsRouteImport.update({
@@ -195,6 +203,11 @@ const PersonnelIndexRoute = PersonnelIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PersonnelRoute,
 } as any)
+const KnowledgeBaseIndexRoute = KnowledgeBaseIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KnowledgeBaseRoute,
+} as any)
 const IntegrationsIndexRoute = IntegrationsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -260,6 +273,11 @@ const PoliciesPolicyIdRoute = PoliciesPolicyIdRouteImport.update({
   path: '/$policyId',
   getParentRoute: () => PoliciesRoute,
 } as any)
+const KnowledgeBaseArticleIdRoute = KnowledgeBaseArticleIdRouteImport.update({
+  id: '/$articleId',
+  path: '/$articleId',
+  getParentRoute: () => KnowledgeBaseRoute,
+} as any)
 const IncidentsIncidentIdRoute = IncidentsIncidentIdRouteImport.update({
   id: '/$incidentId',
   path: '/$incidentId',
@@ -293,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/frameworks': typeof FrameworksRouteWithChildren
   '/incidents': typeof IncidentsRouteWithChildren
   '/integrations': typeof IntegrationsRouteWithChildren
+  '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/login': typeof LoginRoute
   '/personnel': typeof PersonnelRouteWithChildren
   '/policies': typeof PoliciesRouteWithChildren
@@ -307,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
+  '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
@@ -320,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/frameworks/': typeof FrameworksIndexRoute
   '/incidents/': typeof IncidentsIndexRoute
   '/integrations/': typeof IntegrationsIndexRoute
+  '/knowledge-base/': typeof KnowledgeBaseIndexRoute
   '/personnel/': typeof PersonnelIndexRoute
   '/policies/': typeof PoliciesIndexRoute
   '/reports/': typeof ReportsIndexRoute
@@ -338,6 +359,7 @@ export interface FileRoutesByTo {
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
+  '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
@@ -351,6 +373,7 @@ export interface FileRoutesByTo {
   '/frameworks': typeof FrameworksIndexRoute
   '/incidents': typeof IncidentsIndexRoute
   '/integrations': typeof IntegrationsIndexRoute
+  '/knowledge-base': typeof KnowledgeBaseIndexRoute
   '/personnel': typeof PersonnelIndexRoute
   '/policies': typeof PoliciesIndexRoute
   '/reports': typeof ReportsIndexRoute
@@ -372,6 +395,7 @@ export interface FileRoutesById {
   '/frameworks': typeof FrameworksRouteWithChildren
   '/incidents': typeof IncidentsRouteWithChildren
   '/integrations': typeof IntegrationsRouteWithChildren
+  '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/login': typeof LoginRoute
   '/personnel': typeof PersonnelRouteWithChildren
   '/policies': typeof PoliciesRouteWithChildren
@@ -386,6 +410,7 @@ export interface FileRoutesById {
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
+  '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
@@ -399,6 +424,7 @@ export interface FileRoutesById {
   '/frameworks/': typeof FrameworksIndexRoute
   '/incidents/': typeof IncidentsIndexRoute
   '/integrations/': typeof IntegrationsIndexRoute
+  '/knowledge-base/': typeof KnowledgeBaseIndexRoute
   '/personnel/': typeof PersonnelIndexRoute
   '/policies/': typeof PoliciesIndexRoute
   '/reports/': typeof ReportsIndexRoute
@@ -421,6 +447,7 @@ export interface FileRouteTypes {
     | '/frameworks'
     | '/incidents'
     | '/integrations'
+    | '/knowledge-base'
     | '/login'
     | '/personnel'
     | '/policies'
@@ -435,6 +462,7 @@ export interface FileRouteTypes {
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
     | '/incidents/$incidentId'
+    | '/knowledge-base/$articleId'
     | '/policies/$policyId'
     | '/risk-register/$riskId'
     | '/tests/$testId'
@@ -448,6 +476,7 @@ export interface FileRouteTypes {
     | '/frameworks/'
     | '/incidents/'
     | '/integrations/'
+    | '/knowledge-base/'
     | '/personnel/'
     | '/policies/'
     | '/reports/'
@@ -466,6 +495,7 @@ export interface FileRouteTypes {
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
     | '/incidents/$incidentId'
+    | '/knowledge-base/$articleId'
     | '/policies/$policyId'
     | '/risk-register/$riskId'
     | '/tests/$testId'
@@ -479,6 +509,7 @@ export interface FileRouteTypes {
     | '/frameworks'
     | '/incidents'
     | '/integrations'
+    | '/knowledge-base'
     | '/personnel'
     | '/policies'
     | '/reports'
@@ -499,6 +530,7 @@ export interface FileRouteTypes {
     | '/frameworks'
     | '/incidents'
     | '/integrations'
+    | '/knowledge-base'
     | '/login'
     | '/personnel'
     | '/policies'
@@ -513,6 +545,7 @@ export interface FileRouteTypes {
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
     | '/incidents/$incidentId'
+    | '/knowledge-base/$articleId'
     | '/policies/$policyId'
     | '/risk-register/$riskId'
     | '/tests/$testId'
@@ -526,6 +559,7 @@ export interface FileRouteTypes {
     | '/frameworks/'
     | '/incidents/'
     | '/integrations/'
+    | '/knowledge-base/'
     | '/personnel/'
     | '/policies/'
     | '/reports/'
@@ -547,6 +581,7 @@ export interface RootRouteChildren {
   FrameworksRoute: typeof FrameworksRouteWithChildren
   IncidentsRoute: typeof IncidentsRouteWithChildren
   IntegrationsRoute: typeof IntegrationsRouteWithChildren
+  KnowledgeBaseRoute: typeof KnowledgeBaseRouteWithChildren
   LoginRoute: typeof LoginRoute
   PersonnelRoute: typeof PersonnelRouteWithChildren
   PoliciesRoute: typeof PoliciesRouteWithChildren
@@ -629,6 +664,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge-base': {
+      id: '/knowledge-base'
+      path: '/knowledge-base'
+      fullPath: '/knowledge-base'
+      preLoaderRoute: typeof KnowledgeBaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/integrations': {
@@ -757,6 +799,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonnelIndexRouteImport
       parentRoute: typeof PersonnelRoute
     }
+    '/knowledge-base/': {
+      id: '/knowledge-base/'
+      path: '/'
+      fullPath: '/knowledge-base/'
+      preLoaderRoute: typeof KnowledgeBaseIndexRouteImport
+      parentRoute: typeof KnowledgeBaseRoute
+    }
     '/integrations/': {
       id: '/integrations/'
       path: '/'
@@ -847,6 +896,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/policies/$policyId'
       preLoaderRoute: typeof PoliciesPolicyIdRouteImport
       parentRoute: typeof PoliciesRoute
+    }
+    '/knowledge-base/$articleId': {
+      id: '/knowledge-base/$articleId'
+      path: '/$articleId'
+      fullPath: '/knowledge-base/$articleId'
+      preLoaderRoute: typeof KnowledgeBaseArticleIdRouteImport
+      parentRoute: typeof KnowledgeBaseRoute
     }
     '/incidents/$incidentId': {
       id: '/incidents/$incidentId'
@@ -992,6 +1048,20 @@ const IntegrationsRouteWithChildren = IntegrationsRoute._addFileChildren(
   IntegrationsRouteChildren,
 )
 
+interface KnowledgeBaseRouteChildren {
+  KnowledgeBaseArticleIdRoute: typeof KnowledgeBaseArticleIdRoute
+  KnowledgeBaseIndexRoute: typeof KnowledgeBaseIndexRoute
+}
+
+const KnowledgeBaseRouteChildren: KnowledgeBaseRouteChildren = {
+  KnowledgeBaseArticleIdRoute: KnowledgeBaseArticleIdRoute,
+  KnowledgeBaseIndexRoute: KnowledgeBaseIndexRoute,
+}
+
+const KnowledgeBaseRouteWithChildren = KnowledgeBaseRoute._addFileChildren(
+  KnowledgeBaseRouteChildren,
+)
+
 interface PersonnelRouteChildren {
   PersonnelIndexRoute: typeof PersonnelIndexRoute
 }
@@ -1092,6 +1162,7 @@ const rootRouteChildren: RootRouteChildren = {
   FrameworksRoute: FrameworksRouteWithChildren,
   IncidentsRoute: IncidentsRouteWithChildren,
   IntegrationsRoute: IntegrationsRouteWithChildren,
+  KnowledgeBaseRoute: KnowledgeBaseRouteWithChildren,
   LoginRoute: LoginRoute,
   PersonnelRoute: PersonnelRouteWithChildren,
   PoliciesRoute: PoliciesRouteWithChildren,

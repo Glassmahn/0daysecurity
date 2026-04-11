@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
-type CrudTable = 'controls' | 'incidents' | 'evidence' | 'alerts' | 'vendors' | 'frameworks' | 'risks' | 'tests' | 'assets' | 'policies';
+type CrudTable = 'controls' | 'incidents' | 'evidence' | 'alerts' | 'vendors' | 'frameworks' | 'risks' | 'tests' | 'assets' | 'policies' | 'knowledge_base';
 
 export function useSupabaseCrud<T extends CrudTable>(
   table: T,
