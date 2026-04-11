@@ -5,6 +5,8 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { SortableHeader } from '@/components/crud/SortableHeader';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
@@ -87,7 +89,8 @@ function IncidentsPage() {
     });
   }, [incidents, severityFilter, statusFilter, search]);
 
-  const pagination = usePagination(filtered);
+  const { sorted, sort, toggle: toggleSort } = useTableSort(filtered, 'created_at', 'desc');
+  const pagination = usePagination(sorted);
   const filteredIds = useMemo(() => filtered.map(i => i.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -178,10 +181,10 @@ function IncidentsPage() {
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
                   onChange={bulk.toggleAll} className="rounded border-border" />
               </th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Severity</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Created</th>
+              <SortableHeader label="Severity" column="severity" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Created" column="created_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>

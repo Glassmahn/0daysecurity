@@ -5,6 +5,8 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { SortableHeader } from '@/components/crud/SortableHeader';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +62,8 @@ function VendorsIndexPage() {
     return true;
   }), [vendors, riskTierFilter, statusFilter, search]);
 
-  const pagination = usePagination(filtered);
+  const { sorted, sort, toggle: toggleSort } = useTableSort(filtered, 'name', 'asc');
+  const pagination = usePagination(sorted);
   const filteredIds = useMemo(() => filtered.map(v => v.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
   const activeCount = vendors.filter(v => v.status === 'active').length;
@@ -109,7 +112,12 @@ function VendorsIndexPage() {
           <Table>
             <TableHeader><TableRow>
               <TableHead className="w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded border-border" /></TableHead>
-              <TableHead>Vendor</TableHead><TableHead>Risk Tier</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead className="hidden lg:table-cell">Contract Expiry</TableHead><TableHead>Status</TableHead><TableHead className="w-20">Actions</TableHead>
+              <SortableHeader label="Vendor" column="name" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Risk Tier" column="risk_tier" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Contact" column="contact_email" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+              <SortableHeader label="Contract Expiry" column="contract_expiry" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
+              <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <TableHead className="w-20">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {pagination.paged.map(v => (

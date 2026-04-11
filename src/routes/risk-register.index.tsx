@@ -5,6 +5,8 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { SortableHeader } from '@/components/crud/SortableHeader';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
@@ -42,8 +44,9 @@ function RiskRegisterPage() {
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
+  const { sorted, sort, toggle: toggleSort } = useTableSort(risks, 'risk_score', 'desc');
   const riskIds = useMemo(() => risks.map(r => r.id), [risks]);
-  const pagination = usePagination(risks);
+  const pagination = usePagination(sorted);
   const bulk = useBulkSelection(riskIds);
 
   const matrix = useMemo(() => {
@@ -95,11 +98,15 @@ function RiskRegisterPage() {
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border text-left">
             <th className="px-3 py-3 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded border-border" /></th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Category</th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Score</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground">L</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground">I</th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+            <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Category" column="category" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Score" column="risk_score" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="L" column="likelihood" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="I" column="impact" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
-          <tbody>{[...pagination.paged].sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0)).map(r => (
+          <tbody>{pagination.paged.map(r => (
             <tr key={r.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(r.id) ? 'bg-primary/5' : ''}`}
               onClick={() => navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } })}>
               <td className="px-3 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(r.id)} onChange={() => bulk.toggle(r.id)} className="rounded border-border" /></td>
