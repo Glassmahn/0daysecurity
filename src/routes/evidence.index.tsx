@@ -1,11 +1,21 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { evidenceItems } from '@/lib/mock-data-extended';
 import { evidenceTypes } from '@/lib/framework-catalog';
 import { Search, Upload, Zap, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Image, Settings, PenTool, ScrollText, Scan, GraduationCap, UserCheck, ShieldAlert, Building2, GitPullRequest, Database, Network, Ticket, CloudDownload } from 'lucide-react';
+import { zodValidator, fallback } from '@tanstack/zod-adapter';
+import { z } from 'zod';
+
+const evidenceSearchSchema = z.object({
+  status: fallback(z.string(), 'all').default('all'),
+  type: fallback(z.string(), 'all').default('all'),
+  source: fallback(z.string(), 'all').default('all'),
+  q: fallback(z.string(), '').default(''),
+});
 
 export const Route = createFileRoute('/evidence/')({
   component: EvidencePage,
+  validateSearch: zodValidator(evidenceSearchSchema),
   head: () => ({
     meta: [
       { title: 'Evidence — WatchDog Security' },
@@ -41,11 +51,8 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 function EvidencePage() {
-  const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [autoFilter, setAutoFilter] = useState<string>('all');
+  const navigate = useNavigate({ from: '/evidence/' });
+  const { status: statusFilter, type: typeFilter, source: autoFilter, q: search } = Route.useSearch();
 
   const filtered = useMemo(() => {
     return evidenceItems.filter(e => {
@@ -60,6 +67,12 @@ function EvidencePage() {
       return true;
     });
   }, [search, statusFilter, typeFilter, autoFilter]);
+
+  const updateSearch = (updates: Record<string, string>) => {
+    navigate({ search: (prev) => ({ ...prev, ...updates }) });
+  };
+
+  const activeFilterCount = [statusFilter, typeFilter, autoFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
   const stats = {
     total: evidenceItems.length,
@@ -76,46 +89,61 @@ function EvidencePage() {
           <h1 className="text-xl font-bold text-foreground">Evidence</h1>
           <p className="text-sm text-muted-foreground">{evidenceItems.length} items · {evidenceTypes.length} collection types supported</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Upload className="h-4 w-4" />
-          Upload Evidence
-        </button>
+        <div className="flex items-center gap-2">
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => navigate({ search: { status: 'all', type: 'all', source: 'all', q: '' } })}
+              className="text-xs text-primary hover:underline cursor-pointer"
+            >
+              Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+            </button>
+          )}
+          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Upload className="h-4 w-4" />
+            Upload Evidence
+          </button>
+        </div>
       </div>
 
       {(stats.expiring > 0 || stats.expired > 0) && (
         <div className="flex gap-3 flex-wrap">
           {stats.expiring > 0 && (
-            <div className="flex-1 min-w-[200px] flex items-center gap-2 px-4 py-2.5 bg-status-in-progress/10 border border-status-in-progress/20 rounded-lg">
+            <button
+              onClick={() => updateSearch({ status: 'expiring' })}
+              className={`flex-1 min-w-[200px] flex items-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all ${statusFilter === 'expiring' ? 'bg-status-in-progress/20 border-2 border-status-in-progress/40' : 'bg-status-in-progress/10 border border-status-in-progress/20'}`}
+            >
               <Clock className="h-4 w-4 text-status-in-progress" />
               <span className="text-sm text-status-in-progress font-medium">{stats.expiring} evidence items expiring soon</span>
-            </div>
+            </button>
           )}
           {stats.expired > 0 && (
-            <div className="flex-1 min-w-[200px] flex items-center gap-2 px-4 py-2.5 bg-status-failing/10 border border-status-failing/20 rounded-lg">
+            <button
+              onClick={() => updateSearch({ status: 'expired' })}
+              className={`flex-1 min-w-[200px] flex items-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all ${statusFilter === 'expired' ? 'bg-status-failing/20 border-2 border-status-failing/40' : 'bg-status-failing/10 border border-status-failing/20'}`}
+            >
               <XCircle className="h-4 w-4 text-status-failing" />
               <span className="text-sm text-status-failing font-medium">{stats.expired} evidence items expired</span>
-            </div>
+            </button>
           )}
         </div>
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-foreground">{stats.total}</div>
-          <div className="text-[10px] text-muted-foreground">Total</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-status-passing">{stats.valid}</div>
-          <div className="text-[10px] text-muted-foreground">Valid</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-status-in-progress">{stats.expiring}</div>
-          <div className="text-[10px] text-muted-foreground">Expiring</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-status-failing">{stats.expired}</div>
-          <div className="text-[10px] text-muted-foreground">Expired</div>
-        </div>
+        {([
+          { key: 'all', label: 'Total', value: stats.total, color: '' },
+          { key: 'valid', label: 'Valid', value: stats.valid, color: 'text-status-passing' },
+          { key: 'expiring', label: 'Expiring', value: stats.expiring, color: 'text-status-in-progress' },
+          { key: 'expired', label: 'Expired', value: stats.expired, color: 'text-status-failing' },
+        ] as const).map(item => (
+          <button
+            key={item.key}
+            onClick={() => updateSearch({ status: statusFilter === item.key ? 'all' : item.key })}
+            className={`bg-card border rounded-lg p-3 text-center hover:border-primary/40 transition-all cursor-pointer ${statusFilter === item.key && item.key !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+          >
+            <div className={`text-xl font-bold ${item.color || 'text-foreground'}`}>{item.value}</div>
+            <div className="text-[10px] text-muted-foreground">{item.label}</div>
+          </button>
+        ))}
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <div className="flex items-center justify-center gap-1">
             <Zap className="h-3.5 w-3.5 text-chart-1" />
@@ -134,9 +162,9 @@ function EvidencePage() {
             return (
               <button
                 key={et.id}
-                onClick={() => setTypeFilter(typeFilter === et.id ? 'all' : et.id)}
-                className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border transition-all text-center ${
-                  typeFilter === et.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+                onClick={() => updateSearch({ type: typeFilter === et.id ? 'all' : et.id })}
+                className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border transition-all text-center cursor-pointer ${
+                  typeFilter === et.id ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'border-border hover:border-primary/40'
                 }`}
               >
                 <Icon className="h-4 w-4 text-muted-foreground" />
@@ -155,23 +183,33 @@ function EvidencePage() {
             type="text"
             placeholder="Search evidence..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => updateSearch({ q: e.target.value })}
             className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+        <select
+          value={statusFilter}
+          onChange={e => updateSearch({ status: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
           <option value="all">All Statuses</option>
           <option value="valid">Valid</option>
           <option value="expiring">Expiring</option>
           <option value="expired">Expired</option>
           <option value="rejected">Rejected</option>
         </select>
-        <select value={autoFilter} onChange={e => setAutoFilter(e.target.value)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+        <select
+          value={autoFilter}
+          onChange={e => updateSearch({ source: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${autoFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
           <option value="all">All Sources</option>
           <option value="auto">Auto-Collected</option>
           <option value="manual">Manual Upload</option>
         </select>
       </div>
+
+      <p className="text-xs text-muted-foreground">{filtered.length} evidence items matching filters</p>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <table className="w-full text-sm">
@@ -222,6 +260,12 @@ function EvidencePage() {
             })}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No evidence matches the current filters.{' '}
+            <button onClick={() => navigate({ search: { status: 'all', type: 'all', source: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
+          </div>
+        )}
       </div>
     </div>
   );
