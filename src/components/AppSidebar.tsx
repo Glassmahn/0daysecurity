@@ -5,6 +5,7 @@ import {
   Plug, Settings, ChevronLeft, ChevronRight, Dog, FlaskConical, Building2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useSidebarStore } from '@/hooks/use-sidebar-store';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
@@ -28,10 +29,11 @@ const navItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const setOpen = useSidebarStore((s) => s.setOpen);
 
   return (
     <aside
-      className={`flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}
+      className={`flex flex-col bg-sidebar border-r border-sidebar-border h-full transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'}`}
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 h-14 border-b border-sidebar-border">
@@ -51,6 +53,7 @@ export function AppSidebar() {
             <Link
               key={item.to}
               to={item.to}
+              onClick={() => setOpen(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-primary font-medium shadow-sm'
@@ -65,10 +68,10 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle - hidden on mobile */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/40 transition-colors"
+        className="hidden lg:flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/40 transition-colors"
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
