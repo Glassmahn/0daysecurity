@@ -27,7 +27,7 @@ export const Route = createFileRoute('/evidence/')({
   validateSearch: zodValidator(evidenceSearchSchema),
   head: () => ({
     meta: [
-      { title: 'Evidence — WatchDog Security' },
+      { title: 'Evidence — ZeroDay Security' },
       { name: 'description', content: 'Evidence management and collection' },
     ],
   }),

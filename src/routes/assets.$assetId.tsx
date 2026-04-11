@@ -5,7 +5,7 @@ export const Route = createFileRoute('/assets/$assetId')({
   component: AssetDetailPage,
   head: () => ({
     meta: [
-      { title: 'Asset Detail — WatchDog Security' },
+      { title: 'Asset Detail — ZeroDay Security' },
       { name: 'description', content: 'Asset detail with vulnerability history, compliance status, and scan results' },
     ],
   }),

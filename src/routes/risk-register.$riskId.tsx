@@ -5,7 +5,7 @@ export const Route = createFileRoute('/risk-register/$riskId')({
   component: RiskDetailPage,
   head: () => ({
     meta: [
-      { title: 'Risk Detail — WatchDog Security' },
+      { title: 'Risk Detail — ZeroDay Security' },
       { name: 'description', content: 'Risk detail with matrix visualization, treatment plan, and linked controls' },
     ],
   }),

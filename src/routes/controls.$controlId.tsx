@@ -5,7 +5,7 @@ export const Route = createFileRoute('/controls/$controlId')({
   component: ControlDetailPage,
   head: () => ({
     meta: [
-      { title: 'Control Detail — WatchDog Security' },
+      { title: 'Control Detail — ZeroDay Security' },
       { name: 'description', content: 'Control detail with evidence mapping, test history, and cross-framework mappings' },
     ],
   }),

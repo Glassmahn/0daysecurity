@@ -7,7 +7,7 @@ import { AdminGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/settings/')({
   component: SettingsPage,
-  head: () => ({ meta: [{ title: 'Settings — WatchDog Security' }] }),
+  head: () => ({ meta: [{ title: 'Settings — ZeroDay Security' }] }),
 });
 
 const tabs = [

@@ -27,7 +27,7 @@ export function AppLayout() {
           </div>
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Loading WatchDog…</span>
+            <span className="text-sm text-muted-foreground">Loading ZeroDay…</span>
           </div>
         </div>
       </div>

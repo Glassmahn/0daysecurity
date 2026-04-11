@@ -4,7 +4,7 @@ import { BarChart3, Download, Calendar, Play } from 'lucide-react';
 
 export const Route = createFileRoute('/reports/')({
   component: ReportsPage,
-  head: () => ({ meta: [{ title: 'Reports — WatchDog Security' }] }),
+  head: () => ({ meta: [{ title: 'Reports — ZeroDay Security' }] }),
 });
 
 function ReportsPage() {

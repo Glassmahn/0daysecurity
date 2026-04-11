@@ -23,7 +23,7 @@ import { WriteGuard } from '@/components/guards/RoleGuards';
 const vendorsSearchSchema = z.object({ riskTier: fallback(z.string(), 'all').default('all'), status: fallback(z.string(), 'all').default('all'), q: fallback(z.string(), '').default('') });
 
 export const Route = createFileRoute('/vendors/')({ component: VendorsIndexPage, validateSearch: zodValidator(vendorsSearchSchema),
-  head: () => ({ meta: [{ title: 'Vendors — WatchDog Security' }, { name: 'description', content: 'Third-party vendor risk management' }] }) });
+  head: () => ({ meta: [{ title: 'Vendors — ZeroDay Security' }, { name: 'description', content: 'Third-party vendor risk management' }] }) });
 
 function riskTierBadge(tier: string | null) {
   const map: Record<string, 'destructive' | 'default' | 'secondary' | 'outline'> = { critical: 'destructive', high: 'default', medium: 'secondary', low: 'outline' };

@@ -25,7 +25,7 @@ export const Route = createFileRoute('/knowledge-base/')({
   validateSearch: zodValidator(kbSearchSchema),
   head: () => ({
     meta: [
-      { title: 'Knowledge Base — WatchDog Security' },
+      { title: 'Knowledge Base — ZeroDay Security' },
       { name: 'description', content: 'Internal security knowledge base, runbooks, and guides' },
     ],
   }),

@@ -26,7 +26,7 @@ export const Route = createFileRoute('/incidents/')({
   validateSearch: zodValidator(incidentsSearchSchema),
   head: () => ({
     meta: [
-      { title: 'Incidents — WatchDog Security' },
+      { title: 'Incidents — ZeroDay Security' },
       { name: 'description', content: 'Security incident management' },
     ],
   }),

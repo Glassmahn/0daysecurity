@@ -68,7 +68,7 @@ export function AppSidebar() {
         </div>
         {!collapsed && (
           <span className="font-display font-bold text-sm text-sidebar-accent-foreground tracking-tight truncate">
-            WatchDog
+            ZeroDay
           </span>
         )}
       </div>

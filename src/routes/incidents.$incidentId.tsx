@@ -5,7 +5,7 @@ export const Route = createFileRoute('/incidents/$incidentId')({
   component: IncidentDetailPage,
   head: () => ({
     meta: [
-      { title: 'Incident Detail — WatchDog Security' },
+      { title: 'Incident Detail — ZeroDay Security' },
       { name: 'description', content: 'Incident workbench with timeline, evidence, and response checklist' },
     ],
   }),

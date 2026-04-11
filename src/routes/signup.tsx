@@ -55,7 +55,7 @@ function SignupPage() {
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-primary p-12 text-primary-foreground">
         <div className="flex items-center gap-3">
           <Dog className="h-8 w-8" />
-          <span className="text-xl font-bold tracking-tight">WatchDog Security</span>
+          <span className="text-xl font-bold tracking-tight">ZeroDay Security</span>
         </div>
         <div className="max-w-md">
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
@@ -65,7 +65,7 @@ function SignupPage() {
             Automate evidence collection, track controls, and stay compliant across every framework.
           </p>
         </div>
-        <p className="text-sm opacity-60">© 2026 WatchDog Security</p>
+        <p className="text-sm opacity-60">© 2026 ZeroDay Security</p>
       </div>
 
       {/* Right panel */}
@@ -73,7 +73,7 @@ function SignupPage() {
         <div className="w-full max-w-sm space-y-8">
           <div className="lg:hidden flex items-center gap-2.5 mb-4">
             <Dog className="h-6 w-6 text-primary" />
-            <span className="font-bold text-foreground">WatchDog Security</span>
+            <span className="font-bold text-foreground">ZeroDay Security</span>
           </div>
 
           <div>

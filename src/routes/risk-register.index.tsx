@@ -13,7 +13,7 @@ import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
 import { WriteGuard } from '@/components/guards/RoleGuards';
 
-export const Route = createFileRoute('/risk-register/')({ component: RiskRegisterPage, head: () => ({ meta: [{ title: 'Risk Register — WatchDog Security' }] }) });
+export const Route = createFileRoute('/risk-register/')({ component: RiskRegisterPage, head: () => ({ meta: [{ title: 'Risk Register — ZeroDay Security' }] }) });
 
 const statusStyles: Record<string, string> = { open: 'bg-status-failing/15 text-status-failing', mitigated: 'bg-status-passing/15 text-status-passing', accepted: 'bg-muted text-muted-foreground', transferred: 'bg-status-in-progress/15 text-status-in-progress', closed: 'bg-muted text-muted-foreground' };
 

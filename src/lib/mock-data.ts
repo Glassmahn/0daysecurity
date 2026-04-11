@@ -1,4 +1,4 @@
-// Mock data for WatchDog Security Dashboard - Meridian Health Tech
+// Mock data for ZeroDay Security Dashboard - Meridian Health Tech
 
 export interface KPIData {
   label: string;
