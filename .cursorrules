@@ -1,0 +1,33 @@
+## Project: ZeroDay Security — GRC Compliance Platform
+
+### Stack
+- TanStack Start v1 (React 19, SSR on Cloudflare Workers)
+- Supabase (Postgres, Auth, RLS, Edge Functions)
+- Tailwind CSS v4 (configured via CSS @import, NOT tailwind.config.js)
+- Vite 7
+
+### Key Conventions
+- File-based routing in `src/routes/` (TanStack Router)
+- Components in `src/components/`, hooks in `src/hooks/`
+- Supabase client: `import { supabase } from '@/integrations/supabase/client'`
+- Server admin client: `import { supabaseAdmin } from '@/integrations/supabase/client.server'`
+- Auth middleware: `import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'`
+- Design tokens defined in `src/styles.css` and `index.css` — use semantic classes, never raw colors
+
+### Do NOT Edit (Auto-Generated)
+- `src/integrations/supabase/client.ts`
+- `src/integrations/supabase/types.ts`
+- `src/routeTree.gen.ts`
+- `.env`
+
+### Database
+- All tables use Row-Level Security (RLS)
+- Roles: admin, analyst, auditor, viewer (stored in `user_roles` table)
+- `has_role(user_id, role)` — SECURITY DEFINER function for policy checks
+- Profiles auto-created on signup via trigger
+
+### Security Focus Areas
+- See `SECURITY.md` for known findings and review checklist
+- RLS policies need tightening on `vendors`, `assets`, `audit_logs` tables
+- Ensure all server functions use `requireSupabaseAuth` middleware
+- Never expose service role key to client code
