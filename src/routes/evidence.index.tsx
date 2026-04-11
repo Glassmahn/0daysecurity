@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
@@ -81,6 +83,7 @@ function EvidencePage() {
     });
   }, [evidence, search, statusFilter, typeFilter, sourceFilter]);
 
+  const pagination = usePagination(filtered);
   const filteredIds = useMemo(() => filtered.map(e => e.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -190,7 +193,7 @@ function EvidencePage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(e => {
+            {pagination.paged.map(e => {
               const sc = statusConfig[e.status] ?? statusConfig.valid;
               const StatusIcon = sc.icon;
               return (
@@ -234,6 +237,7 @@ function EvidencePage() {
             <button onClick={() => navigate({ search: { status: 'all', type: 'all', source: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
           </div>
         )}
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
 
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}

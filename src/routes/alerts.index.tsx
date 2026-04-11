@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { formatDistanceToNow } from 'date-fns';
@@ -85,6 +87,7 @@ function AlertsPage() {
     });
   }, [alerts, severityFilter, statusFilter, search]);
 
+  const pagination = usePagination(filtered);
   const filteredIds = useMemo(() => filtered.map(a => a.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -184,7 +187,7 @@ function AlertsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(alert => (
+            {pagination.paged.map(alert => (
               <tr key={alert.id} className={`border-b border-border hover:bg-muted/50 transition-colors ${bulk.isSelected(alert.id) ? 'bg-primary/5' : ''}`}>
                 <td className="px-3 py-3">
                   <input type="checkbox" checked={bulk.isSelected(alert.id)} onChange={() => bulk.toggle(alert.id)} className="rounded border-border" />
@@ -216,6 +219,7 @@ function AlertsPage() {
             <button onClick={() => navigate({ search: { severity: 'all', status: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
           </div>
         )}
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
 
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}
