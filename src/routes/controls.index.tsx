@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
 import { enrichedControls, controlCategories, frameworkCatalog, evidenceTypes } from '@/lib/framework-catalog';
 import { Search, Filter, Layers, Zap, ChevronDown } from 'lucide-react';
@@ -22,6 +22,7 @@ const statusStyles: Record<string, string> = {
 };
 
 function ControlsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -136,7 +137,7 @@ function ControlsPage() {
               <>
                 <tr
                   key={c.id}
-                  onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
+                  onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.id } })}
                   className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3 font-mono text-xs text-primary">{c.ref}</td>
