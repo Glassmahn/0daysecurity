@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { policies } from '@/lib/mock-data-extended';
 import { FileText, Plus } from 'lucide-react';
 
