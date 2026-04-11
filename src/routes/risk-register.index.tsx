@@ -3,6 +3,8 @@ import { useState, useMemo } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
@@ -41,6 +43,7 @@ function RiskRegisterPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const riskIds = useMemo(() => risks.map(r => r.id), [risks]);
+  const pagination = usePagination(risks);
   const bulk = useBulkSelection(riskIds);
 
   const matrix = useMemo(() => {
@@ -96,7 +99,7 @@ function RiskRegisterPage() {
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Score</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground">L</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground">I</th>
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th><th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
-          <tbody>{[...risks].sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0)).map(r => (
+          <tbody>{[...pagination.paged].sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0)).map(r => (
             <tr key={r.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(r.id) ? 'bg-primary/5' : ''}`}
               onClick={() => navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } })}>
               <td className="px-3 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(r.id)} onChange={() => bulk.toggle(r.id)} className="rounded border-border" /></td>
@@ -113,6 +116,7 @@ function RiskRegisterPage() {
           ))}</tbody>
         </table>
         {risks.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">No risks recorded yet.</div>}
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Risk' : 'Add Risk'} fields={riskFields} initialValues={editing ?? undefined}
         onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />

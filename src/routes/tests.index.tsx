@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePagination } from '@/hooks/use-pagination';
+import { TablePagination } from '@/components/crud/TablePagination';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
@@ -37,6 +39,7 @@ function TestsIndexPage() {
     return tests.filter(t => t.name.toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q));
   }, [tests, search]);
 
+  const pagination = usePagination(filtered);
   const filteredIds = useMemo(() => filtered.map(t => t.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -84,7 +87,7 @@ function TestsIndexPage() {
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Result</th>
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
-          <tbody>{filtered.map(t => (
+          <tbody>{pagination.paged.map(t => (
             <tr key={t.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(t.id) ? 'bg-primary/5' : ''}`}
               onClick={() => navigate({ to: '/tests/$testId', params: { testId: t.id } })}>
               <td className="px-3 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(t.id)} onChange={() => bulk.toggle(t.id)} className="rounded border-border" /></td>
@@ -101,6 +104,7 @@ function TestsIndexPage() {
           ))}</tbody>
         </table>
         {filtered.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">No tests found.</div>}
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Test' : 'New Test'} fields={testFields} initialValues={editing ?? undefined}
         onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
