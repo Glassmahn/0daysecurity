@@ -5,6 +5,8 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { SortableHeader } from '@/components/crud/SortableHeader';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
@@ -39,7 +41,8 @@ function TestsIndexPage() {
     return tests.filter(t => t.name.toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q));
   }, [tests, search]);
 
-  const pagination = usePagination(filtered);
+  const { sorted, sort, toggle: toggleSort } = useTableSort(filtered, 'name', 'asc');
+  const pagination = usePagination(sorted);
   const filteredIds = useMemo(() => filtered.map(t => t.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -80,11 +83,11 @@ function TestsIndexPage() {
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border text-left">
             <th className="px-3 py-3 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded border-border" /></th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Test Name</th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Schedule</th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Last Run</th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Result</th>
+            <SortableHeader label="Test Name" column="name" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Schedule" column="schedule" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+            <SortableHeader label="Last Run" column="last_run" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
+            <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Result" column="result" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
           <tbody>{pagination.paged.map(t => (

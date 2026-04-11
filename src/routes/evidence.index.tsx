@@ -5,6 +5,8 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2 } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { SortableHeader } from '@/components/crud/SortableHeader';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
@@ -83,7 +85,8 @@ function EvidencePage() {
     });
   }, [evidence, search, statusFilter, typeFilter, sourceFilter]);
 
-  const pagination = usePagination(filtered);
+  const { sorted, sort, toggle: toggleSort } = useTableSort(filtered, 'collected_at', 'desc');
+  const pagination = usePagination(sorted);
   const filteredIds = useMemo(() => filtered.map(e => e.id), [filtered]);
   const bulk = useBulkSelection(filteredIds);
 
@@ -184,11 +187,11 @@ function EvidencePage() {
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
                   onChange={bulk.toggleAll} className="rounded border-border" />
               </th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Title</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Type</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden md:table-cell">Source</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Collected</th>
+              <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Type" column="type" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Source" column="source" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+              <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Collected" column="collected_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
