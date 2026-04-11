@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { risks } from '@/lib/mock-data-extended';
 import { useState } from 'react';
 import { AlertOctagon, Plus } from 'lucide-react';
@@ -24,6 +24,7 @@ function scoreColor(score: number) {
 
 function RiskRegisterPage() {
   const [view, setView] = useState<'matrix' | 'table'>('matrix');
+  const navigate = useNavigate();
 
   // Build 5x5 matrix
   const matrix: Record<string, typeof risks> = {};
@@ -120,7 +121,7 @@ function RiskRegisterPage() {
           </thead>
           <tbody>
             {risks.sort((a, b) => b.riskScore - a.riskScore).map(r => (
-              <tr key={r.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer">
+              <tr key={r.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } })}>
                 <td className="px-4 py-3">
                   <div className="font-medium text-foreground">{r.title}</div>
                   <div className="text-xs text-muted-foreground line-clamp-1">{r.description}</div>
