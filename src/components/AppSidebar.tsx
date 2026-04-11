@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import {
   LayoutDashboard, Shield, ListChecks, Paperclip, AlertTriangle, Flame,
   Monitor, Users, FileText, AlertOctagon, ClipboardCheck, BarChart3,
-  Plug, Settings, ChevronLeft, ChevronRight, Dog,
+  Plug, Settings, ChevronLeft, ChevronRight, Dog, FlaskConical, Building2,
 } from 'lucide-react';
 import { useState } from 'react';
 
