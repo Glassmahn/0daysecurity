@@ -213,5 +213,6 @@ function SettingsPage() {
         </div>
       )}
     </div>
+    </AdminGuard>
   );
 }
