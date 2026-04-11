@@ -23,7 +23,8 @@ export function ControlStatusDonut() {
   const navigate = useNavigate();
 
   const handleClick = (_: unknown, index: number) => {
-    navigate({ to: '/controls' });
+    const filter = controlData[index]?.filter || 'all';
+    navigate({ to: '/controls', search: { status: filter } });
   };
 
   return (
@@ -67,7 +68,7 @@ export function ControlStatusDonut() {
         {controlData.map(d => (
           <button
             key={d.name}
-            onClick={() => navigate({ to: '/controls' })}
+            onClick={() => navigate({ to: '/controls', search: { status: d.filter } })}
             className="flex items-center gap-2 text-xs hover:bg-accent/50 rounded px-1 py-0.5 transition-colors cursor-pointer"
           >
             <span className="h-2 w-2 rounded-full shrink-0" style={{ background: d.color }} />
@@ -76,7 +77,7 @@ export function ControlStatusDonut() {
           </button>
         ))}
       </div>
-      <p className="text-[10px] text-muted-foreground mt-2 text-center">Click to view controls</p>
+      <p className="text-[10px] text-muted-foreground mt-2 text-center">Click to filter controls by status</p>
     </div>
   );
 }

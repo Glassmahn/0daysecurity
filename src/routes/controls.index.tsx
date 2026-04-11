@@ -1,10 +1,20 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState, useMemo } from 'react';
-import { enrichedControls, controlCategories, frameworkCatalog, evidenceTypes } from '@/lib/framework-catalog';
-import { Search, Filter, Layers, Zap, ChevronDown } from 'lucide-react';
+import { useMemo } from 'react';
+import { enrichedControls } from '@/lib/framework-catalog';
+import { Search, Zap } from 'lucide-react';
+import { zodValidator, fallback } from '@tanstack/zod-adapter';
+import { z } from 'zod';
+
+const controlsSearchSchema = z.object({
+  status: fallback(z.string(), 'all').default('all'),
+  category: fallback(z.string(), 'all').default('all'),
+  framework: fallback(z.string(), 'all').default('all'),
+  q: fallback(z.string(), '').default(''),
+});
 
 export const Route = createFileRoute('/controls/')({
   component: ControlsPage,
+  validateSearch: zodValidator(controlsSearchSchema),
   head: () => ({
     meta: [
       { title: 'Controls — WatchDog Security' },
@@ -22,14 +32,9 @@ const statusStyles: Record<string, string> = {
 };
 
 function ControlsPage() {
-  const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [frameworkFilter, setFrameworkFilter] = useState<string>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const navigate = useNavigate({ from: '/controls/' });
+  const { status: statusFilter, category: categoryFilter, framework: frameworkFilter, q: search } = Route.useSearch();
 
-  const activeFrameworks = frameworkCatalog.filter(fw => fw.enabled);
   const usedCategories = [...new Set(enrichedControls.map(c => c.category))].sort();
 
   const filtered = useMemo(() => {
@@ -52,28 +57,44 @@ function ControlsPage() {
     automatable: enrichedControls.filter(c => c.automatable).length,
   };
 
+  const updateSearch = (updates: Record<string, string>) => {
+    navigate({ search: (prev) => ({ ...prev, ...updates }) });
+  };
+
+  const activeFilterCount = [statusFilter, categoryFilter, frameworkFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
+
   return (
     <div className="space-y-6 animate-slide-in">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Controls</h1>
-        <p className="text-sm text-muted-foreground">{enrichedControls.length} controls across {[...new Set(enrichedControls.flatMap(c => c.frameworks))].length} frameworks</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Controls</h1>
+          <p className="text-sm text-muted-foreground">{enrichedControls.length} controls across {[...new Set(enrichedControls.flatMap(c => c.frameworks))].length} frameworks</p>
+        </div>
+        {activeFilterCount > 0 && (
+          <button
+            onClick={() => navigate({ search: { status: 'all', category: 'all', framework: 'all', q: '' } })}
+            className="text-xs text-primary hover:underline cursor-pointer"
+          >
+            Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-lg p-4">
+        <button onClick={() => updateSearch({ status: 'all' })} className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/40 transition-colors cursor-pointer">
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
           <div className="text-xs text-muted-foreground">Total Controls</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
+        </button>
+        <button onClick={() => updateSearch({ status: 'implemented' })} className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/40 transition-colors cursor-pointer">
           <div className="text-2xl font-bold text-status-passing">{stats.implemented}</div>
           <div className="text-xs text-muted-foreground">Implemented</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
+        </button>
+        <button onClick={() => updateSearch({ status: 'failing' })} className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/40 transition-colors cursor-pointer">
           <div className="text-2xl font-bold text-status-failing">{stats.failing}</div>
           <div className="text-xs text-muted-foreground">Failing</div>
-        </div>
+        </button>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-1">
             <Zap className="h-4 w-4 text-chart-1" />
@@ -91,22 +112,34 @@ function ControlsPage() {
             type="text"
             placeholder="Search controls..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => updateSearch({ q: e.target.value })}
             className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+        <select
+          value={statusFilter}
+          onChange={e => updateSearch({ status: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
           <option value="all">All Statuses</option>
           <option value="implemented">Implemented</option>
           <option value="in_progress">In Progress</option>
           <option value="failing">Failing</option>
           <option value="not_implemented">Not Implemented</option>
         </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+        <select
+          value={categoryFilter}
+          onChange={e => updateSearch({ category: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${categoryFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
           <option value="all">All Categories</option>
           {usedCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
         </select>
-        <select value={frameworkFilter} onChange={e => setFrameworkFilter(e.target.value)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+        <select
+          value={frameworkFilter}
+          onChange={e => updateSearch({ framework: e.target.value })}
+          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${frameworkFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+        >
           <option value="all">All Frameworks</option>
           {[...new Set(enrichedControls.flatMap(c => c.frameworks))].sort().map(fw => (
             <option key={fw} value={fw}>{fw}</option>
@@ -134,90 +167,54 @@ function ControlsPage() {
           </thead>
           <tbody>
             {filtered.map(c => (
-              <>
-                <tr
-                  key={c.id}
-                  onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.id } })}
-                  className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{c.ref}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-foreground">{c.title}</span>
-                      {c.automatable && <Zap className="h-3 w-3 text-chart-1 shrink-0" />}
+              <tr
+                key={c.id}
+                onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.id } })}
+                className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                <td className="px-4 py-3 font-mono text-xs text-primary">{c.ref}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-foreground">{c.title}</span>
+                    {c.automatable && <Zap className="h-3 w-3 text-chart-1 shrink-0" />}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.category}</td>
+                <td className="px-4 py-3">
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${statusStyles[c.status]}`}>
+                    {c.status.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-4 py-3 hidden lg:table-cell">
+                  <div className="flex flex-wrap gap-1">
+                    {c.frameworks.slice(0, 3).map(fw => (
+                      <span key={fw} className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground">{fw}</span>
+                    ))}
+                    {c.frameworks.length > 3 && (
+                      <span className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground">+{c.frameworks.length - 3}</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.owner}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-12 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${c.implementationPct}%` }} />
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.category}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${statusStyles[c.status]}`}>
-                      {c.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {c.frameworks.slice(0, 3).map(fw => (
-                        <span key={fw} className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground">{fw}</span>
-                      ))}
-                      {c.frameworks.length > 3 && (
-                        <span className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground">+{c.frameworks.length - 3}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.owner}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-12 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: `${c.implementationPct}%` }} />
-                      </div>
-                      <span className="text-xs text-muted-foreground">{c.implementationPct}%</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{c.evidenceCount}</td>
-                </tr>
-                {expandedId === c.id && (
-                  <tr key={`${c.id}-detail`} className="border-b border-border">
-                    <td colSpan={8} className="px-4 py-4 bg-muted/30">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</h4>
-                          <p className="text-sm text-foreground">{c.description}</p>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mt-3 mb-1">Test Frequency</h4>
-                          <p className="text-sm text-foreground capitalize">{c.testFrequency}</p>
-                          {c.lastTested && (
-                            <>
-                              <h4 className="text-xs font-semibold text-muted-foreground uppercase mt-3 mb-1">Last Tested</h4>
-                              <p className="text-sm text-foreground">{c.lastTested}</p>
-                            </>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Cross-Framework Mappings</h4>
-                          <div className="space-y-1">
-                            {c.crossMappings.map(m => (
-                              <div key={m.framework + m.ref} className="flex items-center gap-2 text-sm">
-                                <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded font-mono">{m.framework}</span>
-                                <span className="text-muted-foreground">{m.ref}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mt-3 mb-1">Evidence Types</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {c.evidenceTypes.map(et => (
-                              <span key={et} className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground capitalize">
-                                {et.replace(/_/g, ' ')}
-                              </span>
-                            ))}
-                            {c.evidenceTypes.length === 0 && <span className="text-xs text-muted-foreground italic">No evidence linked</span>}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
+                    <span className="text-xs text-muted-foreground">{c.implementationPct}%</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{c.evidenceCount}</td>
+              </tr>
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No controls match the current filters.{' '}
+            <button onClick={() => navigate({ search: { status: 'all', category: 'all', framework: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
+          </div>
+        )}
       </div>
     </div>
   );

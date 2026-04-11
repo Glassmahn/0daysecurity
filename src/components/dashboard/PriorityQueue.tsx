@@ -9,11 +9,11 @@ const typeIcons: Record<string, React.ElementType> = {
   review: Users,
 };
 
-const typeRoutes: Record<string, string> = {
-  alert: '/alerts',
-  control: '/controls',
-  evidence: '/evidence',
-  review: '/personnel',
+const typeRouteConfig: Record<string, { to: string; search?: Record<string, string> }> = {
+  alert: { to: '/alerts' },
+  control: { to: '/controls', search: { status: 'failing' } },
+  evidence: { to: '/evidence' },
+  review: { to: '/personnel' },
 };
 
 const severityStyles: Record<string, string> = {
@@ -32,11 +32,12 @@ export function PriorityQueue({ items }: { items: PriorityItem[] }) {
       <div className="space-y-2">
         {items.map((item) => {
           const Icon = typeIcons[item.type] || AlertTriangle;
-          const route = typeRoutes[item.type] || '/alerts';
+          const config = typeRouteConfig[item.type] || { to: '/alerts' };
           return (
             <Link
               key={item.id}
-              to={route as '/'}
+              to={config.to as '/'}
+              search={config.search}
               className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-surface hover:bg-surface-raised hover:border-primary/30 transition-colors group"
             >
               <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
