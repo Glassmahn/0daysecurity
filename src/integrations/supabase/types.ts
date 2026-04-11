@@ -119,6 +119,36 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_snapshots: {
+        Row: {
+          controls_passing_pct: number
+          created_at: string
+          evidence_valid_pct: number
+          frameworks_data: Json | null
+          id: string
+          overall_score: number
+          snapshot_date: string
+        }
+        Insert: {
+          controls_passing_pct?: number
+          created_at?: string
+          evidence_valid_pct?: number
+          frameworks_data?: Json | null
+          id?: string
+          overall_score?: number
+          snapshot_date?: string
+        }
+        Update: {
+          controls_passing_pct?: number
+          created_at?: string
+          evidence_valid_pct?: number
+          frameworks_data?: Json | null
+          id?: string
+          overall_score?: number
+          snapshot_date?: string
+        }
+        Relationships: []
+      }
       controls: {
         Row: {
           category: string | null
