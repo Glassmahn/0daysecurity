@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { testLibraryCatalog, getTestCategories, getTestFrameworks, type TestTemplate } from '@/lib/test-library-catalog';
 import { enrichedControls } from '@/lib/framework-catalog';
+import { TestCoverageDashboard } from '@/components/tests/TestCoverageDashboard';
 
 export const Route = createFileRoute('/tests/')({ component: TestsIndexPage,
   head: () => ({ meta: [{ title: 'Tests — ZeroDay Security' }, { name: 'description', content: 'Compliance test management' }] }) });
