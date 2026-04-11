@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
@@ -15,6 +15,7 @@ import { WriteGuard } from '@/components/guards/RoleGuards';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { testLibraryCatalog, getTestCategories, getTestFrameworks, type TestTemplate } from '@/lib/test-library-catalog';
+import { enrichedControls } from '@/lib/framework-catalog';
 
 export const Route = createFileRoute('/tests/')({ component: TestsIndexPage,
   head: () => ({ meta: [{ title: 'Tests — ZeroDay Security' }, { name: 'description', content: 'Compliance test management' }] }) });
@@ -340,7 +341,16 @@ function TestsIndexPage() {
                           </div>
                           <div>
                             <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Control Refs</div>
-                            <div className="flex flex-wrap gap-1">{tmpl.controlRefs.map(r => <Badge key={r} variant="secondary" className="text-[10px] font-mono">{r}</Badge>)}</div>
+                            <div className="flex flex-wrap gap-1">{tmpl.controlRefs.map(r => {
+                              const ec = enrichedControls.find(c => c.ref === r);
+                              return ec ? (
+                                <Link key={r} to="/controls/$controlId" params={{ controlId: ec.id }} onClick={e => e.stopPropagation()}>
+                                  <Badge variant="secondary" className="text-[10px] font-mono hover:bg-primary/20 cursor-pointer transition-colors">{r}</Badge>
+                                </Link>
+                              ) : (
+                                <Badge key={r} variant="secondary" className="text-[10px] font-mono">{r}</Badge>
+                              );
+                            })}</div>
                           </div>
                           <div>
                             <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Frameworks</div>
