@@ -41,6 +41,7 @@ import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
 import { Route as RiskRegisterRiskIdRouteImport } from './routes/risk-register.$riskId'
 import { Route as PoliciesPolicyIdRouteImport } from './routes/policies.$policyId'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
+import { Route as EvidenceEvidenceIdRouteImport } from './routes/evidence.$evidenceId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -202,6 +203,11 @@ const IncidentsIncidentIdRoute = IncidentsIncidentIdRouteImport.update({
   path: '/$incidentId',
   getParentRoute: () => IncidentsRoute,
 } as any)
+const EvidenceEvidenceIdRoute = EvidenceEvidenceIdRouteImport.update({
+  id: '/$evidenceId',
+  path: '/$evidenceId',
+  getParentRoute: () => EvidenceRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/evidence/$evidenceId'
     | '/incidents/$incidentId'
     | '/policies/$policyId'
     | '/risk-register/$riskId'
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/evidence/$evidenceId'
     | '/incidents/$incidentId'
     | '/policies/$policyId'
     | '/risk-register/$riskId'
@@ -364,6 +375,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/risk-register'
     | '/settings'
+    | '/evidence/$evidenceId'
     | '/incidents/$incidentId'
     | '/policies/$policyId'
     | '/risk-register/$riskId'
@@ -627,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IncidentsIncidentIdRouteImport
       parentRoute: typeof IncidentsRoute
     }
+    '/evidence/$evidenceId': {
+      id: '/evidence/$evidenceId'
+      path: '/$evidenceId'
+      fullPath: '/evidence/$evidenceId'
+      preLoaderRoute: typeof EvidenceEvidenceIdRouteImport
+      parentRoute: typeof EvidenceRoute
+    }
   }
 }
 
@@ -688,10 +707,12 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 )
 
 interface EvidenceRouteChildren {
+  EvidenceEvidenceIdRoute: typeof EvidenceEvidenceIdRoute
   EvidenceIndexRoute: typeof EvidenceIndexRoute
 }
 
 const EvidenceRouteChildren: EvidenceRouteChildren = {
+  EvidenceEvidenceIdRoute: EvidenceEvidenceIdRoute,
   EvidenceIndexRoute: EvidenceIndexRoute,
 }
 
