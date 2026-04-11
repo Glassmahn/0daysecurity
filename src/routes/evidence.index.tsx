@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2, Download } from 'lucide-react';
+import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2, Download, Paperclip, Filter } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -34,9 +34,9 @@ export const Route = createFileRoute('/evidence/')({
 });
 
 const statusConfig: Record<string, { style: string; icon: React.ElementType; label: string }> = {
-  valid: { style: 'bg-status-passing/15 text-status-passing', icon: CheckCircle, label: 'Valid' },
-  pending_review: { style: 'bg-status-in-progress/15 text-status-in-progress', icon: Clock, label: 'Pending Review' },
-  expired: { style: 'bg-status-failing/15 text-status-failing', icon: XCircle, label: 'Expired' },
+  valid: { style: 'bg-status-passing/12 text-status-passing', icon: CheckCircle, label: 'Valid' },
+  pending_review: { style: 'bg-status-in-progress/12 text-status-in-progress', icon: Clock, label: 'Pending Review' },
+  expired: { style: 'bg-status-failing/12 text-status-failing', icon: XCircle, label: 'Expired' },
   rejected: { style: 'bg-muted text-muted-foreground', icon: AlertTriangle, label: 'Rejected' },
 };
 
@@ -108,37 +108,53 @@ function EvidencePage() {
   const usedTypes = useMemo(() => [...new Set(evidence.map(e => e.type))].sort(), [evidence]);
 
   if (loading) {
-    return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+        <p className="text-sm text-muted-foreground">Loading evidence…</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 animate-slide-in">
+    <div className="space-y-5 animate-fade-up">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Evidence</h1>
-          <p className="text-sm text-muted-foreground">{evidence.length} items</p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+            <Paperclip className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Evidence</h1>
+            <p className="text-sm text-muted-foreground">{evidence.length} items collected</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
             <button onClick={() => navigate({ search: { status: 'all', type: 'all', source: 'all', q: '' } })}
-              className="text-xs text-primary hover:underline cursor-pointer">
+              className="text-xs text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
           )}
           <button onClick={() => exportToCsv('evidence', filtered as Record<string, unknown>[], [
               { key: 'title', label: 'Title' }, { key: 'type', label: 'Type' }, { key: 'status', label: 'Status' },
               { key: 'source', label: 'Source' }, { key: 'collected_at', label: 'Collected' }, { key: 'expires_at', label: 'Expires' },
-            ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
+            ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <WriteGuard><button onClick={() => { setEditing(null); setFormOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus className="h-4 w-4" /> Add Evidence
-          </button></WriteGuard>
+          <WriteGuard>
+            <button onClick={() => { setEditing(null); setFormOpen(true); }}
+              className="flex items-center gap-1.5 px-4 py-2 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 shadow-glow transition-all">
+              <Plus className="h-4 w-4" /> Add Evidence
+            </button>
+          </WriteGuard>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
         {([
           { key: 'all', label: 'Total', value: stats.total, color: '' },
           { key: 'valid', label: 'Valid', value: stats.valid, color: 'text-status-passing' },
@@ -146,34 +162,35 @@ function EvidencePage() {
           { key: 'expired', label: 'Expired', value: stats.expired, color: 'text-status-failing' },
         ] as const).map(item => (
           <button key={item.key} onClick={() => updateSearch({ status: statusFilter === item.key ? 'all' : item.key })}
-            className={`bg-card border rounded-lg p-3 text-center hover:border-primary/40 transition-all cursor-pointer ${statusFilter === item.key && item.key !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
-            <div className={`text-xl font-bold ${item.color || 'text-foreground'}`}>{item.value}</div>
-            <div className="text-[10px] text-muted-foreground">{item.label}</div>
+            className={`bg-card border rounded-xl p-4 text-left hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer ${statusFilter === item.key && item.key !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+            <div className={`text-2xl font-display font-bold ${item.color || 'text-foreground'}`}>{item.value}</div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-1">{item.label}</div>
           </button>
         ))}
       </div>
 
+      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input type="text" placeholder="Search evidence..." value={search} onChange={e => updateSearch({ q: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" />
         </div>
         <select value={statusFilter} onChange={e => updateSearch({ status: e.target.value })}
-          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
+          className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${statusFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Statuses</option>
           <option value="valid">Valid</option><option value="pending_review">Pending Review</option>
           <option value="expired">Expired</option><option value="rejected">Rejected</option>
         </select>
         {usedTypes.length > 1 && (
           <select value={typeFilter} onChange={e => updateSearch({ type: e.target.value })}
-            className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${typeFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
+            className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${typeFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
             <option value="all">All Types</option>
             {usedTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
           </select>
         )}
         <select value={sourceFilter} onChange={e => updateSearch({ source: e.target.value })}
-          className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${sourceFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
+          className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${sourceFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Sources</option>
           <option value="auto">Auto-Collected</option><option value="manual">Manual Upload</option>
         </select>
@@ -187,20 +204,21 @@ function EvidencePage() {
         onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })}
         entityName="evidence item" />
 
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      {/* Table */}
+      <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-card">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left">
-              <th className="px-3 py-3 w-10">
+            <tr className="border-b border-border/60 text-left bg-surface/50">
+              <th className="px-3 py-3.5 w-10">
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
-                  onChange={bulk.toggleAll} className="rounded border-border" />
+                  onChange={bulk.toggleAll} className="rounded-md border-border" />
               </th>
               <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Type" column="type" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Source" column="source" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
               <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Collected" column="collected_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+              <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -208,33 +226,35 @@ function EvidencePage() {
               const sc = statusConfig[e.status] ?? statusConfig.valid;
               const StatusIcon = sc.icon;
               return (
-                <tr key={e.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(e.id) ? 'bg-primary/5' : ''}`}
+                <tr key={e.id} className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(e.id) ? 'bg-primary/5' : ''}`}
                   onClick={() => navigate({ to: '/evidence/$evidenceId', params: { evidenceId: e.id } })}>
-                  <td className="px-3 py-3" onClick={ev => ev.stopPropagation()}>
-                    <input type="checkbox" checked={bulk.isSelected(e.id)} onChange={() => bulk.toggle(e.id)} className="rounded border-border" />
+                  <td className="px-3 py-3.5" onClick={ev => ev.stopPropagation()}>
+                    <input type="checkbox" checked={bulk.isSelected(e.id)} onChange={() => bulk.toggle(e.id)} className="rounded-md border-border" />
                   </td>
-                  <td className="px-4 py-3 text-foreground">{e.title}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5 text-foreground font-medium">{e.title}</td>
+                  <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground capitalize">{e.type.replace(/_/g, ' ')}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{e.source ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${sc.style}`}>
+                  <td className="px-4 py-3.5 text-muted-foreground hidden md:table-cell">{e.source ?? '—'}</td>
+                  <td className="px-4 py-3.5">
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-md ${sc.style}`}>
                       <StatusIcon className="h-3 w-3" />{sc.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden lg:table-cell">
                     {e.collected_at ? new Date(e.collected_at).toLocaleDateString() : '—'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1" onClick={ev => ev.stopPropagation()}>
-                      <button onClick={() => { setEditing({ title: e.title, type: e.type, status: e.status, source: e.source, _id: e.id }); setFormOpen(true); }}
-                        className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-<WriteGuard>                      <button onClick={() => setDeleteTarget({ id: e.id, title: e.title })}
-                        className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
+                      <WriteGuard>
+                        <button onClick={() => { setEditing({ title: e.title, type: e.type, status: e.status, source: e.source, _id: e.id }); setFormOpen(true); }}
+                          className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setDeleteTarget({ id: e.id, title: e.title })}
+                          className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </WriteGuard>
                     </div>
                   </td>
                 </tr>
@@ -243,9 +263,12 @@ function EvidencePage() {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            No evidence matches the current filters.{' '}
-            <button onClick={() => navigate({ search: { status: 'all', type: 'all', source: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear filters</button>
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-3">
+            <div className="h-12 w-12 rounded-xl bg-muted/50 flex items-center justify-center">
+              <Filter className="h-5 w-5 text-muted-foreground/50" />
+            </div>
+            <p>No evidence matches the current filters.</p>
+            <button onClick={() => navigate({ search: { status: 'all', type: 'all', source: 'all', q: '' } })} className="text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium text-xs">Clear filters</button>
           </div>
         )}
         <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />

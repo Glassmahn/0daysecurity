@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Plus, Loader2, Pencil, Trash2, Download } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Download, AlertOctagon } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -15,7 +15,7 @@ import { WriteGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/risk-register/')({ component: RiskRegisterPage, head: () => ({ meta: [{ title: 'Risk Register — ZeroDay Security' }] }) });
 
-const statusStyles: Record<string, string> = { open: 'bg-status-failing/15 text-status-failing', mitigated: 'bg-status-passing/15 text-status-passing', accepted: 'bg-muted text-muted-foreground', transferred: 'bg-status-in-progress/15 text-status-in-progress', closed: 'bg-muted text-muted-foreground' };
+const statusStyles: Record<string, string> = { open: 'bg-status-failing/12 text-status-failing', mitigated: 'bg-status-passing/12 text-status-passing', accepted: 'bg-muted text-muted-foreground', transferred: 'bg-status-in-progress/12 text-status-in-progress', closed: 'bg-muted text-muted-foreground' };
 
 function scoreColor(score: number | null) {
   if (!score) return 'bg-muted text-muted-foreground';
@@ -57,38 +57,59 @@ function RiskRegisterPage() {
     return m;
   }, [risks]);
 
-  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      </div>
+      <p className="text-sm text-muted-foreground">Loading risks…</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-slide-in">
+    <div className="space-y-5 animate-fade-up">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-foreground">Risk Register</h1><p className="text-sm text-muted-foreground">{risks.length} identified risks</p></div>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+            <AlertOctagon className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Risk Register</h1>
+            <p className="text-sm text-muted-foreground">{risks.length} identified risks</p>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 bg-secondary rounded-md p-0.5">
-            <button onClick={() => setView('matrix')} className={`px-3 py-1 text-xs font-medium rounded transition-colors ${view === 'matrix' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Matrix</button>
-            <button onClick={() => setView('table')} className={`px-3 py-1 text-xs font-medium rounded transition-colors ${view === 'table' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Table</button>
+          <div className="flex gap-1 bg-card border border-border/60 rounded-xl p-1">
+            <button onClick={() => setView('matrix')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${view === 'matrix' ? 'gradient-primary text-white shadow-glow' : 'text-muted-foreground hover:text-foreground'}`}>Matrix</button>
+            <button onClick={() => setView('table')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${view === 'table' ? 'gradient-primary text-white shadow-glow' : 'text-muted-foreground hover:text-foreground'}`}>Table</button>
           </div>
           <button onClick={() => exportToCsv('risks', risks as Record<string, unknown>[], [
               { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'risk_score', label: 'Score' },
               { key: 'likelihood', label: 'Likelihood' }, { key: 'impact', label: 'Impact' }, { key: 'status', label: 'Status' }, { key: 'mitigation_plan', label: 'Mitigation' },
-            ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
+            ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <WriteGuard><button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Add Risk</button></WriteGuard>
+          <WriteGuard>
+            <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-1.5 px-4 py-2 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 shadow-glow transition-all">
+              <Plus className="h-4 w-4" /> Add Risk
+            </button>
+          </WriteGuard>
         </div>
       </div>
 
+      {/* Heat Map */}
       {view === 'matrix' && (
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Risk Heat Map — Likelihood × Impact</h3>
+        <div className="bg-card border border-border/60 rounded-xl p-6 shadow-card">
+          <h3 className="text-sm font-display font-semibold text-foreground mb-4">Risk Heat Map — Likelihood × Impact</h3>
           <div className="flex gap-2">
             <div className="flex flex-col-reverse justify-between py-1 pr-2">{[1,2,3,4,5].map(l => <div key={l} className="h-16 flex items-center text-xs text-muted-foreground">{l}</div>)}<div className="h-6" /></div>
             <div className="flex-1">
               <div className="grid grid-cols-5 gap-1">{[5,4,3,2,1].map(likelihood => [1,2,3,4,5].map(impact => {
                 const cellRisks = matrix[`${likelihood}-${impact}`] || []; const score = likelihood * impact;
                 const bg = score >= 15 ? 'bg-severity-critical/20 border-severity-critical/30' : score >= 10 ? 'bg-severity-high/20 border-severity-high/30' : score >= 6 ? 'bg-severity-medium/20 border-severity-medium/30' : 'bg-status-passing/10 border-status-passing/20';
-                return <div key={`${likelihood}-${impact}`} className={`h-16 rounded border ${bg} flex items-center justify-center text-xs transition-all ${cellRisks.length > 0 ? 'cursor-pointer hover:scale-105' : ''}`} title={cellRisks.map(r => r.title).join('\n') || `L${likelihood} × I${impact}`}>
-                  {cellRisks.length > 0 && <span className={`text-xs font-bold px-2 py-0.5 rounded ${scoreColor(score)}`}>{cellRisks.length}</span>}
+                return <div key={`${likelihood}-${impact}`} className={`h-16 rounded-lg border ${bg} flex items-center justify-center text-xs transition-all ${cellRisks.length > 0 ? 'cursor-pointer hover:scale-105' : ''}`} title={cellRisks.map(r => r.title).join('\n') || `L${likelihood} × I${impact}`}>
+                  {cellRisks.length > 0 && <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${scoreColor(score)}`}>{cellRisks.length}</span>}
                 </div>;
               }))}</div>
               <div className="grid grid-cols-5 gap-1 mt-1">{[1,2,3,4,5].map(i => <div key={i} className="text-center text-xs text-muted-foreground">{i}</div>)}</div>
@@ -102,35 +123,38 @@ function RiskRegisterPage() {
       <BulkActionBar count={bulk.count} onClear={bulk.clear} onBulkDelete={() => bulkRemove([...bulk.selected])}
         statusOptions={riskStatusOptions} onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })} entityName="risk" />
 
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      {/* Table */}
+      <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-card">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-border text-left">
-            <th className="px-3 py-3 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded border-border" /></th>
+          <thead><tr className="border-b border-border/60 text-left bg-surface/50">
+            <th className="px-3 py-3.5 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
             <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Category" column="category" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Score" column="risk_score" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="L" column="likelihood" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="I" column="impact" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-            <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+            <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
           <tbody>{pagination.paged.map(r => (
-            <tr key={r.id} className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${bulk.isSelected(r.id) ? 'bg-primary/5' : ''}`}
+            <tr key={r.id} className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(r.id) ? 'bg-primary/5' : ''}`}
               onClick={() => navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } })}>
-              <td className="px-3 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(r.id)} onChange={() => bulk.toggle(r.id)} className="rounded border-border" /></td>
-              <td className="px-4 py-3"><div className="font-medium text-foreground">{r.title}</div><div className="text-xs text-muted-foreground line-clamp-1">{r.description}</div></td>
-              <td className="px-4 py-3 text-muted-foreground text-xs">{r.category}</td>
-              <td className="px-4 py-3"><span className={`text-xs font-bold px-2 py-0.5 rounded ${scoreColor(r.risk_score)}`}>{r.risk_score ?? '—'}</span></td>
-              <td className="px-4 py-3 text-center text-muted-foreground">{r.likelihood}</td><td className="px-4 py-3 text-center text-muted-foreground">{r.impact}</td>
-              <td className="px-4 py-3"><span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[r.status] ?? 'bg-muted text-muted-foreground'}`}>{r.status}</span></td>
-              <td className="px-4 py-3"><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                <button onClick={() => { setEditing({ title: r.title, description: r.description, category: r.category, likelihood: r.likelihood, impact: r.impact, status: r.status, mitigation_plan: r.mitigation_plan, _id: r.id }); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-<WriteGuard>                <button onClick={() => setDeleteTarget({ id: r.id, title: r.title })} className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
+              <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(r.id)} onChange={() => bulk.toggle(r.id)} className="rounded-md border-border" /></td>
+              <td className="px-4 py-3.5"><div className="font-medium text-foreground">{r.title}</div><div className="text-xs text-muted-foreground line-clamp-1">{r.description}</div></td>
+              <td className="px-4 py-3.5 text-muted-foreground text-xs">{r.category}</td>
+              <td className="px-4 py-3.5"><span className={`text-xs font-bold px-2 py-1 rounded-md ${scoreColor(r.risk_score)}`}>{r.risk_score ?? '—'}</span></td>
+              <td className="px-4 py-3.5 text-center text-muted-foreground">{r.likelihood}</td><td className="px-4 py-3.5 text-center text-muted-foreground">{r.impact}</td>
+              <td className="px-4 py-3.5"><span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusStyles[r.status] ?? 'bg-muted text-muted-foreground'}`}>{r.status}</span></td>
+              <td className="px-4 py-3.5"><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <WriteGuard>
+                  <button onClick={() => { setEditing({ title: r.title, description: r.description, category: r.category, likelihood: r.likelihood, impact: r.impact, status: r.status, mitigation_plan: r.mitigation_plan, _id: r.id }); setFormOpen(true); }} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setDeleteTarget({ id: r.id, title: r.title })} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                </WriteGuard>
               </div></td>
             </tr>
           ))}</tbody>
         </table>
-        {risks.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">No risks recorded yet.</div>}
+        {risks.length === 0 && <div className="text-center py-16 text-muted-foreground text-sm">No risks recorded yet.</div>}
         <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Risk' : 'Add Risk'} fields={riskFields} initialValues={editing ?? undefined}

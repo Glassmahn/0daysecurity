@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2, Download } from 'lucide-react';
+import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2, Download, Filter } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -10,11 +10,7 @@ import { useTableSort } from '@/hooks/use-table-sort';
 import { SortableHeader } from '@/components/crud/SortableHeader';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
@@ -73,79 +69,123 @@ function VendorsIndexPage() {
   const expiringContracts = vendors.filter(v => { if (!v.contract_expiry) return false; const d = Math.ceil((new Date(v.contract_expiry).getTime() - Date.now()) / 86400000); return d > 0 && d <= 90; }).length;
   const activeFilterCount = [riskTierFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
-  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      </div>
+      <p className="text-sm text-muted-foreground">Loading vendors…</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-slide-in">
+    <div className="space-y-5 animate-fade-up">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-foreground">Vendors</h1><p className="text-sm text-muted-foreground">Third-party vendor risk management</p></div>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Vendors</h1>
+            <p className="text-sm text-muted-foreground">Third-party vendor risk management</p>
+          </div>
+        </div>
         <div className="flex gap-2">
-          {activeFilterCount > 0 && <Button variant="ghost" size="sm" onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })}>Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</Button>}
-          <Button variant="outline" size="sm" onClick={() => exportToCsv('vendors', filtered as Record<string, unknown>[], [
+          {activeFilterCount > 0 && <button onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })} className="text-xs text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium">Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</button>}
+          <button onClick={() => exportToCsv('vendors', filtered as Record<string, unknown>[], [
               { key: 'name', label: 'Name' }, { key: 'risk_tier', label: 'Risk Tier' }, { key: 'status', label: 'Status' },
               { key: 'contact_email', label: 'Email' }, { key: 'contract_value', label: 'Contract Value' }, { key: 'contract_expiry', label: 'Contract Expiry' },
-            ])}><Download className="h-4 w-4 mr-1" />Export</Button>
-          <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Vendor</Button>
+            ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
+            <Download className="h-4 w-4" /> Export
+          </button>
+          <WriteGuard>
+            <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-1.5 px-4 py-2 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 shadow-glow transition-all">
+              <Plus className="h-4 w-4" /> Add Vendor
+            </button>
+          </WriteGuard>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:border-primary/40 transition-all" onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })}><CardContent className="p-4 flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><Building2 className="h-5 w-5 text-primary" /></div><div><p className="text-2xl font-bold">{vendors.length}</p><p className="text-xs text-muted-foreground">Total Vendors</p></div></CardContent></Card>
-        <Card className={`cursor-pointer hover:border-primary/40 transition-all ${statusFilter === 'active' ? 'border-primary ring-1 ring-primary/30' : ''}`} onClick={() => updateSearch({ status: statusFilter === 'active' ? 'all' : 'active' })}><CardContent className="p-4 flex items-center gap-3"><div className="p-2 rounded-lg bg-status-passing/10"><ShieldCheck className="h-5 w-5 text-status-passing" /></div><div><p className="text-2xl font-bold">{activeCount}</p><p className="text-xs text-muted-foreground">Active</p></div></CardContent></Card>
-        <Card className={`cursor-pointer hover:border-primary/40 transition-all ${statusFilter === 'under_review' ? 'border-primary ring-1 ring-primary/30' : ''}`} onClick={() => updateSearch({ status: statusFilter === 'under_review' ? 'all' : 'under_review' })}><CardContent className="p-4 flex items-center gap-3"><div className="p-2 rounded-lg bg-destructive/10"><ShieldAlert className="h-5 w-5 text-destructive" /></div><div><p className="text-2xl font-bold">{underReview}</p><p className="text-xs text-muted-foreground">Under Review</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2 rounded-lg bg-status-warning/10"><AlertTriangle className="h-5 w-5 text-status-warning" /></div><div><p className="text-2xl font-bold">{expiringContracts}</p><p className="text-xs text-muted-foreground">Expiring Soon</p></div></CardContent></Card>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-children">
+        <button onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })} className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer">
+          <div className="p-2.5 rounded-xl bg-primary/10"><Building2 className="h-5 w-5 text-primary" /></div>
+          <div><p className="text-2xl font-display font-bold">{vendors.length}</p><p className="text-[11px] text-muted-foreground font-medium">Total Vendors</p></div>
+        </button>
+        <button onClick={() => updateSearch({ status: statusFilter === 'active' ? 'all' : 'active' })} className={`bg-card border rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer ${statusFilter === 'active' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+          <div className="p-2.5 rounded-xl bg-status-passing/10"><ShieldCheck className="h-5 w-5 text-status-passing" /></div>
+          <div><p className="text-2xl font-display font-bold">{activeCount}</p><p className="text-[11px] text-muted-foreground font-medium">Active</p></div>
+        </button>
+        <button onClick={() => updateSearch({ status: statusFilter === 'under_review' ? 'all' : 'under_review' })} className={`bg-card border rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer ${statusFilter === 'under_review' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+          <div className="p-2.5 rounded-xl bg-destructive/10"><ShieldAlert className="h-5 w-5 text-destructive" /></div>
+          <div><p className="text-2xl font-display font-bold">{underReview}</p><p className="text-[11px] text-muted-foreground font-medium">Under Review</p></div>
+        </button>
+        <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-status-warning/10"><AlertTriangle className="h-5 w-5 text-status-warning" /></div>
+          <div><p className="text-2xl font-display font-bold">{expiringContracts}</p><p className="text-[11px] text-muted-foreground font-medium">Expiring Soon</p></div>
+        </div>
       </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input placeholder="Search vendors..." className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" value={search} onChange={e => updateSearch({ q: e.target.value })} />
+        </div>
+        <select value={riskTierFilter} onChange={e => updateSearch({ riskTier: e.target.value })} className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${riskTierFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+          <option value="all">All Risk Tiers</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+        </select>
+        <select value={statusFilter} onChange={e => updateSearch({ status: e.target.value })} className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${statusFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+          <option value="all">All Statuses</option><option value="active">Active</option><option value="under_review">Under Review</option><option value="suspended">Suspended</option><option value="offboarded">Offboarded</option>
+        </select>
+      </div>
+
+      <p className="text-xs text-muted-foreground">{filtered.length} vendors matching filters</p>
 
       <BulkActionBar count={bulk.count} onClear={bulk.clear} onBulkDelete={() => bulkRemove([...bulk.selected])}
         statusOptions={vendorStatusOptions} onBulkStatusUpdate={(status) => bulkUpdate([...bulk.selected], { status })} entityName="vendor" />
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="text-base">Vendor Directory</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative w-48 sm:w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Search vendors..." className="pl-8 h-9" value={search} onChange={e => updateSearch({ q: e.target.value })} /></div>
-              <select value={riskTierFilter} onChange={e => updateSearch({ riskTier: e.target.value })} className={`bg-card border rounded-lg px-3 py-1.5 text-sm text-foreground h-9 focus:outline-none focus:ring-2 focus:ring-primary/50 ${riskTierFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
-                <option value="all">All Risk Tiers</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
-              </select>
-              <select value={statusFilter} onChange={e => updateSearch({ status: e.target.value })} className={`bg-card border rounded-lg px-3 py-1.5 text-sm text-foreground h-9 focus:outline-none focus:ring-2 focus:ring-primary/50 ${statusFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
-                <option value="all">All Statuses</option><option value="active">Active</option><option value="under_review">Under Review</option><option value="suspended">Suspended</option><option value="offboarded">Offboarded</option>
-              </select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs text-muted-foreground mb-3">{filtered.length} vendors matching filters</p>
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead className="w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded border-border" /></TableHead>
-              <SortableHeader label="Vendor" column="name" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-              <SortableHeader label="Risk Tier" column="risk_tier" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-              <SortableHeader label="Contact" column="contact_email" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
-              <SortableHeader label="Contract Expiry" column="contract_expiry" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
-              <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-              <TableHead className="w-20">Actions</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {pagination.paged.map(v => (
-                <TableRow key={v.id} className={`cursor-pointer ${bulk.isSelected(v.id) ? 'bg-primary/5' : ''}`} onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>
-                  <TableCell onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(v.id)} onChange={() => bulk.toggle(v.id)} className="rounded border-border" /></TableCell>
-                  <TableCell><div className="flex items-center gap-2"><div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-bold">{v.name.charAt(0)}</div><p className="font-medium text-sm">{v.name}</p></div></TableCell>
-                  <TableCell>{riskTierBadge(v.risk_tier)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{v.contact_email ?? '—'}</TableCell>
-                  <TableCell className="text-sm font-mono hidden lg:table-cell">{v.contract_expiry ? new Date(v.contract_expiry).toLocaleDateString() : '—'}</TableCell>
-                  <TableCell>{statusBadge(v.status)}</TableCell>
-                  <TableCell><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => { setEditing({ name: v.name, contact_email: v.contact_email, risk_tier: v.risk_tier, status: v.status, contract_value: v.contract_value, notes: v.notes, _id: v.id }); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-<WriteGuard>                    <button onClick={() => setDeleteTarget({ id: v.id, title: v.name })} className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
-                  </div></TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No vendors match filters. <button onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })} className="text-primary hover:underline cursor-pointer">Clear</button></TableCell></TableRow>}
-            </TableBody>
-          </Table>
-          <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
-        </CardContent>
-      </Card>
+      {/* Table */}
+      <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-card">
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-border/60 text-left bg-surface/50">
+            <th className="px-3 py-3.5 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
+            <SortableHeader label="Vendor" column="name" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Risk Tier" column="risk_tier" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <SortableHeader label="Contact" column="contact_email" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+            <SortableHeader label="Contract Expiry" column="contract_expiry" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
+            <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+            <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+          </tr></thead>
+          <tbody>
+            {pagination.paged.map(v => (
+              <tr key={v.id} className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(v.id) ? 'bg-primary/5' : ''}`} onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>
+                <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(v.id)} onChange={() => bulk.toggle(v.id)} className="rounded-md border-border" /></td>
+                <td className="px-4 py-3.5"><div className="flex items-center gap-2"><div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center text-xs font-bold text-white">{v.name.charAt(0)}</div><p className="font-medium text-sm text-foreground">{v.name}</p></div></td>
+                <td className="px-4 py-3.5">{riskTierBadge(v.risk_tier)}</td>
+                <td className="px-4 py-3.5 text-sm text-muted-foreground hidden md:table-cell">{v.contact_email ?? '—'}</td>
+                <td className="px-4 py-3.5 text-sm font-mono hidden lg:table-cell">{v.contract_expiry ? new Date(v.contract_expiry).toLocaleDateString() : '—'}</td>
+                <td className="px-4 py-3.5">{statusBadge(v.status)}</td>
+                <td className="px-4 py-3.5"><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  <WriteGuard>
+                    <button onClick={() => { setEditing({ name: v.name, contact_email: v.contact_email, risk_tier: v.risk_tier, status: v.status, contract_value: v.contract_value, notes: v.notes, _id: v.id }); setFormOpen(true); }} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setDeleteTarget({ id: v.id, title: v.name })} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </WriteGuard>
+                </div></td>
+              </tr>
+            ))}
+            {filtered.length === 0 && <tr><td colSpan={7}>
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-3">
+                <div className="h-12 w-12 rounded-xl bg-muted/50 flex items-center justify-center"><Filter className="h-5 w-5 text-muted-foreground/50" /></div>
+                <p>No vendors match filters.</p>
+                <button onClick={() => navigate({ search: { riskTier: 'all', status: 'all', q: '' } })} className="text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium text-xs">Clear</button>
+              </div>
+            </td></tr>}
+          </tbody>
+        </table>
+        <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
+      </div>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Vendor' : 'Add Vendor'} fields={vendorFields} initialValues={editing ?? undefined}
         onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'vendor'}
