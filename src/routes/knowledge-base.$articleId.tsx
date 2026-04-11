@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useSupabaseTable } from '@/hooks/use-supabase-data';
 import { Loader2, ArrowLeft, BookOpen, Calendar, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
+
+const MDEditor = lazy(() => import('@uiw/react-md-editor'));
 
 export const Route = createFileRoute('/knowledge-base/$articleId')({
   component: KBArticleDetail,
@@ -21,7 +23,7 @@ const categoryStyles: Record<string, string> = {
 
 const kbFields: FieldDef[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Article title', max: 255 },
-  { name: 'content', label: 'Content (Markdown)', type: 'textarea', placeholder: 'Write content in Markdown...', max: 50000 },
+  { name: 'content', label: 'Content', type: 'markdown' as const, placeholder: 'Write content in Markdown...', max: 50000 },
   {
     name: 'category', label: 'Category', type: 'select', required: true,
     options: [
@@ -60,20 +62,6 @@ function KBArticleDetail() {
     );
   }
 
-  // Simple markdown-ish rendering
-  const renderContent = (content: string) => {
-    return content.split('\n').map((line, i) => {
-      if (line.startsWith('# ')) return <h1 key={i} className="text-2xl font-bold text-foreground mt-6 mb-3">{line.slice(2)}</h1>;
-      if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-semibold text-foreground mt-5 mb-2">{line.slice(3)}</h2>;
-      if (line.startsWith('### ')) return <h3 key={i} className="text-lg font-medium text-foreground mt-4 mb-1.5">{line.slice(4)}</h3>;
-      if (line.startsWith('- [ ] ')) return <div key={i} className="flex items-center gap-2 py-0.5 pl-4"><input type="checkbox" disabled className="rounded border-border" /><span className="text-sm text-foreground">{line.slice(6)}</span></div>;
-      if (line.startsWith('- ')) return <div key={i} className="flex gap-2 py-0.5 pl-4"><span className="text-muted-foreground">•</span><span className="text-sm text-foreground">{line.slice(2)}</span></div>;
-      if (line.match(/^\d+\. /)) return <div key={i} className="flex gap-2 py-0.5 pl-4"><span className="text-muted-foreground font-medium">{line.match(/^(\d+)\./)?.[1]}.</span><span className="text-sm text-foreground">{line.replace(/^\d+\. /, '')}</span></div>;
-      if (line.trim() === '') return <div key={i} className="h-2" />;
-      return <p key={i} className="text-sm text-foreground leading-relaxed">{line}</p>;
-    });
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-slide-in">
       <div className="flex items-center justify-between">
@@ -100,14 +88,18 @@ function KBArticleDetail() {
 
         {article.tags && (article.tags as string[]).length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-6">
-            {(article.tags as string[]).map(tag => (
+            {(article.tags as string[]).map((tag: string) => (
               <span key={tag} className="text-xs px-2 py-1 bg-muted rounded-full text-muted-foreground">{tag}</span>
             ))}
           </div>
         )}
 
-        <div className="prose-sm">
-          {article.content ? renderContent(article.content) : (
+        <div data-color-mode="auto">
+          {article.content ? (
+            <Suspense fallback={<div className="h-32 bg-muted rounded animate-pulse" />}>
+              <MDEditor.Markdown source={article.content} style={{ background: 'transparent' }} />
+            </Suspense>
+          ) : (
             <p className="text-sm text-muted-foreground italic">No content yet.</p>
           )}
         </div>
