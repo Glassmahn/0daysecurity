@@ -60,7 +60,7 @@ function PoliciesPage() {
           </thead>
           <tbody>
             {policies.map(p => (
-              <tr key={p.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer">
+              <tr key={p.id} className="border-b border-border hover:bg-surface transition-colors cursor-pointer" onClick={() => navigate({ to: '/policies/$policyId', params: { policyId: p.id } })}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
