@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import {
   Terminal, Paperclip, Bug, Wrench, Cpu, User, FileText, Download,
   ChevronRight, Shield, Calendar, ExternalLink, Image, File,
 } from 'lucide-react';
+import { testLibraryCatalog, type TestTemplate } from '@/lib/test-library-catalog';
 
 /* ── Test Run Data ───────────────────────────────────── */
 const testRunsMap: Record<string, {
@@ -241,6 +243,14 @@ function stepStatusIcon(status: string) {
 export function TestDetailView({ testId }: { testId: string }) {
   const test = testRunsMap[testId];
 
+  // Find matching templates from the enriched test library
+  const matchingTemplates = useMemo(() => {
+    if (!test) return [];
+    // Try to match by control ref
+    const controlRef = test.control;
+    return testLibraryCatalog.filter((t: TestTemplate) => t.controlRefs.includes(controlRef));
+  }, [test]);
+
   if (!test) {
     return (
       <div className="p-6 space-y-4">
@@ -307,6 +317,7 @@ export function TestDetailView({ testId }: { testId: string }) {
           <TabsTrigger value="evidence" className="gap-1"><Paperclip className="h-3.5 w-3.5" />Evidence ({evidence.length})</TabsTrigger>
           <TabsTrigger value="findings" className="gap-1"><Bug className="h-3.5 w-3.5" />Findings ({findings.length})</TabsTrigger>
           <TabsTrigger value="remediation" className="gap-1"><Wrench className="h-3.5 w-3.5" />Remediation ({remediations.length})</TabsTrigger>
+          <TabsTrigger value="controls" className="gap-1"><Shield className="h-3.5 w-3.5" />Control Mappings ({matchingTemplates.length})</TabsTrigger>
         </TabsList>
 
         {/* ── Execution Logs ── */}
@@ -495,6 +506,72 @@ export function TestDetailView({ testId }: { testId: string }) {
                   </Card>
                 );
               })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ── Control Mappings ── */}
+        <TabsContent value="controls">
+          {matchingTemplates.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center space-y-2">
+                <Shield className="h-10 w-10 text-muted-foreground mx-auto" />
+                <p className="text-sm font-medium">No control mappings found</p>
+                <p className="text-xs text-muted-foreground">This test run's control reference doesn't match any enriched control templates.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {matchingTemplates.map((tmpl: TestTemplate) => (
+                <Card key={tmpl.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-sm">{tmpl.name}</CardTitle>
+                        <CardDescription className="text-xs mt-1">{tmpl.description}</CardDescription>
+                      </div>
+                      <Badge variant={tmpl.method === 'automated' ? 'default' : tmpl.method === 'manual' ? 'secondary' : 'outline'} className="text-xs capitalize gap-1">
+                        {tmpl.method === 'automated' ? <Cpu className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                        {tmpl.method}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Mapped Controls</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tmpl.controlRefs.map(ref => (
+                          <Badge key={ref} variant="secondary" className="text-[10px] font-mono">{ref}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Framework Coverage</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tmpl.frameworks.map(fw => (
+                          <Badge key={fw} variant="outline" className="text-[10px]">{fw.replace(/_/g, ' ')}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-xs border-t pt-3">
+                      <div><span className="text-muted-foreground">Frequency:</span> <span className="font-medium">{tmpl.frequency}</span></div>
+                      <div><span className="text-muted-foreground">Duration:</span> <span className="font-medium">{tmpl.estimatedDuration}</span></div>
+                      <div><span className="text-muted-foreground">Complexity:</span> <span className="font-medium capitalize">{tmpl.complexity}</span></div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Test Steps</p>
+                      <ol className="space-y-1">
+                        {tmpl.steps.map((s, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                            <span className="shrink-0 h-4 w-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                            {s}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </TabsContent>
