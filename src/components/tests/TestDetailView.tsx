@@ -241,6 +241,14 @@ function stepStatusIcon(status: string) {
 export function TestDetailView({ testId }: { testId: string }) {
   const test = testRunsMap[testId];
 
+  // Find matching templates from the enriched test library
+  const matchingTemplates = useMemo(() => {
+    if (!test) return [];
+    // Try to match by control ref
+    const controlRef = test.control;
+    return testLibraryCatalogImported.filter(t => t.controlRefs.includes(controlRef));
+  }, [test]);
+
   if (!test) {
     return (
       <div className="p-6 space-y-4">
