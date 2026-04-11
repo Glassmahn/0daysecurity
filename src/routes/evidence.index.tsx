@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
 import { evidenceItems } from '@/lib/mock-data-extended';
 import { evidenceTypes } from '@/lib/framework-catalog';
@@ -41,6 +41,7 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 function EvidencePage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -191,7 +192,7 @@ function EvidencePage() {
               const StatusIcon = sc.icon;
               const TypeIcon = typeIcons[e.type] || FileText;
               return (
-                <tr key={e.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                <tr key={e.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate({ to: '/evidence/$evidenceId', params: { evidenceId: e.id } })}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-foreground">{e.title}</span>
