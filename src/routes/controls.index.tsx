@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
+import { WriteGuard } from '@/components/guards/RoleGuards';
 
 const controlsSearchSchema = z.object({
   status: fallback(z.string(), 'all').default('all'),
@@ -128,10 +129,12 @@ function ControlsPage() {
             ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <button onClick={() => { setEditing(null); setFormOpen(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus className="h-4 w-4" /> Add Control
-          </button>
+          <WriteGuard>
+            <button onClick={() => { setEditing(null); setFormOpen(true); }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+              <Plus className="h-4 w-4" /> Add Control
+            </button>
+          </WriteGuard>
         </div>
       </div>
 
@@ -223,10 +226,12 @@ function ControlsPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => { setEditing({ code: c.code, title: c.title, description: c.description, category: c.category, status: c.status, _id: c.id }); setFormOpen(true); }}
-                      className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setDeleteTarget({ id: c.id, title: c.title })}
-                      className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <WriteGuard>
+                      <button onClick={() => { setEditing({ code: c.code, title: c.title, description: c.description, category: c.category, status: c.status, _id: c.id }); setFormOpen(true); }}
+                        className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDeleteTarget({ id: c.id, title: c.title })}
+                        className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </WriteGuard>
                   </div>
                 </td>
               </tr>
