@@ -132,8 +132,6 @@ function VendorsIndexPage() {
           <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
         </CardContent>
       </Card>
-        </CardContent>
-      </Card>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Vendor' : 'Add Vendor'} fields={vendorFields} initialValues={editing ?? undefined}
         onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'vendor'}
