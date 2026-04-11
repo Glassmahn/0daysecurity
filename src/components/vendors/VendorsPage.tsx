@@ -145,7 +145,7 @@ export function VendorsPage() {
                 </TableRow></TableHeader>
                 <TableBody>
                   {vendors.filter(v => v.name.toLowerCase().includes(search.toLowerCase())).map(v => (
-                    <TableRow key={v.id} className="cursor-pointer">
+                    <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate({ to: '/vendors/$vendorId', params: { vendorId: v.id } })}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-bold">{v.name.charAt(0)}</div>
