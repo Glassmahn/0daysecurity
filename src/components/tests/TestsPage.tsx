@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +60,7 @@ function statusBadge(status: string) {
 
 export function TestsPage() {
   const [search, setSearch] = useState('');
-
+  const navigate = useNavigate();
   const passed = testRuns.filter(t => t.status === 'passed').length;
   const failed = testRuns.filter(t => t.status === 'failed').length;
   const inProgress = testRuns.filter(t => t.status === 'in_progress').length;
@@ -126,7 +127,7 @@ export function TestsPage() {
                 </TableRow></TableHeader>
                 <TableBody>
                   {testRuns.filter(t => t.name.toLowerCase().includes(search.toLowerCase())).map(run => (
-                    <TableRow key={run.id} className="cursor-pointer">
+                    <TableRow key={run.id} className="cursor-pointer" onClick={() => navigate({ to: '/tests/$testId', params: { testId: run.id } })}>
                       <TableCell className="font-mono text-xs">{run.id}</TableCell>
                       <TableCell className="font-medium">{run.name}</TableCell>
                       <TableCell><Badge variant="outline">{run.control}</Badge></TableCell>
