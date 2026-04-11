@@ -69,7 +69,7 @@ function EvidencePage() {
   }, [search, statusFilter, typeFilter, autoFilter]);
 
   const updateSearch = (updates: Record<string, string>) => {
-    navigate({ search: (prev) => ({ ...prev, ...updates }) });
+    navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
   };
 
   const activeFilterCount = [statusFilter, typeFilter, autoFilter].filter(f => f !== 'all').length + (search ? 1 : 0);

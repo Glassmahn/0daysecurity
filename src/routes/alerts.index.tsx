@@ -55,7 +55,7 @@ function AlertsPage() {
   }, [severityFilter, statusFilter, search]);
 
   const updateSearch = (updates: Record<string, string>) => {
-    navigate({ search: (prev) => ({ ...prev, ...updates }) });
+    navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
   };
 
   const activeFilterCount = [severityFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
