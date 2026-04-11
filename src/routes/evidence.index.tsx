@@ -41,6 +41,7 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 function EvidencePage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
