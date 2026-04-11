@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { assets } from '@/lib/mock-data';
+import { WriteGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/assets/')({
   component: AssetsPage,

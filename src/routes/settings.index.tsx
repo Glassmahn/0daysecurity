@@ -3,6 +3,7 @@ import { teamMembers } from '@/lib/mock-data-extended';
 import { useState } from 'react';
 import { Settings as SettingsIcon, Users, Bell, Key, CreditCard, Building2, UserPlus, Shield } from 'lucide-react';
 import { RBACManager } from '@/components/settings/RBACManager';
+import { AdminGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/settings/')({
   component: SettingsPage,
@@ -36,6 +37,15 @@ function SettingsPage() {
   const [activeTab, setActiveTab] = useState('team');
 
   return (
+    <AdminGuard fallback={
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center space-y-3">
+          <div className="text-4xl">🔒</div>
+          <h2 className="text-lg font-semibold text-foreground">Admin Only</h2>
+          <p className="text-sm text-muted-foreground">Only administrators can access Settings.</p>
+        </div>
+      </div>
+    }>
     <div className="space-y-6 animate-slide-in">
       <div>
         <h1 className="text-xl font-bold text-foreground">Settings</h1>
@@ -203,5 +213,6 @@ function SettingsPage() {
         </div>
       )}
     </div>
+    </AdminGuard>
   );
 }

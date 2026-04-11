@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
+import { WriteGuard } from '@/components/guards/RoleGuards';
 
 const vendorsSearchSchema = z.object({ riskTier: fallback(z.string(), 'all').default('all'), status: fallback(z.string(), 'all').default('all'), q: fallback(z.string(), '').default('') });
 
@@ -135,7 +136,7 @@ function VendorsIndexPage() {
                   <TableCell>{statusBadge(v.status)}</TableCell>
                   <TableCell><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <button onClick={() => { setEditing({ name: v.name, contact_email: v.contact_email, risk_tier: v.risk_tier, status: v.status, contract_value: v.contract_value, notes: v.notes, _id: v.id }); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setDeleteTarget({ id: v.id, title: v.name })} className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+<WriteGuard>                    <button onClick={() => setDeleteTarget({ id: v.id, title: v.name })} className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
                   </div></TableCell>
                 </TableRow>
               ))}

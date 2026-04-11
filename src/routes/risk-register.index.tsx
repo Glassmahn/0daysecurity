@@ -11,6 +11,7 @@ import { SortableHeader } from '@/components/crud/SortableHeader';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
+import { WriteGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/risk-register/')({ component: RiskRegisterPage, head: () => ({ meta: [{ title: 'Risk Register — WatchDog Security' }] }) });
 
@@ -73,7 +74,7 @@ function RiskRegisterPage() {
             ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Add Risk</button>
+          <WriteGuard><button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Add Risk</button></WriteGuard>
         </div>
       </div>
 
@@ -124,7 +125,7 @@ function RiskRegisterPage() {
               <td className="px-4 py-3"><span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[r.status] ?? 'bg-muted text-muted-foreground'}`}>{r.status}</span></td>
               <td className="px-4 py-3"><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                 <button onClick={() => { setEditing({ title: r.title, description: r.description, category: r.category, likelihood: r.likelihood, impact: r.impact, status: r.status, mitigation_plan: r.mitigation_plan, _id: r.id }); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                <button onClick={() => setDeleteTarget({ id: r.id, title: r.title })} className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+<WriteGuard>                <button onClick={() => setDeleteTarget({ id: r.id, title: r.title })} className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button></WriteGuard>
               </div></td>
             </tr>
           ))}</tbody>
