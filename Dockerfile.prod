@@ -1,0 +1,43 @@
+# Production Dockerfile — multi-stage build
+# Stage 1: build the Vite/TanStack Start app
+# Stage 2: serve the built output with a lightweight server
+#
+# Build:  docker build -f Dockerfile.prod -t zeroday-app:prod .
+# Run:    docker run --rm -p 8080:8080 --env-file .env zeroday-app:prod
+
+# ---------- Builder ----------
+FROM oven/bun:1.2-alpine AS builder
+
+WORKDIR /app
+
+# Install deps with cache-friendly layer
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile || bun install
+
+# Copy source and build
+COPY . .
+RUN bun run build
+
+# ---------- Runner ----------
+FROM oven/bun:1.2-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=8080
+
+# Non-root user for safety
+RUN addgroup -S app && adduser -S app -G app
+
+# Copy only what's needed to serve the build
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+
+USER app
+
+EXPOSE 8080
+
+# TanStack Start emits a Nitro-style server in .output/server/index.mjs
+CMD ["bun", "run", ".output/server/index.mjs"]
