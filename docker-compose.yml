@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    container_name: zeroday-app
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount source for hot reload while editing in Cursor
+      - .:/app
+      # Keep node_modules inside the container (avoids host/container mismatch)
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=8080
+    restart: unless-stopped
