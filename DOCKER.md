@@ -69,3 +69,31 @@ docker compose exec app bun run lint
 - **Backend**: the app continues to talk to your Lovable Cloud (Supabase) project remotely — no local database is run. Migrations and edge functions are still managed via Lovable.
 - **Auth callbacks**: OAuth/SSO redirects expect `http://localhost:8080` to be in the Supabase allowed redirect URLs. Add it via Lovable Cloud → Auth Settings if you'll test those flows locally.
 - **Production build** (optional): `docker compose exec app bun run build` produces output in `.output/` for inspection.
+
+## 6. Production image
+
+A multi-stage `Dockerfile.prod` builds the Vite/TanStack Start app and serves the compiled output (`.output/server/index.mjs`) under a non-root user — no dev server, no source bind-mounts.
+
+```bash
+# Build + run via compose override
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+# Or build/run the image directly
+docker build -f Dockerfile.prod -t zeroday-app:prod .
+docker run --rm -p 8080:8080 --env-file .env zeroday-app:prod
+```
+
+App listens on **http://localhost:8080**. Make sure `.env` contains the `VITE_SUPABASE_*` keys at build time (Vite inlines them into the bundle).
+
+## 7. Cloning from GitHub
+
+Once the project is connected to GitHub via Lovable (Plus menu → GitHub → Connect project), clone and run locally:
+
+```bash
+git clone https://github.com/<your-org>/<your-repo>.git
+cd <your-repo>
+cp .env.example .env   # then fill in the Supabase keys
+docker compose up --build              # dev
+# or
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d   # prod
+```
