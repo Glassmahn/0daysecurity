@@ -1,0 +1,25 @@
+# Production override — builds the optimized image and serves the built app.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+#
+# This override:
+#   - swaps the dev Dockerfile for Dockerfile.prod (multi-stage build)
+#   - removes the dev bind-mounts (production runs the baked image)
+#   - sets NODE_ENV=production
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: zeroday-app-prod
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=8080
+    volumes: []
+    restart: unless-stopped
