@@ -192,6 +192,69 @@ function LoginPage() {
             Google
           </Button>
 
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 rounded-xl border-border/60 hover:bg-surface hover:border-primary/30 transition-all"
+            disabled={loading}
+            onClick={async () => {
+              setError('');
+              setLoading(true);
+              const result = await lovable.auth.signInWithOAuth('microsoft', {
+                redirect_uri: window.location.origin,
+              });
+              if (result.error) {
+                setError(result.error instanceof Error ? result.error.message : 'Microsoft sign-in failed');
+                setLoading(false);
+                return;
+              }
+              if (result.redirected) return;
+              navigate({ to: '/dashboard' });
+            }}
+          >
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">
+              <path fill="#f3f3f3" d="M0 0h23v23H0z" />
+              <path fill="#f35325" d="M1 1h10v10H1z" />
+              <path fill="#81bc06" d="M12 1h10v10H12z" />
+              <path fill="#05a6f0" d="M1 12h10v10H1z" />
+              <path fill="#ffba08" d="M12 12h10v10H12z" />
+            </svg>
+            Microsoft
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 rounded-xl border-border/60 hover:bg-surface hover:border-primary/30 transition-all"
+            disabled={loading}
+            onClick={async () => {
+              setError('');
+              const ssoEmail = window.prompt('Enter your work email to sign in with SSO:');
+              if (!ssoEmail) return;
+              const domain = ssoEmail.split('@')[1]?.trim();
+              if (!domain) {
+                setError('Please enter a valid email address.');
+                return;
+              }
+              setLoading(true);
+              const { data, error: ssoError } = await supabase.auth.signInWithSSO({
+                domain,
+                options: { redirectTo: `${window.location.origin}/dashboard` },
+              });
+              if (ssoError) {
+                setError(ssoError.message);
+                setLoading(false);
+                return;
+              }
+              if (data?.url) {
+                window.location.href = data.url;
+              }
+            }}
+          >
+            <Lock className="mr-2 h-4 w-4" />
+            Sign in with SSO
+          </Button>
+
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
             <Link to="/signup" className="font-medium text-primary hover:text-primary-glow transition-colors">
