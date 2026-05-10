@@ -1,11 +1,99 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { reportTemplates } from '@/lib/mock-data-extended';
-import { BarChart3, Download, Calendar, Play } from 'lucide-react';
+import { generateReport } from '@/lib/pdf-report';
+import { BarChart3, Download, Calendar, Play, Loader2, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/reports/')({
   component: ReportsPage,
   head: () => ({ meta: [{ title: 'Reports — ZeroDay Security' }] }),
 });
+
+const FORMAT_COLORS: Record<string, string> = {
+  pdf: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  csv: 'bg-green-500/10 text-green-400 border border-green-500/20',
+};
+
+function ReportCard({ rpt }: { rpt: typeof reportTemplates[number] }) {
+  const [generating, setGenerating] = useState(false);
+
+  const canGenerate = ['rpt-1', 'rpt-2', 'rpt-3', 'rpt-4', 'rpt-5', 'rpt-7', 'rpt-8'].includes(rpt.id);
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      await generateReport(rpt.id);
+      toast.success(`${rpt.name} downloaded`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to generate report');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 transition-all group flex flex-col gap-3">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground text-sm">{rpt.name}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{rpt.description}</p>
+          </div>
+        </div>
+        <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0 ml-2 ${FORMAT_COLORS[rpt.format] ?? 'bg-muted text-muted-foreground'}`}>
+          {rpt.format}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        {rpt.frequency && (
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span className="capitalize">{rpt.frequency}</span>
+          </div>
+        )}
+        {rpt.lastGenerated && (
+          <span>Last: {rpt.lastGenerated}</span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 mt-auto pt-1">
+        {canGenerate ? (
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {generating
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <Play className="h-3 w-3" />}
+            {generating ? 'Generating…' : rpt.format === 'csv' ? 'Export CSV' : 'Generate PDF'}
+          </button>
+        ) : (
+          <button
+            disabled
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded text-xs font-medium opacity-50 cursor-not-allowed"
+          >
+            <Play className="h-3 w-3" /> Generate
+          </button>
+        )}
+        {rpt.lastGenerated && canGenerate && (
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded text-xs font-medium hover:bg-accent transition-colors text-muted-foreground disabled:opacity-50"
+          >
+            <Download className="h-3 w-3" /> Download
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ReportsPage() {
   return (
@@ -22,38 +110,7 @@ function ReportsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {reportTemplates.map(rpt => (
-          <div key={rpt.id} className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 transition-all group">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-foreground">{rpt.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{rpt.description}</p>
-              </div>
-              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{rpt.format}</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
-              {rpt.frequency && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span className="capitalize">{rpt.frequency}</span>
-                </div>
-              )}
-              {rpt.lastGenerated && (
-                <span>Last: {rpt.lastGenerated}</span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors">
-                <Play className="h-3 w-3" /> Generate
-              </button>
-              {rpt.lastGenerated && (
-                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded text-xs font-medium hover:bg-accent transition-colors">
-                  <Download className="h-3 w-3" /> Download Last
-                </button>
-              )}
-            </div>
-          </div>
+          <ReportCard key={rpt.id} rpt={rpt} />
         ))}
       </div>
 
