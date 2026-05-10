@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState, useCallback } from 'react';
-import { Users, Bell, Key, CreditCard, Building2, Shield, Loader2 } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Users, Bell, Key, CreditCard, Building2, Shield, Loader2, Clock, CheckCircle2, XCircle, Play, RefreshCw } from 'lucide-react';
 import { RBACManager } from '@/components/settings/RBACManager';
 import { UserManagement } from '@/components/settings/UserManagement';
 import { AdminGuard } from '@/components/guards/RoleGuards';
 import { useNotificationPrefs, type NotificationPrefs } from '@/hooks/use-notification-prefs';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/settings/')({
@@ -17,6 +18,7 @@ const tabs = [
   { id: 'team', label: 'Team Members', icon: Users },
   { id: 'roles', label: 'Roles & Permissions', icon: Shield },
   { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'jobs', label: 'Scheduled Jobs', icon: Clock },
   { id: 'api', label: 'API Keys', icon: Key },
   { id: 'billing', label: 'Billing', icon: CreditCard },
 ];
@@ -117,6 +119,138 @@ function NotificationsTab() {
   );
 }
 
+interface JobRun {
+  id: string;
+  job_name: string;
+  status: 'success' | 'failure' | 'partial';
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  records_affected: number;
+  error_message: string | null;
+}
+
+const JOB_LABELS: Record<string, string> = {
+  'evidence-expiry-scan': 'Evidence Expiry Scan',
+  'alert-escalation': 'Alert Escalation',
+  'vendor-contract-review': 'Vendor Contract Review',
+  'compliance-snapshot': 'Compliance Snapshot',
+};
+
+function ScheduledJobsTab() {
+  const [runs, setRuns] = useState<JobRun[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [triggering, setTriggering] = useState(false);
+
+  async function fetchRuns() {
+    setLoading(true);
+    const { data, error } = await (supabase as any)
+      .from('job_runs')
+      .select('id,job_name,status,started_at,finished_at,duration_ms,records_affected,error_message')
+      .order('started_at', { ascending: false })
+      .limit(50);
+    if (error) toast.error('Failed to load job runs');
+    else setRuns(data ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => { fetchRuns(); }, []);
+
+  async function handleTrigger() {
+    setTriggering(true);
+    try {
+      const { error } = await supabase.functions.invoke('run-scheduled-jobs');
+      if (error) throw new Error(error.message);
+      toast.success('Jobs triggered — refreshing…');
+      await fetchRuns();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to trigger jobs');
+    } finally {
+      setTriggering(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Scheduled Jobs</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Jobs run daily at 06:00 UTC via pg_cron. Last 50 runs shown.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchRuns}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-accent transition-colors text-muted-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh
+          </button>
+          <button
+            onClick={handleTrigger}
+            disabled={triggering}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {triggering ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            Run Now
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16 gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading runs…
+          </div>
+        ) : runs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-2">
+            <Clock className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No job runs yet. Click "Run Now" to trigger.</p>
+          </div>
+        ) : (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border bg-surface">
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Job</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Started</th>
+                <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Duration</th>
+                <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Records</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map((run, i) => (
+                <tr key={run.id} className={`border-b border-border last:border-0 hover:bg-surface/50 transition-colors ${i % 2 === 0 ? '' : 'bg-surface/20'}`}>
+                  <td className="px-4 py-3 font-medium text-foreground">{JOB_LABELS[run.job_name] ?? run.job_name}</td>
+                  <td className="px-4 py-3">
+                    {run.status === 'success' ? (
+                      <span className="inline-flex items-center gap-1 text-status-passing">
+                        <CheckCircle2 className="h-3 w-3" />Success
+                      </span>
+                    ) : run.status === 'failure' ? (
+                      <span className="inline-flex items-center gap-1 text-status-failing" title={run.error_message ?? undefined}>
+                        <XCircle className="h-3 w-3" />Failed
+                      </span>
+                    ) : (
+                      <span className="text-status-in-progress">Partial</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {new Date(run.started_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">
+                    {run.duration_ms != null ? `${run.duration_ms.toLocaleString()} ms` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right text-foreground font-medium">{run.records_affected}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState('team');
 
@@ -188,6 +322,8 @@ function SettingsPage() {
       {activeTab === 'roles' && <RBACManager />}
 
       {activeTab === 'notifications' && <NotificationsTab />}
+
+      {activeTab === 'jobs' && <ScheduledJobsTab />}
 
       {activeTab === 'api' && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
