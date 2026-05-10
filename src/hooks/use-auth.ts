@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { setUserContext, clearUserContext } from '@/lib/monitoring';
 
 export interface AuthState {
   user: User | null;
@@ -26,6 +27,11 @@ export function useAuth() {
           isAuthenticated: !!session?.user,
           isLoading: false,
         });
+        if (session?.user) {
+          setUserContext(session.user.id, session.user.email);
+        } else {
+          clearUserContext();
+        }
       }
     );
 
@@ -36,6 +42,9 @@ export function useAuth() {
         isAuthenticated: !!session?.user,
         isLoading: false,
       });
+      if (session?.user) {
+        setUserContext(session.user.id, session.user.email);
+      }
     });
 
     return () => subscription.unsubscribe();

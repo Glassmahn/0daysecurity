@@ -12,6 +12,8 @@ export default defineConfig({
     'import.meta.env.VITE_SUPABASE_PROJECT_ID': '"test"',
     'import.meta.env.DEV': 'false',
     'import.meta.env.MODE': '"test"',
+    // No DSN in tests — Sentry initialisation is a no-op
+    'import.meta.env.VITE_SENTRY_DSN': '""',
   },
   test: {
     environment: 'jsdom',

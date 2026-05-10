@@ -1,5 +1,6 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { captureError } from "@/lib/monitoring";
 
 function DefaultErrorComponent({
   error,
@@ -8,6 +9,7 @@ function DefaultErrorComponent({
   error: Error;
   reset: () => void;
 }) {
+  captureError(error, { source: 'DefaultErrorComponent' });
   const router = useRouter();
 
   return (

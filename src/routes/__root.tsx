@@ -1,9 +1,12 @@
 import '@/lib/env'; // validates required env vars at startup — throws with a clear message if any are missing
+import { initMonitoring } from '@/lib/monitoring';
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { useState } from "react";
+
+initMonitoring();
 
 import appCss from "../styles.css?url";
 

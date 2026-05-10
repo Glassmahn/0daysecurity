@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { sanitizeError } from '@/lib/errors';
+import { captureError } from '@/lib/monitoring';
 
 type SupabaseTable = 'controls' | 'incidents' | 'evidence' | 'alerts' | 'vendors' | 'frameworks' | 'knowledge_base';
 
@@ -24,6 +25,7 @@ export function useSupabaseTable<T extends SupabaseTable>(
         .order(orderBy, { ascending });
       if (cancelled) return;
       if (err) {
+        captureError(err, { table, operation: 'fetch' });
         setError(sanitizeError(err));
         setLoading(false);
         return;
