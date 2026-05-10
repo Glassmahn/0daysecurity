@@ -4,6 +4,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { inviteUser, deactivateUser, reactivateUser, listUsers } from '@/lib/user-management.functions';
 import { UserPlus, Loader2, Search, UserX, UserCheck, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/errors';
 import { format } from 'date-fns';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -49,7 +50,7 @@ export function UserManagement() {
       setInviteForm({ email: '', displayName: '', role: 'viewer' });
       toast.success('User invited successfully');
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.error(sanitizeError(err)),
   });
 
   const deactivateMutation = useMutation({
@@ -58,7 +59,7 @@ export function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast.success('User deactivated');
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.error(sanitizeError(err)),
   });
 
   const reactivateMutation = useMutation({
@@ -67,7 +68,7 @@ export function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast.success('User reactivated');
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.error(sanitizeError(err)),
   });
 
   const filtered = users.filter(u => {

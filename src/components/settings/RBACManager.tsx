@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logAudit } from '@/lib/audit-logger';
 import { Shield, UserPlus, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/errors';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -79,7 +80,7 @@ export function RBACManager() {
       toast.success('Role updated successfully');
     },
     onError: (err) => {
-      toast.error(`Failed to update role: ${err.message}`);
+      toast.error(`Failed to update role: ${sanitizeError(err)}`);
     },
   });
 

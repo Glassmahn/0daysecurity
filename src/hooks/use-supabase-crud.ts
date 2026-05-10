@@ -4,6 +4,7 @@ import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logAudit } from '@/lib/audit-logger';
 import type { AuditEntityType } from '@/lib/audit-logger';
+import { sanitizeError } from '@/lib/errors';
 
 type CrudTable = 'controls' | 'incidents' | 'evidence' | 'alerts' | 'vendors' | 'frameworks' | 'risks' | 'tests' | 'assets' | 'policies' | 'knowledge_base';
 
@@ -38,7 +39,7 @@ export function useSupabaseCrud<T extends CrudTable>(
       .select('*')
       .order(orderBy, { ascending });
     if (err) {
-      setError(err.message);
+      setError(sanitizeError(err));
       setLoading(false);
       return;
     }
@@ -53,7 +54,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   const insert = useCallback(async (record: Record<string, unknown>) => {
     const { data: inserted, error: err } = await supabase.from(table).insert(record as never).select('id').maybeSingle();
     if (err) {
-      toast.error(`Failed to create: ${err.message}`);
+      toast.error(`Failed to create: ${sanitizeError(err)}`);
       return false;
     }
     toast.success('Record created successfully');
@@ -70,7 +71,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   const update = useCallback(async (id: string, record: Record<string, unknown>) => {
     const { error: err } = await (supabase.from(table).update(record as never) as any).eq('id', id);
     if (err) {
-      toast.error(`Failed to update: ${err.message}`);
+      toast.error(`Failed to update: ${sanitizeError(err)}`);
       return false;
     }
     toast.success('Record updated successfully');
@@ -87,7 +88,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   const remove = useCallback(async (id: string) => {
     const { error: err } = await (supabase.from(table).delete() as any).eq('id', id);
     if (err) {
-      toast.error(`Failed to delete: ${err.message}`);
+      toast.error(`Failed to delete: ${sanitizeError(err)}`);
       return false;
     }
     toast.success('Record deleted successfully');
@@ -99,7 +100,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   const bulkRemove = useCallback(async (ids: string[]) => {
     const { error: err } = await (supabase.from(table).delete() as any).in('id', ids);
     if (err) {
-      toast.error(`Failed to delete: ${err.message}`);
+      toast.error(`Failed to delete: ${sanitizeError(err)}`);
       return false;
     }
     toast.success(`${ids.length} record${ids.length > 1 ? 's' : ''} deleted`);
@@ -111,7 +112,7 @@ export function useSupabaseCrud<T extends CrudTable>(
   const bulkUpdate = useCallback(async (ids: string[], record: Record<string, unknown>) => {
     const { error: err } = await (supabase.from(table).update(record as never) as any).in('id', ids);
     if (err) {
-      toast.error(`Failed to update: ${err.message}`);
+      toast.error(`Failed to update: ${sanitizeError(err)}`);
       return false;
     }
     toast.success(`${ids.length} record${ids.length > 1 ? 's' : ''} updated`);
