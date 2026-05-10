@@ -37,12 +37,12 @@ All tables have Row-Level Security enabled. Key patterns:
 
 ### Known Findings (from automated scan)
 
-| Severity | Finding | Table | Recommendation |
-|----------|---------|-------|---------------|
-| ERROR | Sensitive data (contact_email, contract_value) readable by all authenticated | `vendors` | Restrict SELECT to admin/analyst |
-| ERROR | IP addresses and locations readable by all authenticated | `assets` | Restrict SELECT to admin/analyst |
-| WARN | Audit logs readable by all authenticated users | `audit_logs` | Restrict SELECT to admin only |
-| WARN | Extension installed in `public` schema | — | Move to dedicated schema |
+| Severity | Finding | Table | Status |
+|----------|---------|-------|--------|
+| ~~ERROR~~ | Sensitive data (contact_email, contract_value) readable by all authenticated | `vendors` | Fixed — migration `20260411180000` |
+| ~~ERROR~~ | IP addresses and locations readable by all authenticated | `assets` | Fixed — migration `20260509000000` |
+| ~~WARN~~ | Audit logs readable by all authenticated users | `audit_logs` | Fixed — migration `20260411180000` |
+| WARN | Extension installed in `public` schema | — | Open — move to dedicated schema |
 
 ## Key Files for Review
 
