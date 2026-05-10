@@ -24,7 +24,7 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
         </div>
       </div>
       <div className="space-y-1">
-        {items.map((item, index) => {
+        {items.map((item) => {
           const route = entityTypeRoutes[item.entityType] || '/';
           return (
             <Link

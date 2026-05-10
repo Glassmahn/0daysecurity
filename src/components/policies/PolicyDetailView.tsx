@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { policies } from '@/lib/mock-data-extended';
 import { controls, frameworks } from '@/lib/mock-data';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import {
   ArrowLeft, FileText, Clock, User, Shield, CheckCircle2,

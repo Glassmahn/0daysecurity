@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Trash2, RefreshCw, X, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,

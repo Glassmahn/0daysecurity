@@ -16,7 +16,6 @@ import {
   User,
   Calendar,
   FileText,
-  CheckCircle2,
 } from 'lucide-react';
 
 const statusStyles: Record<string, string> = {

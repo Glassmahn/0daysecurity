@@ -40,7 +40,6 @@ describe('exportToCsv', () => {
   it('sets the correct download filename', () => {
     const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(node => node);
     exportToCsv('controls-export', rows, columns);
-    const anchors = document.querySelectorAll('a[download]');
     // The element is created but not necessarily appended; check the href attribute via the spy args
     expect(URL.createObjectURL).toHaveBeenCalledOnce();
     appendSpy.mockRestore();

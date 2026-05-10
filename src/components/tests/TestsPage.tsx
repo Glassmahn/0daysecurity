@@ -8,8 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Play, CheckCircle, XCircle, Clock, AlertTriangle, Calendar,
-  RefreshCw, Filter, Plus, Search, Library, FlaskConical, BarChart3,
-  Timer, User, Cpu, FileText,
+  RefreshCw, Filter, Plus, Search, Library, BarChart3,
+  User, Cpu,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 

@@ -11,8 +11,6 @@ import { VendorRiskRadar } from '@/components/dashboard/VendorRiskRadar';
 import { FrameworkScoreCards } from '@/components/dashboard/FrameworkScoreCards';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp } from 'lucide-react';
-
 export const Route = createFileRoute('/dashboard/')({
   component: DashboardHome,
   head: () => ({

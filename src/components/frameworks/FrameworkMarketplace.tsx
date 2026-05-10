@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Search, Plus, ChevronRight, Check, Globe, Lock, Brain, Building, MapPin, Sparkles } from 'lucide-react';
+import { Shield, Search, Plus, ChevronRight, Globe, Lock, Brain, Building, MapPin, Sparkles } from 'lucide-react';
 import { frameworkCatalog, categoryLabels, type CatalogFramework } from '@/lib/framework-catalog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AddFrameworkWizard } from './AddFrameworkWizard';

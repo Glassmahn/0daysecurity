@@ -3,7 +3,7 @@ import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, BookOpen, Tag } from 'lucide-react';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, BookOpen } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
 import { useTableSort } from '@/hooks/use-table-sort';
@@ -68,7 +68,7 @@ const kbStatusOptions = kbFields.find(f => f.name === 'status')!.options!;
 function KnowledgeBasePage() {
   const navigate = useNavigate({ from: '/knowledge-base/' });
   const { category: categoryFilter, q: search } = Route.useSearch();
-  const { data: articles, loading, insert, update, remove, bulkRemove, bulkUpdate, refetch } = useSupabaseCrud('knowledge_base');
+  const { data: articles, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('knowledge_base');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -76,7 +76,7 @@ function KnowledgeBasePage() {
 
   // Full-text search results
   const [ftsResults, setFtsResults] = useState<Set<string> | null>(null);
-  const [ftsLoading, setFtsLoading] = useState(false);
+  const [, setFtsLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const runFts = useCallback(async (q: string) => {

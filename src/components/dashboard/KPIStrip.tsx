@@ -17,7 +17,7 @@ const iconMap: Record<string, React.ElementType> = {
   'user-x': UserX,
 };
 
-export function KPIStrip({ data, period }: { data: KPIData[]; period: string }) {
+export function KPIStrip({ data, period: _period }: { data: KPIData[]; period: string }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3 stagger-children">
       {data.map((kpi) => {

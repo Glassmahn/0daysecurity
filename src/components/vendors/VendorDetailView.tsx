@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  ArrowLeft, CheckCircle, XCircle, Clock, AlertTriangle, Shield,
+  ArrowLeft, CheckCircle, XCircle, Clock, AlertTriangle,
   FileText, Download, Upload, Building2, Globe, Mail, MapPin, Calendar,
-  ClipboardList, Wrench, File, Image, RefreshCw, ExternalLink,
-  TrendingUp, TrendingDown, Minus, Star, Lock, Phone,
+  ClipboardList, Wrench, File, Image, RefreshCw,
+  TrendingUp, TrendingDown, Minus, Star, Phone,
 } from 'lucide-react';
 
 /* ── Vendor Data ─────────────────────────────────────── */

@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
   ArrowLeft, CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw,
   Terminal, Paperclip, Bug, Wrench, Cpu, User, FileText, Download,
-  ChevronRight, Shield, Calendar, ExternalLink, Image, File,
+  Shield, Calendar, Image, File,
 } from 'lucide-react';
 import { testLibraryCatalog, type TestTemplate } from '@/lib/test-library-catalog';
 import { enrichedControls } from '@/lib/framework-catalog';

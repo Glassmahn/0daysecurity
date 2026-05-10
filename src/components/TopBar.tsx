@@ -1,4 +1,4 @@
-import { Search, Bell, Sun, Moon, Menu, LogOut, User } from 'lucide-react';
+import { Search, Bell, Sun, Moon, Menu, LogOut } from 'lucide-react';
 import { CommandSearch } from './CommandSearch';
 import { useThemeStore } from '@/hooks/use-theme';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';

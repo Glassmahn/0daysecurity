@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, Check, Shield, Users, Calendar, Search } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Check, Shield, Calendar, Search } from 'lucide-react';
 import { type CatalogFramework, enrichedControls, controlCategories } from '@/lib/framework-catalog';
 
 interface Props {

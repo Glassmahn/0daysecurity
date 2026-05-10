@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logAudit } from '@/lib/audit-logger';
-import { Shield, UserPlus, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/errors';
 import type { Database } from '@/integrations/supabase/types';

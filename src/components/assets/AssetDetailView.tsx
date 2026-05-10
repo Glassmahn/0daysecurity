@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   ArrowLeft, Server, Database, Globe, Cloud, Monitor, Network, Laptop,
   Shield, AlertTriangle, CheckCircle2, XCircle, Clock, Bug, Scan,
-  Calendar, User, Activity, TrendingDown, TrendingUp, Eye
+  Calendar, User, TrendingDown, TrendingUp
 } from 'lucide-react';
 
 const typeIcons: Record<string, React.ElementType> = {
