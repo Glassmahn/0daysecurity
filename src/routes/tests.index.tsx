@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { TEST_STATUS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap, Target } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
@@ -93,9 +94,9 @@ function TestsIndexPage() {
   const bulk = useBulkSelection(filteredIds);
 
   const stats = useMemo(() => ({
-    passing: tests.filter(t => t.status === 'passing').length,
-    failing: tests.filter(t => t.status === 'failing').length,
-    pending: tests.filter(t => t.status === 'pending').length,
+    passing: tests.filter(t => t.status === TEST_STATUS.PASSING).length,
+    failing: tests.filter(t => t.status === TEST_STATUS.FAILING).length,
+    pending: tests.filter(t => t.status === TEST_STATUS.PENDING).length,
     total: tests.length,
   }), [tests]);
   const passRate = stats.total > 0 ? Math.round((stats.passing / stats.total) * 100) : 0;

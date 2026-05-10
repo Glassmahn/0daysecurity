@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { SEVERITY, SEVERITY_LEVELS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2, Download, Flame, Filter } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
@@ -103,10 +104,10 @@ function IncidentsPage() {
   const activeFilterCount = [severityFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
   const severityCounts = useMemo(() => ({
-    critical: incidents.filter(i => i.severity === 'critical').length,
-    high: incidents.filter(i => i.severity === 'high').length,
-    medium: incidents.filter(i => i.severity === 'medium').length,
-    low: incidents.filter(i => i.severity === 'low').length,
+    [SEVERITY.CRITICAL]: incidents.filter(i => i.severity === SEVERITY.CRITICAL).length,
+    [SEVERITY.HIGH]: incidents.filter(i => i.severity === SEVERITY.HIGH).length,
+    [SEVERITY.MEDIUM]: incidents.filter(i => i.severity === SEVERITY.MEDIUM).length,
+    [SEVERITY.LOW]: incidents.filter(i => i.severity === SEVERITY.LOW).length,
   }), [incidents]);
 
   if (loading) {
@@ -157,7 +158,7 @@ function IncidentsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
-        {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
+        {SEVERITY_LEVELS.map(sev => (
           <button key={sev} onClick={() => updateSearch({ severity: severityFilter === sev ? 'all' : sev })}
             className={`bg-card border rounded-xl p-4 text-left hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer ${severityFilter === sev ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
             <div className={`text-2xl font-display font-bold ${severityFilter === sev ? 'text-primary' : ''}`}>{severityCounts[sev]}</div>

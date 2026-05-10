@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { CONTROL_STATUS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2, Download, ListChecks, Filter } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
@@ -94,9 +95,9 @@ function ControlsPage() {
 
   const stats = useMemo(() => ({
     total: controls.length,
-    implemented: controls.filter(c => c.status === 'implemented').length,
-    failing: controls.filter(c => c.status === 'failing').length,
-    in_progress: controls.filter(c => c.status === 'partially_implemented').length,
+    implemented: controls.filter(c => c.status === CONTROL_STATUS.IMPLEMENTED).length,
+    failing: controls.filter(c => c.status === CONTROL_STATUS.FAILING).length,
+    in_progress: controls.filter(c => c.status === CONTROL_STATUS.PARTIALLY_IMPLEMENTED).length,
   }), [controls]);
 
   const updateSearch = (updates: Record<string, string>) => {

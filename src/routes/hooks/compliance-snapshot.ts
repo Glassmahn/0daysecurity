@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
+import { CONTROL_STATUS } from '@/lib/constants'
 
 export const Route = createFileRoute('/hooks/compliance-snapshot')({
   server: {
@@ -33,7 +34,7 @@ export const Route = createFileRoute('/hooks/compliance-snapshot')({
 
         const totalControls = controls?.length || 1
         const passingControls = controls?.filter(
-          (c) => c.status === 'implemented'
+          (c) => c.status === CONTROL_STATUS.IMPLEMENTED
         ).length || 0
         const controlsPct = Math.round((passingControls / totalControls) * 100)
 
@@ -63,7 +64,7 @@ export const Route = createFileRoute('/hooks/compliance-snapshot')({
           ) || []
           const fwTotal = fwControls.length || 1
           const fwPassing = fwControls.filter(
-            (c) => c.status === 'implemented'
+            (c) => c.status === CONTROL_STATUS.IMPLEMENTED
           ).length
           return {
             id: fw.id,

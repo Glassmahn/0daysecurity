@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { KPIData, PriorityItem, ActivityItem } from '@/lib/mock-data';
+import { ALERT_STATUS, CONTROL_STATUS, SEVERITY } from '@/lib/constants';
 
 // ---------- helpers ----------
 
@@ -17,9 +18,9 @@ async function fetchAlertCounts() {
   if (error) throw error;
   let openCritical = 0, openHigh = 0;
   (data ?? []).forEach(r => {
-    if (r.status !== 'resolved' && r.status !== 'dismissed') {
-      if (r.severity === 'critical') openCritical++;
-      if (r.severity === 'high') openHigh++;
+    if (r.status !== ALERT_STATUS.RESOLVED && r.status !== ALERT_STATUS.DISMISSED) {
+      if (r.severity === SEVERITY.CRITICAL) openCritical++;
+      if (r.severity === SEVERITY.HIGH) openHigh++;
     }
   });
   return { openCritical, openHigh, total: data?.length ?? 0 };
@@ -49,10 +50,10 @@ async function fetchFrameworkPosture() {
     const fwControls = (controls ?? []).filter(c => c.framework_id === fw.id);
     let passing = 0, failing = 0, inProgress = 0, na = 0;
     fwControls.forEach(c => {
-      if (c.status === 'implemented') passing++;
-      else if (c.status === 'failing') failing++;
-      else if (c.status === 'in_progress') inProgress++;
-      else if (c.status === 'not_applicable') na++;
+      if (c.status === CONTROL_STATUS.IMPLEMENTED) passing++;
+      else if (c.status === CONTROL_STATUS.FAILING) failing++;
+      else if (c.status === CONTROL_STATUS.IN_PROGRESS) inProgress++;
+      else if (c.status === CONTROL_STATUS.NOT_APPLICABLE) na++;
     });
     // Use DB counts if no controls mapped yet
     if (fwControls.length === 0) {
@@ -106,10 +107,10 @@ async function fetchRiskHeatmap() {
 async function fetchControlStatusDonut() {
   const counts = await fetchControlCounts();
   return [
-    { name: 'Implemented', value: counts['implemented'] || 0, color: 'oklch(0.65 0.19 155)', filter: 'implemented' },
-    { name: 'In Progress', value: counts['in_progress'] || 0, color: 'oklch(0.65 0.19 250)', filter: 'in_progress' },
-    { name: 'Failing', value: counts['failing'] || 0, color: 'oklch(0.7 0.15 60)', filter: 'failing' },
-    { name: 'Not Started', value: (counts['not_started'] || 0) + (counts['not_implemented'] || 0), color: 'oklch(0.4 0.02 250)', filter: 'not_implemented' },
+    { name: 'Implemented', value: counts[CONTROL_STATUS.IMPLEMENTED] || 0, color: 'oklch(0.65 0.19 155)', filter: CONTROL_STATUS.IMPLEMENTED },
+    { name: 'In Progress', value: counts[CONTROL_STATUS.IN_PROGRESS] || 0, color: 'oklch(0.65 0.19 250)', filter: CONTROL_STATUS.IN_PROGRESS },
+    { name: 'Failing', value: counts[CONTROL_STATUS.FAILING] || 0, color: 'oklch(0.7 0.15 60)', filter: CONTROL_STATUS.FAILING },
+    { name: 'Not Started', value: (counts[CONTROL_STATUS.NOT_STARTED] || 0) + (counts[CONTROL_STATUS.NOT_IMPLEMENTED] || 0), color: 'oklch(0.4 0.02 250)', filter: CONTROL_STATUS.NOT_IMPLEMENTED },
   ];
 }
 
@@ -120,8 +121,8 @@ async function fetchPriorityQueue(): Promise<PriorityItem[]> {
   const { data: alerts } = await supabase
     .from('alerts')
     .select('id, title, severity, created_at')
-    .in('severity', ['critical', 'high'])
-    .not('status', 'in', '("resolved","dismissed")')
+    .in('severity', [SEVERITY.CRITICAL, SEVERITY.HIGH])
+    .not('status', 'in', `("${ALERT_STATUS.RESOLVED}","${ALERT_STATUS.DISMISSED}")`)
     .order('created_at', { ascending: false })
     .limit(5);
   (alerts ?? []).forEach(a => {
@@ -139,7 +140,7 @@ async function fetchPriorityQueue(): Promise<PriorityItem[]> {
   const { data: controls } = await supabase
     .from('controls')
     .select('id, title, created_at')
-    .eq('status', 'failing')
+    .eq('status', CONTROL_STATUS.FAILING)
     .limit(3);
   (controls ?? []).forEach(c => {
     items.push({
@@ -153,7 +154,7 @@ async function fetchPriorityQueue(): Promise<PriorityItem[]> {
   });
 
   // Sort: critical first, then high
-  items.sort((a, b) => (a.severity === 'critical' ? 0 : 1) - (b.severity === 'critical' ? 0 : 1));
+  items.sort((a, b) => (a.severity === SEVERITY.CRITICAL ? 0 : 1) - (b.severity === SEVERITY.CRITICAL ? 0 : 1));
   return items.slice(0, 8);
 }
 
@@ -210,8 +211,8 @@ async function fetchKPIData(): Promise<KPIData[]> {
   ]);
 
   const totalControls = Object.values(controlCounts).reduce((a, b) => a + b, 0) || 1;
-  const passing = controlCounts['implemented'] || 0;
-  const failing = (controlCounts['failing'] || 0);
+  const passing = controlCounts[CONTROL_STATUS.IMPLEMENTED] || 0;
+  const failing = controlCounts[CONTROL_STATUS.FAILING] || 0;
   const compliancePct = Math.round((passing / totalControls) * 100);
 
   return [

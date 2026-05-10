@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { SEVERITY, SEVERITY_LEVELS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { Search, Loader2, Plus, Pencil, Trash2, Download, AlertTriangle, Filter } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
@@ -103,10 +104,10 @@ function AlertsPage() {
   const activeFilterCount = [severityFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
   const severityCounts = useMemo(() => ({
-    critical: alerts.filter(a => a.severity === 'critical').length,
-    high: alerts.filter(a => a.severity === 'high').length,
-    medium: alerts.filter(a => a.severity === 'medium').length,
-    low: alerts.filter(a => a.severity === 'low').length,
+    [SEVERITY.CRITICAL]: alerts.filter(a => a.severity === SEVERITY.CRITICAL).length,
+    [SEVERITY.HIGH]: alerts.filter(a => a.severity === SEVERITY.HIGH).length,
+    [SEVERITY.MEDIUM]: alerts.filter(a => a.severity === SEVERITY.MEDIUM).length,
+    [SEVERITY.LOW]: alerts.filter(a => a.severity === SEVERITY.LOW).length,
   }), [alerts]);
 
   if (loading) {
@@ -157,7 +158,7 @@ function AlertsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
-        {(['critical', 'high', 'medium', 'low'] as const).map(sev => (
+        {SEVERITY_LEVELS.map(sev => (
           <button key={sev} onClick={() => updateSearch({ severity: severityFilter === sev ? 'all' : sev })}
             className={`bg-card border rounded-xl p-4 text-left hover:border-primary/40 hover:shadow-glow transition-all cursor-pointer ${severityFilter === sev ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
             <div className={`text-2xl font-display font-bold ${severityFilter === sev ? 'text-primary' : ''}`}>{severityCounts[sev]}</div>
