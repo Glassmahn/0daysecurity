@@ -34,6 +34,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Test
+        run: npm run test:run
+
       - name: Build
         run: bun run build
         env:
