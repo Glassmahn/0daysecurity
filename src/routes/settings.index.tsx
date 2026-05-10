@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-import { Users, Bell, Key, CreditCard, Building2, Shield } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Users, Bell, Key, CreditCard, Building2, Shield, Loader2 } from 'lucide-react';
 import { RBACManager } from '@/components/settings/RBACManager';
 import { UserManagement } from '@/components/settings/UserManagement';
 import { AdminGuard } from '@/components/guards/RoleGuards';
+import { useNotificationPrefs, type NotificationPrefs } from '@/hooks/use-notification-prefs';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/settings/')({
   component: SettingsPage,
@@ -19,6 +21,101 @@ const tabs = [
   { id: 'billing', label: 'Billing', icon: CreditCard },
 ];
 
+
+const NOTIFICATION_ROWS: Array<{
+  label: string;
+  emailKey: keyof NotificationPrefs;
+  slackKey: keyof NotificationPrefs;
+}> = [
+  { label: 'Critical alerts',          emailKey: 'critical_alerts_email',   slackKey: 'critical_alerts_slack'   },
+  { label: 'High severity alerts',     emailKey: 'high_alerts_email',        slackKey: 'high_alerts_slack'        },
+  { label: 'Evidence expiring',        emailKey: 'evidence_expiring_email',  slackKey: 'evidence_expiring_slack'  },
+  { label: 'Access review reminders',  emailKey: 'access_review_email',      slackKey: 'access_review_slack'      },
+  { label: 'Policy review due',        emailKey: 'policy_review_email',      slackKey: 'policy_review_slack'      },
+  { label: 'Weekly digest',            emailKey: 'weekly_digest_email',      slackKey: 'weekly_digest_slack'      },
+];
+
+function NotificationsTab() {
+  const { prefs, loading, saving, save } = useNotificationPrefs();
+  const [local, setLocal] = useState<NotificationPrefs | null>(null);
+
+  // Merge server prefs into local state once loaded.
+  const effective = local ?? prefs;
+
+  const toggle = useCallback((key: keyof NotificationPrefs) => {
+    setLocal(prev => {
+      const base = prev ?? prefs;
+      return { ...base, [key]: !base[key] };
+    });
+  }, [prefs]);
+
+  const handleSave = async () => {
+    const ok = await save(effective);
+    if (ok) {
+      toast.success('Notification preferences saved');
+      setLocal(null);
+    } else {
+      toast.error('Failed to save preferences');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading preferences…
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">Notification Preferences</h3>
+      <div className="space-y-2">
+        {NOTIFICATION_ROWS.map(row => (
+          <div key={row.emailKey} className="flex items-center justify-between px-4 py-3 bg-surface rounded-lg">
+            <span className="text-sm text-foreground">{row.label}</span>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={effective[row.emailKey] as boolean}
+                  onChange={() => toggle(row.emailKey)}
+                  className="rounded"
+                />
+                <span className="text-xs text-muted-foreground">Email</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={effective[row.slackKey] as boolean}
+                  onChange={() => toggle(row.slackKey)}
+                  className="rounded"
+                />
+                <span className="text-xs text-muted-foreground">Slack</span>
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving || local === null}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+          Save Preferences
+        </button>
+        {local !== null && (
+          <span className="text-xs text-muted-foreground">Unsaved changes</span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground pt-1">
+        Notification emails are sent daily at 08:00 UTC. Evidence expiry alerts trigger 30 days before the deadline.
+      </p>
+    </div>
+  );
+}
 
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState('team');
@@ -90,35 +187,7 @@ function SettingsPage() {
 
       {activeTab === 'roles' && <RBACManager />}
 
-      {activeTab === 'notifications' && (
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">Notification Preferences</h3>
-          <div className="space-y-4">
-            {[
-              { label: 'Critical alerts', email: true, slack: true },
-              { label: 'High severity alerts', email: true, slack: false },
-              { label: 'Evidence expiring', email: true, slack: false },
-              { label: 'Access review reminders', email: true, slack: true },
-              { label: 'Policy review due', email: false, slack: false },
-              { label: 'Weekly digest', email: true, slack: false },
-            ].map((n, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3 bg-surface rounded-lg">
-                <span className="text-sm text-foreground">{n.label}</span>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" defaultChecked={n.email} className="rounded" />
-                    <span className="text-xs text-muted-foreground">Email</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" defaultChecked={n.slack} className="rounded" />
-                    <span className="text-xs text-muted-foreground">Slack</span>
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {activeTab === 'notifications' && <NotificationsTab />}
 
       {activeTab === 'api' && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
