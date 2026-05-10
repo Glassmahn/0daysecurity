@@ -6,6 +6,9 @@ import { Shield, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { checkRateLimit, recordAttempt, formatRetryAfter } from '@/lib/rate-limiter';
+
+const SIGNUP_LIMIT = { maxAttempts: 5, windowMs: 30 * 60 * 1000 };
 
 export const Route = createFileRoute('/signup')({
   component: SignupPage,
@@ -29,6 +32,13 @@ function SignupPage() {
       return;
     }
 
+    const rlKey = `signup:${email.trim().toLowerCase()}`;
+    const limit = checkRateLimit(rlKey, SIGNUP_LIMIT);
+    if (!limit.allowed) {
+      setError(`Too many sign-up attempts. Please wait ${formatRetryAfter(limit.retryAfterMs)} before trying again.`);
+      return;
+    }
+
     setLoading(true);
 
     const { error: authError } = await supabase.auth.signUp({
@@ -41,6 +51,7 @@ function SignupPage() {
     });
 
     if (authError) {
+      recordAttempt(rlKey, SIGNUP_LIMIT);
       setError(authError.message);
       setLoading(false);
       return;

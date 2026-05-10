@@ -5,6 +5,9 @@ import { Shield, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { checkRateLimit, recordAttempt, formatRetryAfter } from '@/lib/rate-limiter';
+
+const RESET_LIMIT = { maxAttempts: 3, windowMs: 60 * 60 * 1000 };
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,
@@ -19,6 +22,14 @@ function ForgotPasswordPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const rlKey = `reset:${email.trim().toLowerCase()}`;
+    const limit = checkRateLimit(rlKey, RESET_LIMIT);
+    if (!limit.allowed) {
+      setError(`Reset link already requested. Please wait ${formatRetryAfter(limit.retryAfterMs)} before requesting another.`);
+      return;
+    }
+
     setLoading(true);
 
     const { error: authError } = await supabase.auth.resetPasswordForEmail(
@@ -27,11 +38,13 @@ function ForgotPasswordPage() {
     );
 
     if (authError) {
+      recordAttempt(rlKey, RESET_LIMIT);
       setError(authError.message);
       setLoading(false);
       return;
     }
 
+    recordAttempt(rlKey, RESET_LIMIT);
     setSent(true);
     setLoading(false);
   };
