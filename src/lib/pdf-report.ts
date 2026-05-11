@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToCsv } from './export-csv';
 import { format } from 'date-fns';
+import { personnelMembers } from './mock-data-extended';
 
 // ─── Colour palette (RGB tuples for jsPDF) ────────────────────────────────────
 const C = {
@@ -520,6 +521,22 @@ export async function generateIncidentSummary() {
   doc.save(`incident-summary_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
 
+// ─── Personnel Review Status CSV ─────────────────────────────────────────────
+
+async function generatePersonnelReview(): Promise<void> {
+  const rows = personnelMembers.map(p => ({
+    Name: p.name,
+    Email: p.email,
+    Department: p.department,
+    Title: p.title,
+    'Access Review': p.accessReviewStatus,
+    'Training Status': p.trainingStatus.replace(/_/g, ' '),
+    'Last Access Review': p.lastAccessReview ?? '',
+    'Last Training': p.lastTrainingCompleted ?? '',
+  }));
+  exportToCsv(`personnel-review_${format(new Date(), 'yyyy-MM-dd')}.csv`, rows);
+}
+
 // ─── Dispatch by report type ──────────────────────────────────────────────────
 
 const GENERATORS: Record<string, () => Promise<void>> = {
@@ -528,6 +545,7 @@ const GENERATORS: Record<string, () => Promise<void>> = {
   'rpt-3': generateEvidenceCoverage,
   'rpt-4': generateAlertTrends,
   'rpt-5': generateIncidentSummary,
+  'rpt-6': generatePersonnelReview,
   'rpt-7': generateRiskAssessment,
   'rpt-8': generateExecutiveDashboard,
 };

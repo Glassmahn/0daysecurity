@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { assets } from '@/lib/mock-data';
-import { Monitor } from 'lucide-react';
+import { Monitor, Search } from 'lucide-react';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/assets/')({
   component: AssetsPage,
@@ -31,16 +32,50 @@ const typeStyles: Record<string, string> = {
 
 function AssetsPage() {
   const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const types = ['all', ...Array.from(new Set(assets.map(a => a.type)))];
+  const filtered = assets.filter(a => {
+    const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.owner.toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === 'all' || a.type === typeFilter;
+    return matchSearch && matchType;
+  });
+
   return (
     <div className="space-y-5 animate-fade-up">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-          <Monitor className="h-5 w-5 text-white" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+            <Monitor className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Assets</h1>
+            <p className="text-sm text-muted-foreground">{filtered.length} of {assets.length} monitored assets</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Assets</h1>
-          <p className="text-sm text-muted-foreground">{assets.length} monitored assets</p>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search assets…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-48"
+            />
+          </div>
+          <select
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+            className="text-sm bg-surface border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+          >
+            {types.map(t => (
+              <option key={t} value={t}>{t === 'all' ? 'All Types' : t.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -58,7 +93,7 @@ function AssetsPage() {
             </tr>
           </thead>
           <tbody>
-            {assets.map(a => (
+            {filtered.map(a => (
               <tr key={a.id} className="border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer" onClick={() => navigate({ to: '/assets/$assetId', params: { assetId: a.id } })}>
                 <td className="px-4 py-3.5 font-medium text-foreground">{a.name}</td>
                 <td className="px-4 py-3.5">

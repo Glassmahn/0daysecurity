@@ -3,6 +3,8 @@ import { CommandSearch } from './CommandSearch';
 import { useThemeStore } from '@/hooks/use-theme';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { useAuth } from '@/hooks/use-auth';
+import { useNavigate } from '@tanstack/react-router';
+import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +17,9 @@ export function TopBar() {
   const { theme, toggleTheme } = useThemeStore();
   const sidebarToggle = useSidebarStore((s) => s.toggle);
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { data: alerts } = useSupabaseCrud('alerts');
+  const openAlertCount = alerts?.filter((a: { status: string }) => a.status === 'open').length ?? 0;
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
@@ -55,11 +60,17 @@ export function TopBar() {
             )}
           </button>
 
-          <button className="relative p-2.5 rounded-xl hover:bg-accent transition-all group">
+          <button
+            onClick={() => navigate({ to: '/alerts' })}
+            className="relative p-2.5 rounded-xl hover:bg-accent transition-all group"
+            title="View open alerts"
+          >
             <Bell className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-            <span className="absolute top-1 right-1 h-4 w-4 rounded-full gradient-primary text-[9px] font-bold text-white flex items-center justify-center shadow-glow">
-              3
-            </span>
+            {openAlertCount > 0 && (
+              <span className="absolute top-1 right-1 h-4 w-4 rounded-full gradient-primary text-[9px] font-bold text-white flex items-center justify-center shadow-glow">
+                {openAlertCount > 99 ? '99+' : openAlertCount}
+              </span>
+            )}
           </button>
 
           <DropdownMenu>

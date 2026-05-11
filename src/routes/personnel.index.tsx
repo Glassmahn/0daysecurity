@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { personnelMembers } from '@/lib/mock-data-extended';
 import { useState } from 'react';
 import { Users, Mail, ShieldAlert, GraduationCap } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/personnel/')({
   component: PersonnelPage,
@@ -43,7 +44,13 @@ function PersonnelPage() {
           <h1 className="text-xl font-bold text-foreground">Personnel</h1>
           <p className="text-sm text-muted-foreground">{personnelMembers.length} team members tracked</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
+        <button
+          onClick={() => {
+            const overdueCount = personnelMembers.filter(p => p.accessReviewStatus === 'overdue' || p.trainingStatus === 'overdue').length;
+            toast.success(`Reminders sent to ${overdueCount} team member${overdueCount !== 1 ? 's' : ''}`);
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
           <Mail className="h-4 w-4" /> Send Reminders
         </button>
       </div>

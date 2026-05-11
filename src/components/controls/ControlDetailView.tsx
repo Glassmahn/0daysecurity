@@ -216,10 +216,12 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-secondary rounded-md p-0.5 overflow-x-auto">
+      <div role="tablist" className="flex gap-1 bg-secondary rounded-md p-0.5 overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={activeTab === t.key}
             onClick={() => setActiveTab(t.key)}
             className={`px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap ${activeTab === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >

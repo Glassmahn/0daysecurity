@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { policies } from '@/lib/mock-data-extended';
 import { FileText, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/policies/')({
   component: PoliciesPage,
@@ -26,7 +27,10 @@ function PoliciesPage() {
           <h1 className="text-xl font-bold text-foreground">Policies</h1>
           <p className="text-sm text-muted-foreground">{policies.length} policies managed</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
+        <button
+          onClick={() => toast.info('Policy editor coming soon')}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
           <Plus className="h-4 w-4" /> New Policy
         </button>
       </div>

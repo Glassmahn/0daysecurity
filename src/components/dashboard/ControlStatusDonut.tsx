@@ -17,8 +17,8 @@ export function ControlStatusDonut({ data, isLoading }: { data?: DonutItem[]; is
     return <Skeleton className="h-[360px] rounded-xl" />;
   }
 
-  const total = data.reduce((s, d) => s + d.value, 0) || 1;
-  const implementedPct = Math.round((data[0]?.value ?? 0) / total * 100);
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const implementedPct = total === 0 ? 0 : Math.round((data[0]?.value ?? 0) / total * 100);
 
   const handleClick = (_: unknown, index: number) => {
     const filter = data[index]?.filter || 'all';
@@ -33,7 +33,7 @@ export function ControlStatusDonut({ data, isLoading }: { data?: DonutItem[]; is
         </div>
         <div>
           <h3 className="font-display font-semibold text-foreground">Control Status</h3>
-          <p className="text-xs text-muted-foreground">{total} total controls</p>
+          <p className="text-xs text-muted-foreground">{total} total control{total !== 1 ? 's' : ''}</p>
         </div>
       </div>
       <div className="relative">

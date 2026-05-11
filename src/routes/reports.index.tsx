@@ -18,7 +18,7 @@ const FORMAT_COLORS: Record<string, string> = {
 function ReportCard({ rpt }: { rpt: typeof reportTemplates[number] }) {
   const [generating, setGenerating] = useState(false);
 
-  const canGenerate = ['rpt-1', 'rpt-2', 'rpt-3', 'rpt-4', 'rpt-5', 'rpt-7', 'rpt-8'].includes(rpt.id);
+  const canGenerate = ['rpt-1', 'rpt-2', 'rpt-3', 'rpt-4', 'rpt-5', 'rpt-6', 'rpt-7', 'rpt-8'].includes(rpt.id);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -85,9 +85,10 @@ function ReportCard({ rpt }: { rpt: typeof reportTemplates[number] }) {
           <button
             onClick={handleGenerate}
             disabled={generating}
+            title="Re-generate and download"
             className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded text-xs font-medium hover:bg-accent transition-colors text-muted-foreground disabled:opacity-50"
           >
-            <Download className="h-3 w-3" /> Download
+            <Download className="h-3 w-3" /> Re-generate
           </button>
         )}
       </div>
@@ -103,7 +104,11 @@ function ReportsPage() {
           <h1 className="text-xl font-bold text-foreground">Reports</h1>
           <p className="text-sm text-muted-foreground">{reportTemplates.length} report templates available</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
+        <button
+          disabled
+          title="Custom report builder coming soon"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium opacity-50 cursor-not-allowed"
+        >
           <BarChart3 className="h-4 w-4" /> Custom Report
         </button>
       </div>
