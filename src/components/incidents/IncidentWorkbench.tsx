@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function fmtTime(iso: string) {
   const d = new Date(iso);
@@ -6,6 +6,7 @@ function fmtTime(iso: string) {
 }
 import { Link } from '@tanstack/react-router';
 import { incidents, controls, assets, alerts } from '@/lib/mock-data';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -148,13 +149,40 @@ const timelineTypeColors: Record<string, string> = {
 };
 
 export function IncidentWorkbench({ incidentId }: { incidentId: string }) {
-  const incident = incidents.find((i) => i.id === incidentId);
+  const [sbIncident, setSbIncident] = useState<typeof incidents[0] | null>(null);
+  const [sbLoading, setSbLoading] = useState(false);
+  const mockIncident = incidents.find((i) => i.id === incidentId);
+  const incident = mockIncident ?? sbIncident;
+
+  useEffect(() => {
+    if (mockIncident) return;
+    setSbLoading(true);
+    supabase.from('incidents').select('*').eq('id', incidentId).maybeSingle().then(({ data }) => {
+      if (data) {
+        setSbIncident({
+          id: data.id,
+          title: data.title ?? 'Untitled Incident',
+          severity: data.severity ?? 'medium',
+          status: data.status ?? 'open',
+          priority: 'p2',
+          owner: 'Unassigned',
+          slaDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          openedAt: data.created_at ?? new Date().toISOString(),
+        } as typeof incidents[0]);
+      }
+      setSbLoading(false);
+    });
+  }, [incidentId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const details = getDetails(incidentId);
   const [checkState, setCheckState] = useState<Record<string, boolean>>(
     Object.fromEntries(details.checklist.map((c) => [c.id, c.done]))
   );
 
   if (!incident) {
+    if (sbLoading) {
+      return <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">Loading…</div>;
+    }
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <AlertTriangle className="h-12 w-12 text-muted-foreground" />

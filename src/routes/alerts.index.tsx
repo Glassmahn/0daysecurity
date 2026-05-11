@@ -15,7 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
-import { WriteGuard } from '@/components/guards/RoleGuards';
+import { WriteGuard, RouteGuard } from '@/components/guards/RoleGuards';
 
 const alertsSearchSchema = z.object({
   severity: fallback(z.string(), 'all').default('all'),
@@ -122,6 +122,7 @@ function AlertsPage() {
   }
 
   return (
+    <RouteGuard allowedRoles={['admin', 'analyst']}>
     <div className="space-y-5 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -266,5 +267,6 @@ function AlertsPage() {
         title={deleteTarget?.title ?? 'alert'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>
+    </RouteGuard>
   );
 }

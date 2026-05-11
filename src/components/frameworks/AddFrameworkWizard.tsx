@@ -16,9 +16,8 @@ export function AddFrameworkWizard({ framework, allFrameworks, onComplete, onClo
   const [selectedControls, setSelectedControls] = useState<Set<string>>(() => {
     if (framework) {
       const ids = new Set<string>();
-      enrichedControls
-        .filter(c => c.frameworks.includes(framework.standard))
-        .forEach(c => ids.add(c.id));
+      const exact = enrichedControls.filter(c => c.frameworks.includes(framework.standard));
+      (exact.length > 0 ? exact : enrichedControls).forEach(c => ids.add(c.id));
       return ids;
     }
     return new Set();
@@ -29,9 +28,10 @@ export function AddFrameworkWizard({ framework, allFrameworks, onComplete, onClo
   const availableFrameworks = allFrameworks.filter(fw => !fw.enabled);
   const selected = allFrameworks.find(fw => fw.id === selectedId);
 
-  const matchingControls = selected
+  const exactControls = selected
     ? enrichedControls.filter(c => c.frameworks.includes(selected.standard))
     : [];
+  const matchingControls = exactControls.length > 0 ? exactControls : (selected ? enrichedControls : []);
 
   const filteredControls = matchingControls.filter(c =>
     c.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -67,7 +67,7 @@ export function AddFrameworkWizard({ framework, allFrameworks, onComplete, onClo
 
   const canNext = () => {
     if (step === 1) return !!selectedId;
-    if (step === 2) return selectedControls.size > 0;
+    if (step === 2) return matchingControls.length === 0 || selectedControls.size > 0;
     if (step === 3) return true;
     if (step === 4) return true; // date is optional
     return false;
@@ -117,7 +117,8 @@ export function AddFrameworkWizard({ framework, allFrameworks, onComplete, onClo
                   onClick={() => {
                     setSelectedId(fw.id);
                     const ids = new Set<string>();
-                    enrichedControls.filter(c => c.frameworks.includes(fw.standard)).forEach(c => ids.add(c.id));
+                    const exact = enrichedControls.filter(c => c.frameworks.includes(fw.standard));
+                    (exact.length > 0 ? exact : enrichedControls).forEach(c => ids.add(c.id));
                     setSelectedControls(ids);
                   }}
                   className={`w-full text-left p-4 rounded-lg border transition-all ${

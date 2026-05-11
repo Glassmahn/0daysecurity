@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
-import { WriteGuard } from '@/components/guards/RoleGuards';
+import { WriteGuard, RouteGuard } from '@/components/guards/RoleGuards';
 
 const vendorsSearchSchema = z.object({ riskTier: fallback(z.string(), 'all').default('all'), status: fallback(z.string(), 'all').default('all'), q: fallback(z.string(), '').default('') });
 
@@ -79,6 +79,7 @@ function VendorsIndexPage() {
   );
 
   return (
+    <RouteGuard allowedRoles={['admin', 'analyst']}>
     <div className="space-y-5 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -191,5 +192,6 @@ function VendorsIndexPage() {
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'vendor'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>
+    </RouteGuard>
   );
 }

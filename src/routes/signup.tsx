@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, type FormEvent } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable/index';
 import { Shield, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ const SIGNUP_LIMIT = { maxAttempts: 5, windowMs: 30 * 60 * 1000 };
 
 export const Route = createFileRoute('/signup')({
   component: SignupPage,
+  head: () => ({ meta: [{ title: 'Create Account — ZeroDay Security' }] }),
 });
 
 function SignupPage() {
@@ -153,6 +153,7 @@ function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -183,16 +184,14 @@ function SignupPage() {
             onClick={async () => {
               setError('');
               setLoading(true);
-              const result = await lovable.auth.signInWithOAuth('google', {
-                redirect_uri: window.location.origin,
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: `${window.location.origin}/dashboard` },
               });
-              if (result.error) {
-                setError(result.error instanceof Error ? result.error.message : 'Google sign-up failed');
+              if (error) {
+                setError(error.message || 'Google sign-up is not available. Please use email/password.');
                 setLoading(false);
-                return;
               }
-              if (result.redirected) return;
-              navigate({ to: '/dashboard' });
             }}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -202,6 +201,34 @@ function SignupPage() {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
             Google
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={loading}
+            onClick={async () => {
+              setError('');
+              setLoading(true);
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'azure',
+                options: { redirectTo: `${window.location.origin}/dashboard` },
+              });
+              if (error) {
+                setError(error.message || 'Microsoft sign-up is not available. Please use email/password.');
+                setLoading(false);
+              }
+            }}
+          >
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">
+              <path fill="#f3f3f3" d="M0 0h23v23H0z" />
+              <path fill="#f35325" d="M1 1h10v10H1z" />
+              <path fill="#81bc06" d="M12 1h10v10H12z" />
+              <path fill="#05a6f0" d="M1 12h10v10H1z" />
+              <path fill="#ffba08" d="M12 12h10v10H12z" />
+            </svg>
+            Microsoft
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

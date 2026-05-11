@@ -3,6 +3,7 @@ import { personnelMembers } from '@/lib/mock-data-extended';
 import { useState } from 'react';
 import { Users, Mail, ShieldAlert, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/personnel/')({
   component: PersonnelPage,
@@ -38,6 +39,7 @@ function PersonnelPage() {
     : personnelMembers;
 
   return (
+    <AdminGuard fallback={<div className="flex items-center justify-center py-24"><div className="text-center space-y-3"><div className="text-4xl">🔒</div><h2 className="text-lg font-semibold">Access Restricted</h2><p className="text-sm text-muted-foreground">Only administrators can access Personnel management.</p></div></div>}>
     <div className="space-y-6 animate-slide-in">
       <div className="flex items-center justify-between">
         <div>
@@ -130,5 +132,6 @@ function PersonnelPage() {
         </table>
       </div>
     </div>
+    </AdminGuard>
   );
 }

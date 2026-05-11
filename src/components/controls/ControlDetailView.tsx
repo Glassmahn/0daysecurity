@@ -117,7 +117,7 @@ interface ControlDetailViewProps {
 }
 
 export function ControlDetailView({ controlId }: ControlDetailViewProps) {
-  const control = enrichedControls.find(c => c.id === controlId);
+  const control = enrichedControls.find(c => c.id === controlId || c.ref === controlId);
   const [activeTab, setActiveTab] = useState<'evidence' | 'tests' | 'timeline' | 'frameworks'>('evidence');
 
   if (!control) {

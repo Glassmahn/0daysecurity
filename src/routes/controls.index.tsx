@@ -226,7 +226,7 @@ function ControlsPage() {
             {pagination.paged.map(c => (
               <tr key={c.id}
                 className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}
-                onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.id } })}>
+                onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.code } })}>
                 <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
                   <input type="checkbox" checked={bulk.isSelected(c.id)} onChange={() => bulk.toggle(c.id)} className="rounded-md border-border" />
                 </td>

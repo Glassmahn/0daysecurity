@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
-import { WriteGuard } from '@/components/guards/RoleGuards';
+import { WriteGuard, RouteGuard } from '@/components/guards/RoleGuards';
 
 const incidentsSearchSchema = z.object({
   severity: fallback(z.string(), 'all').default('all'),
@@ -122,6 +122,7 @@ function IncidentsPage() {
   }
 
   return (
+    <RouteGuard allowedRoles={['admin', 'analyst']}>
     <div className="space-y-5 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -267,5 +268,6 @@ function IncidentsPage() {
         title={deleteTarget?.title ?? 'incident'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>
+    </RouteGuard>
   );
 }

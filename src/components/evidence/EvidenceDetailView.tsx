@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { evidenceItems } from '@/lib/mock-data-extended';
+import { supabase } from '@/integrations/supabase/client';
 import { controls } from '@/lib/mock-data';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -122,10 +123,40 @@ interface EvidenceDetailViewProps {
 }
 
 export function EvidenceDetailView({ evidenceId }: EvidenceDetailViewProps) {
-  const evidence = evidenceItems.find(e => e.id === evidenceId);
+  const [sbEvidence, setSbEvidence] = useState<typeof evidenceItems[0] | null>(null);
+  const [sbLoading, setSbLoading] = useState(false);
+  const mockEvidence = evidenceItems.find(e => e.id === evidenceId);
+  const evidence = mockEvidence ?? sbEvidence;
   const [activeTab, setActiveTab] = useState<'history' | 'controls' | 'expiration' | 'automation'>('history');
 
+  useEffect(() => {
+    if (mockEvidence) return;
+    setSbLoading(true);
+    supabase.from('evidence').select('*').eq('id', evidenceId).maybeSingle().then(({ data }) => {
+      if (data) {
+        const today = new Date().toISOString().split('T')[0];
+        const nextYear = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0];
+        setSbEvidence({
+          id: data.id,
+          title: data.title ?? 'Untitled Evidence',
+          type: data.type ?? 'document',
+          status: (['valid', 'expiring', 'expired', 'rejected'].includes(data.status) ? data.status : 'valid') as 'valid' | 'expiring' | 'expired' | 'rejected',
+          source: data.source ?? 'manual',
+          collectedAt: data.collected_at ? data.collected_at.split('T')[0] : today,
+          expiresAt: data.expires_at ? data.expires_at.split('T')[0] : nextYear,
+          autoCollected: data.source === 'auto',
+          controlRef: '',
+          controlTitle: '',
+        } as typeof evidenceItems[0]);
+      }
+      setSbLoading(false);
+    });
+  }, [evidenceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!evidence) {
+    if (sbLoading) {
+      return <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">Loading…</div>;
+    }
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <FileText className="h-12 w-12 text-muted-foreground" />

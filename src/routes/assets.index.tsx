@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { assets } from '@/lib/mock-data';
 import { Monitor, Search } from 'lucide-react';
 import { useState } from 'react';
+import { RouteGuard } from '@/components/guards/RoleGuards';
 
 export const Route = createFileRoute('/assets/')({
   component: AssetsPage,
@@ -44,6 +45,7 @@ function AssetsPage() {
   });
 
   return (
+    <RouteGuard allowedRoles={['admin', 'analyst']}>
     <div className="space-y-5 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -118,5 +120,6 @@ function AssetsPage() {
         </table>
       </div>
     </div>
+    </RouteGuard>
   );
 }

@@ -12,7 +12,7 @@ import { SortableHeader } from '@/components/crud/SortableHeader';
 import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDialog';
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
-import { WriteGuard } from '@/components/guards/RoleGuards';
+import { WriteGuard, RouteGuard } from '@/components/guards/RoleGuards';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { testLibraryCatalog, getTestCategories, getTestFrameworks, type TestTemplate } from '@/lib/test-library-catalog';
@@ -124,6 +124,7 @@ function TestsIndexPage() {
   );
 
   return (
+    <RouteGuard allowedRoles={['admin', 'analyst']}>
     <div className="space-y-5 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -425,5 +426,6 @@ function TestsIndexPage() {
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'test'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>
+    </RouteGuard>
   );
 }

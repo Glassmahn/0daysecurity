@@ -1,21 +1,30 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable/index';
 import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { checkRateLimit, recordAttempt, clearRateLimit, formatRetryAfter } from '@/lib/rate-limiter';
+import { useAuth } from '@/hooks/use-auth';
 
 const LOGIN_LIMIT = { maxAttempts: 5, windowMs: 15 * 60 * 1000 };
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
+  head: () => ({ meta: [{ title: 'Sign In — ZeroDay Security' }] }),
 });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Redirect after hydration — avoids SSR/CSR mismatch from rendering <Navigate> on the server
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate({ to: '/dashboard' });
+    }
+  }, [isLoading, isAuthenticated, navigate]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -154,6 +163,7 @@ function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -184,16 +194,14 @@ function LoginPage() {
             onClick={async () => {
               setError('');
               setLoading(true);
-              const result = await lovable.auth.signInWithOAuth('google', {
-                redirect_uri: window.location.origin,
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: `${window.location.origin}/dashboard` },
               });
-              if (result.error) {
-                setError(result.error instanceof Error ? result.error.message : 'Google sign-in failed');
+              if (error) {
+                setError(error.message || 'Google sign-in is not available. Please use email/password.');
                 setLoading(false);
-                return;
               }
-              if (result.redirected) return;
-              navigate({ to: '/dashboard' });
             }}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -213,16 +221,14 @@ function LoginPage() {
             onClick={async () => {
               setError('');
               setLoading(true);
-              const result = await lovable.auth.signInWithOAuth('microsoft', {
-                redirect_uri: window.location.origin,
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'azure',
+                options: { redirectTo: `${window.location.origin}/dashboard` },
               });
-              if (result.error) {
-                setError(result.error instanceof Error ? result.error.message : 'Microsoft sign-in failed');
+              if (error) {
+                setError(error.message || 'Microsoft sign-in is not available. Please use email/password.');
                 setLoading(false);
-                return;
               }
-              if (result.redirected) return;
-              navigate({ to: '/dashboard' });
             }}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">

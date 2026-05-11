@@ -11,6 +11,7 @@ const RESET_LIMIT = { maxAttempts: 3, windowMs: 60 * 60 * 1000 };
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,
+  head: () => ({ meta: [{ title: 'Reset Password — ZeroDay Security' }] }),
 });
 
 function ForgotPasswordPage() {
