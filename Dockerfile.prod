@@ -30,8 +30,8 @@ ENV PORT=8080
 # Non-root user for safety
 RUN addgroup -S app && adduser -S app -G app
 
-# Copy only what's needed to serve the build
-COPY --from=builder /app/.output ./.output
+# Copy only the built output and runtime deps
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 
@@ -39,5 +39,5 @@ USER app
 
 EXPOSE 8080
 
-# TanStack Start emits a Nitro-style server in .output/server/index.mjs
-CMD ["bun", "run", ".output/server/index.mjs"]
+# TanStack Start builds a server entry at dist/server/index.js
+CMD ["bun", "run", "dist/server/index.js"]
