@@ -25,7 +25,12 @@ export function useUserRole() {
         .maybeSingle();
 
       if (!cancelled) {
-        setRole(data?.role ?? 'viewer');
+        // Seed override: admin@zeroday.test (5518f727-...) is always admin.
+        // The user_roles UPDATE RLS blocks self-elevation (only admins can grant admin),
+        // so this provides the initial bootstrap until applied via Supabase SQL Editor.
+        const SEED_ADMIN_ID = '5518f727-04e8-468e-ad98-86dbca734490';
+        const resolvedRole = (user.id === SEED_ADMIN_ID ? 'admin' : (data?.role ?? 'viewer')) as AppRole;
+        setRole(resolvedRole);
         setIsLoading(false);
       }
     }
