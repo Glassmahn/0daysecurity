@@ -1,5 +1,4 @@
-import { Outlet, useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { Outlet, Navigate } from '@tanstack/react-router';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
@@ -10,13 +9,6 @@ import { Shield, Loader2 } from 'lucide-react';
 export function AppLayout() {
   const { open, setOpen } = useSidebarStore();
   const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate({ to: '/login' });
-    }
-  }, [isLoading, isAuthenticated, navigate]);
 
   if (isLoading) {
     return (
@@ -35,7 +27,7 @@ export function AppLayout() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <Navigate to="/login" />;
   }
 
   return (

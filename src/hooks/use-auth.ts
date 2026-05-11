@@ -19,8 +19,15 @@ export function useAuth() {
   });
 
   useEffect(() => {
+    // Safety timeout: if Supabase hasn't resolved in 5 s (e.g. network issue),
+    // treat the user as unauthenticated so auth guards can redirect.
+    const fallback = setTimeout(() => {
+      setState(prev => prev.isLoading ? { ...prev, isLoading: false } : prev);
+    }, 5_000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        clearTimeout(fallback);
         setState({
           user: session?.user ?? null,
           session,
@@ -36,6 +43,7 @@ export function useAuth() {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(fallback);
       setState({
         user: session?.user ?? null,
         session,
@@ -47,7 +55,10 @@ export function useAuth() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = useCallback(async () => {
