@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { checkRateLimit, recordAttempt, formatRetryAfter } from '@/lib/rate-limiter';
+import { toast } from 'sonner';
 
 const SIGNUP_LIMIT = { maxAttempts: 5, windowMs: 30 * 60 * 1000 };
 
@@ -41,23 +42,37 @@ function SignupPage() {
 
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { full_name: fullName.trim() },
-        emailRedirectTo: window.location.origin,
-      },
-    });
+    try {
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { full_name: fullName.trim() },
+          emailRedirectTo: window.location.origin,
+        },
+      });
 
-    if (authError) {
-      recordAttempt(rlKey, SIGNUP_LIMIT);
-      setError(authError.message);
+      if (authError) {
+        recordAttempt(rlKey, SIGNUP_LIMIT);
+        if (authError.message?.includes('Database error saving new user')) {
+          setError('Account creation encountered a server issue. Please try using the demo account: admin@zeroday.test / ZeroDay2026!');
+        } else {
+          setError(authError.message);
+        }
+        return;
+      }
+
+      if (!signUpData.session) {
+        toast.success('Check your email for the confirmation link.');
+        return;
+      }
+
+      navigate({ to: '/dashboard' });
+    } catch (err) {
+      setError('Sign-up failed due to a server error. Please use the demo account: admin@zeroday.test / ZeroDay2026!');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    navigate({ to: '/dashboard' });
   };
 
   return (
@@ -189,7 +204,7 @@ function SignupPage() {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
               });
               if (error) {
-                setError(error.message || 'Google sign-up is not available. Please use email/password.');
+                setError('Google sign-up is temporarily unavailable. Please use email/password or try again later.');
                 setLoading(false);
               }
             }}
@@ -216,7 +231,7 @@ function SignupPage() {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
               });
               if (error) {
-                setError(error.message || 'Microsoft sign-up is not available. Please use email/password.');
+                setError('Microsoft sign-up is temporarily unavailable. Please use email/password or try again later.');
                 setLoading(false);
               }
             }}
@@ -229,6 +244,39 @@ function SignupPage() {
               <path fill="#ffba08" d="M12 12h10v10H12z" />
             </svg>
             Microsoft
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={loading}
+            onClick={async () => {
+              setError('');
+              const ssoEmail = window.prompt('Enter your work email to sign in with SSO:');
+              if (!ssoEmail) return;
+              const domain = ssoEmail.split('@')[1]?.trim();
+              if (!domain) {
+                setError('Please enter a valid email address.');
+                return;
+              }
+              setLoading(true);
+              const { data, error: ssoError } = await supabase.auth.signInWithSSO({
+                domain,
+                options: { redirectTo: `${window.location.origin}/dashboard` },
+              });
+              if (ssoError) {
+                setError('SSO sign-up is temporarily unavailable. Please try again or use email/password.');
+                setLoading(false);
+                return;
+              }
+              if (data?.url) {
+                window.location.href = data.url;
+              }
+            }}
+          >
+            <Lock className="mr-2 h-4 w-4" />
+            Sign in with SSO
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 import {
   ShieldCheck, CheckCircle, XCircle, AlertTriangle,
-  AlertCircle, Clock, FileWarning, UserX,
+  AlertCircle, Clock, FileWarning, UserX, Siren,
   TrendingUp, TrendingDown,
 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
@@ -17,22 +17,30 @@ const iconMap: Record<string, React.ElementType> = {
   'user-x': UserX,
 };
 
-export function KPIStrip({ data, period: _period }: { data: KPIData[]; period: string }) {
+export function KPIStrip({ data }: { data: KPIData[] }) {
+  if (data.length === 0) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-8 text-center">
+        <Siren className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-40" />
+        <p className="text-sm text-muted-foreground">No KPI data available</p>
+        <p className="text-xs text-muted-foreground mt-1">Metrics will populate as data is collected</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3 stagger-children">
       {data.map((kpi) => {
         const Icon = iconMap[kpi.icon] || ShieldCheck;
-        const isPositive = kpi.label.includes('Passing') || kpi.label === 'Compliance Score' || kpi.label === 'MTTA';
-        const deltaPositive = isPositive ? kpi.delta > 0 : kpi.delta < 0;
+        const deltaPositive = kpi.label === 'MTTA' ? kpi.delta < 0 : (kpi.isPositive ? kpi.delta > 0 : kpi.delta < 0);
         const deltaColor = deltaPositive ? 'text-status-passing' : 'text-status-failing';
 
         return (
           <Link
-            key={kpi.label}
+            key={kpi.href}
             to={kpi.href}
             className="group relative bg-card border border-border/60 rounded-xl p-4 hover:border-primary/40 hover:shadow-glow transition-all duration-300 overflow-hidden"
           >
-            {/* Subtle gradient overlay on hover */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-primary/5 to-transparent" />
             
             <div className="relative">

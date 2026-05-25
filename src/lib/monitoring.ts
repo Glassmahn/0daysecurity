@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import type { Event } from '@sentry/react';
 
 let initialised = false;
 
@@ -16,7 +17,7 @@ export function initMonitoring(): void {
     // Low sample rate for perf tracing; errors are always captured
     tracesSampleRate: 0.05,
     // Strip PII from URLs before sending
-    beforeSend(event) {
+    beforeSend(event: Event) {
       if (event.request?.url) {
         try {
           const u = new URL(event.request.url);

@@ -1,27 +1,83 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders, handleCors, errorResponse } from '../_shared/cors.ts';
 
 const supabaseUrl    = Deno.env.get('SUPABASE_URL')!;
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const siteUrl        = Deno.env.get('SITE_URL') ?? `https://${Deno.env.get('SUPABASE_URL')?.replace(/^https:\/\//, '').replace(/\.supabase\.co$/, '') ?? 'localhost:8080'}`;
 
 Deno.serve(async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+  const corsRes = handleCors(req);
+  if (corsRes) return corsRes;
+
+  if (req.headers.get('Authorization') !== `Bearer ${serviceRoleKey}`) {
+    return errorResponse('Unauthorized', 401);
   }
+
+  try {
+    if (req.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
+    }
 
   const db = createClient(supabaseUrl, serviceRoleKey);
   const results: Array<{ job: string; status: string; affected: number; error?: string }> = [];
 
-  await runJob(db, 'evidence-expiry-scan',     evidenceExpiryScan,     results);
-  await runJob(db, 'alert-escalation',          alertEscalation,        results);
-  await runJob(db, 'vendor-contract-review',    vendorContractReview,   results);
-  await runJob(db, 'compliance-snapshot',       complianceSnapshot,     results);
+  await runJob(db, 'evidence-expiry-scan',      evidenceExpiryScan,      results);
+  await runJob(db, 'evidence-recollection',     evidenceRecollection,    results);
+  await runJob(db, 'alert-escalation',          alertEscalation,         results);
+  await runJob(db, 'vendor-contract-review',    vendorContractReview,    results);
+  await runJob(db, 'compliance-snapshot',       complianceSnapshot,      results);
+  await runJob(db, 'integration-connectors',    integrationConnectors,   results);
+  await runJob(db, 'control-monitoring',        controlMonitoring,       results);
+  await runJob(db, 'jira-sync',                 jiraSync,                results);
 
   const anyFailure = results.some(r => r.status === 'failure');
   return new Response(JSON.stringify({ jobs: results }), {
     status: anyFailure ? 207 : 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('run-scheduled-jobs error:', message);
+    return errorResponse(message, 500);
+  }
 });
+
+// ─── Wrapper: call an edge function by name ──────────────────────────────────
+
+async function callEdgeFunction(
+  functionName: string,
+): Promise<{ affected: number; details?: Record<string, unknown> }> {
+  const url = `${siteUrl}/functions/v1/${functionName}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`${functionName} returned ${res.status}: ${body}`);
+  }
+  const data = await res.json();
+  const total = data.results
+    ? (data.results as Array<{ evidence_created?: number }>).reduce((s: number, r: { evidence_created?: number }) => s + (r.evidence_created ?? 0), 0)
+    : data.tested ?? data.tickets_created ?? 0;
+  return { affected: total, details: data };
+}
+
+async function integrationConnectors() {
+  return callEdgeFunction('run-integration-connectors');
+}
+
+async function controlMonitoring() {
+  return callEdgeFunction('control-monitoring');
+}
+
+async function jiraSync() {
+  return callEdgeFunction('jira-sync');
+}
 
 // ─── Job runner helper ────────────────────────────────────────────────────────
 
@@ -106,6 +162,97 @@ async function evidenceExpiryScan(db: ReturnType<typeof createClient>) {
       expiring_soon: expiring.length,
       newly_expired: alreadyExpired?.length ?? 0,
       titles: expiring.slice(0, 5).map((e: { title: string }) => e.title),
+    },
+  };
+}
+
+// ─── Job: evidence-recollection ───────────────────────────────────────────────
+// Finds expired evidence and either:
+//  - Re-collects auto-collected evidence by creating a fresh copy
+//  - Flags manual evidence as needs_recollection + creates an alert
+//  - Escalates if evidence has been expired >7 days without resolution
+async function evidenceRecollection(db: ReturnType<typeof createClient>) {
+  const now = new Date();
+  const nowISO = now.toISOString();
+  const last7 = new Date(now.getTime() - 7 * 86400_000).toISOString();
+  const over7days = new Date(now.getTime() - 14 * 86400_000).toISOString();
+
+  // Find recently expired evidence
+  const { data: expired, error } = await db
+    .from('evidence')
+    .select('id, title, type, source, control_id, expires_at, updated_at')
+    .eq('status', 'expired')
+    .gte('updated_at', over7days);
+
+  if (error) throw new Error(error.message);
+  if (!expired?.length) return { affected: 0 };
+
+  let autoRecollected = 0;
+  let flaggedManual = 0;
+  let escalated = 0;
+
+  for (const item of expired) {
+    const isLongExpired = item.updated_at && item.updated_at < last7;
+
+    if (item.source === 'auto' && !isLongExpired) {
+      const { error: insertErr } = await db
+        .from('evidence')
+        .insert({
+          title: `${item.title} (re-collected ${nowISO.split('T')[0]})`,
+          type: item.type,
+          status: 'valid',
+          source: 'auto',
+          control_id: item.control_id,
+          collected_at: nowISO,
+          expires_at: new Date(now.getTime() + 90 * 86400_000).toISOString(),
+        });
+      if (insertErr) {
+        console.error(`[evidence-recollection] insert failed for ${item.id}:`, insertErr.message);
+      } else {
+        autoRecollected++;
+        await db.from('evidence_recollection_attempts').insert({
+          evidence_id: item.id, attempt_type: 'auto', status: 'completed', result: 'success', triggered_at: nowISO, completed_at: nowISO,
+        });
+      }
+    } else if (item.source === 'manual' && !isLongExpired) {
+      const { error: updateErr } = await db
+        .from('evidence')
+        .update({ status: 'needs_recollection' })
+        .eq('id', item.id);
+      if (updateErr) {
+        console.error(`[evidence-recollection] update failed for ${item.id}:`, updateErr.message);
+      } else {
+        flaggedManual++;
+        await db.from('alerts').insert({
+          title: `Evidence expired: ${item.title}`,
+          severity: 'high', status: 'open',
+          description: `This evidence item expired on ${item.expires_at?.split('T')[0] ?? 'unknown'} and needs to be re-collected manually.`,
+          source: 'system',
+        });
+        await db.from('evidence_recollection_attempts').insert({
+          evidence_id: item.id, attempt_type: 'reminder', status: 'completed', result: 'alert_created', triggered_at: nowISO, completed_at: nowISO,
+        });
+      }
+    } else if (isLongExpired) {
+      escalated++;
+      await db.from('alerts').insert({
+        title: `ESCALATED: Evidence still needs recollection - ${item.title}`,
+        severity: 'critical', status: 'open',
+        description: `This evidence has been expired for over 7 days without resolution. Immediate action required. Evidence: ${item.title} (${item.id})`,
+        source: 'system',
+      });
+      await db.from('evidence_recollection_attempts').insert({
+        evidence_id: item.id, attempt_type: 'escalation', status: 'completed', result: 'escalated', triggered_at: nowISO, completed_at: nowISO,
+      });
+    }
+  }
+
+  return {
+    affected: autoRecollected + flaggedManual + escalated,
+    details: {
+      auto_recollected: autoRecollected,
+      flagged_manual: flaggedManual,
+      escalated,
     },
   };
 }

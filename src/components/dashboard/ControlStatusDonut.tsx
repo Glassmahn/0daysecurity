@@ -10,15 +10,55 @@ interface DonutItem {
   filter: string;
 }
 
-export function ControlStatusDonut({ data, isLoading }: { data?: DonutItem[]; isLoading?: boolean }) {
+export function ControlStatusDonut({ data, isLoading, isError }: { data?: DonutItem[]; isLoading?: boolean; isError?: boolean }) {
   const navigate = useNavigate();
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <Skeleton className="h-[360px] rounded-xl" />;
   }
 
+  if (isError) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+            <PieIcon className="h-4 w-4 text-destructive" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-foreground">Control Status</h3>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <PieIcon className="h-8 w-8 text-destructive mb-3 opacity-60" />
+          <p className="text-sm font-medium text-destructive">Failed to load control data</p>
+          <p className="text-xs text-muted-foreground mt-1">Pull to retry or check your connection</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-chart-5/10 flex items-center justify-center">
+            <PieIcon className="h-4 w-4 text-chart-5" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-foreground">Control Status</h3>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <PieIcon className="h-8 w-8 text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm text-muted-foreground">No control data available</p>
+          <p className="text-xs text-muted-foreground mt-1">Assess controls to populate status distribution</p>
+        </div>
+      </div>
+    );
+  }
+
   const total = data.reduce((s, d) => s + d.value, 0);
-  const implementedPct = total === 0 ? 0 : Math.round((data[0]?.value ?? 0) / total * 100);
+  const implementedPct = total === 0 ? 0 : Math.round((data.find(d => d.name === 'Implemented')?.value ?? 0) / total * 100);
 
   const handleClick = (_: unknown, index: number) => {
     const filter = data[index]?.filter || 'all';
@@ -36,11 +76,11 @@ export function ControlStatusDonut({ data, isLoading }: { data?: DonutItem[]; is
           <p className="text-xs text-muted-foreground">{total} total control{total !== 1 ? 's' : ''}</p>
         </div>
       </div>
-      <div className="relative">
+      <div className="relative" role="button" tabIndex={0} aria-label="Control status donut chart" onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate({ to: '/controls' }); } }}>
         <ResponsiveContainer width="100%" height={190}>
           <PieChart>
             <Pie data={data} cx="50%" cy="50%" innerRadius={58} outerRadius={82} paddingAngle={4} dataKey="value" strokeWidth={0} onClick={handleClick} className="cursor-pointer" cornerRadius={4}>
-              {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+              {data.map(entry => <Cell key={entry.name} fill={entry.color} />)}
             </Pie>
             <Tooltip
               contentStyle={{ background: 'var(--color-popover)', border: '1px solid var(--color-border)', borderRadius: '12px', fontSize: '12px', color: 'var(--color-popover-foreground)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}

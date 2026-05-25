@@ -13,6 +13,7 @@ type RoleValue = {
   role: 'admin' | 'analyst' | 'auditor' | 'viewer' | null;
   isAdmin: boolean;
   isAnalyst: boolean;
+  isEditor: boolean;
   isAuditor: boolean;
   isViewer: boolean;
   canWrite: boolean;
@@ -25,6 +26,7 @@ function mockRole(overrides: Partial<RoleValue>) {
     role: null,
     isAdmin: false,
     isAnalyst: false,
+    isEditor: false,
     isAuditor: false,
     isViewer: false,
     canWrite: false,

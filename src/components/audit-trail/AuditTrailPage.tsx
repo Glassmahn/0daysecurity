@@ -7,6 +7,7 @@ import {
   AlertTriangle, Monitor, Flame, Building2, FlaskConical,
   Paperclip, ListChecks, BookOpen, LogIn, LogOut, RotateCcw,
   Download, Eye, Pencil, Trash2, Plus, Loader2, Calendar,
+  Mail, UserPlus,
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { logAudit } from '@/lib/audit-logger';
@@ -23,6 +24,9 @@ const actionIcons: Record<string, typeof Plus> = {
   view: Eye,
   export: Download,
   revert: RotateCcw,
+  send_reminders: Mail,
+  offboarding_completed: LogOut,
+  assign_personnel: UserPlus,
 };
 
 const actionStyles: Record<string, string> = {
@@ -35,6 +39,9 @@ const actionStyles: Record<string, string> = {
   view: 'bg-muted text-muted-foreground',
   export: 'bg-status-warning/15 text-status-warning',
   revert: 'bg-chart-5/15 text-chart-5',
+  send_reminders: 'bg-status-warning/15 text-status-warning',
+  offboarding_completed: 'bg-severity-critical/15 text-severity-critical',
+  assign_personnel: 'bg-chart-2/15 text-chart-2',
 };
 
 const entityIcons: Record<string, typeof Shield> = {
@@ -63,24 +70,26 @@ const CSV_COLUMNS = [
 ];
 
 export function AuditTrailPage() {
-  const [search, setSearch]           = useState('');
+  const [search, setSearch]             = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [entityFilter, setEntityFilter] = useState<string>('all');
-  const [dateFrom, setDateFrom]       = useState('');
-  const [dateTo, setDateTo]           = useState('');
-  const [exporting, setExporting]     = useState(false);
+  const [userFilter, setUserFilter]     = useState<string>('all');
+  const [dateFrom, setDateFrom]         = useState('');
+  const [dateTo, setDateTo]             = useState('');
+  const [exporting, setExporting]       = useState(false);
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['audit-logs', actionFilter, entityFilter, dateFrom, dateTo],
+    queryKey: ['audit-logs', actionFilter, entityFilter, userFilter, dateFrom, dateTo],
     queryFn: async () => {
       let query = supabase
         .from('audit_logs')
-        .select('*')
+        .select('id, action, entity_type, entity_id, user_id, details, created_at')
         .order('created_at', { ascending: false })
         .limit(200);
 
       if (actionFilter !== 'all') query = query.eq('action', actionFilter);
       if (entityFilter !== 'all') query = query.eq('entity_type', entityFilter);
+      if (userFilter !== 'all')   query = query.eq('user_id', userFilter);
       if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00Z`);
       if (dateTo)   query = query.lte('created_at', `${dateTo}T23:59:59Z`);
 
@@ -93,12 +102,15 @@ export function AuditTrailPage() {
   const { data: profiles = [] } = useQuery({
     queryKey: ['profiles-for-audit'],
     queryFn: async () => {
-      const { data } = await supabase.from('profiles').select('user_id, display_name');
+      const { data } = await supabase.from('profiles').select('user_id, display_name, department');
       return data ?? [];
     },
   });
 
   const profileMap = new Map(profiles.map(p => [p.user_id, p.display_name]));
+  const userOptions = profiles
+    .filter(p => p.display_name)
+    .sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''));
 
   const filtered = logs.filter(log => {
     if (!search) return true;
@@ -118,11 +130,12 @@ export function AuditTrailPage() {
       // Fetch all matching rows without the preview limit.
       let query = supabase
         .from('audit_logs')
-        .select('*')
+        .select('id, action, entity_type, entity_id, user_id, details, created_at')
         .order('created_at', { ascending: false });
 
       if (actionFilter !== 'all') query = query.eq('action', actionFilter);
       if (entityFilter !== 'all') query = query.eq('entity_type', entityFilter);
+      if (userFilter !== 'all')   query = query.eq('user_id', userFilter);
       if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00Z`);
       if (dateTo)   query = query.lte('created_at', `${dateTo}T23:59:59Z`);
 
@@ -148,13 +161,14 @@ export function AuditTrailPage() {
         : `_${format(new Date(), 'yyyy-MM-dd')}`;
       exportToCsv(`audit-log${dateSuffix}`, exportRows, CSV_COLUMNS);
 
-      await logAudit({
+      logAudit({
         action: 'export',
         entity_type: 'session',
         details: {
           record_count: exportRows.length,
           action_filter: actionFilter,
           entity_filter: entityFilter,
+          user_filter: userFilter === 'all' ? null : userFilter,
           date_from: dateFrom || null,
           date_to: dateTo || null,
         },
@@ -203,8 +217,8 @@ export function AuditTrailPage() {
           className="px-3 py-2 bg-input border border-border rounded-md text-sm text-foreground"
         >
           <option value="all">All Actions</option>
-          {['create', 'update', 'delete', 'login', 'logout', 'role_change', 'view', 'export', 'revert'].map(a => (
-            <option key={a} value={a}>{a.replace('_', ' ')}</option>
+          {['create', 'update', 'delete', 'login', 'logout', 'role_change', 'view', 'export', 'revert', 'send_reminders', 'offboarding_completed', 'assign_personnel'].map(a => (
+            <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>
           ))}
         </select>
         <select
@@ -213,8 +227,31 @@ export function AuditTrailPage() {
           className="px-3 py-2 bg-input border border-border rounded-md text-sm text-foreground"
         >
           <option value="all">All Entities</option>
-          {['control', 'evidence', 'framework', 'policy', 'risk', 'incident', 'asset', 'vendor', 'test', 'kb_article', 'user', 'role', 'session'].map(e => (
-            <option key={e} value={e}>{e.replace('_', ' ')}</option>
+          {[
+            'control', 'evidence', 'framework', 'policy', 'risk',
+            'incident', 'asset', 'vendor', 'test', 'alert',
+            'kb_article', 'user', 'role', 'session', 'personnel',
+            'compliance_snapshot', 'trust_portal_share',
+            'policy_acknowledgment', 'vendor_assessment',
+            'access_review_campaign', 'access_review_assignment',
+            'custom_field_definition', 'custom_field_value',
+            'audit', 'audit_finding', 'audit_evidence_request',
+            'sso_configuration', 'training_course', 'training_assignment',
+            'report_schedule',
+          ].map(e => (
+            <option key={e} value={e}>{e.replace(/_/g, ' ')}</option>
+          ))}
+        </select>
+        <select
+          value={userFilter}
+          onChange={e => setUserFilter(e.target.value)}
+          className="px-3 py-2 bg-input border border-border rounded-md text-sm text-foreground"
+        >
+          <option value="all">All Users</option>
+          {userOptions.map(p => (
+            <option key={p.user_id} value={p.user_id}>
+              {p.display_name}{p.department ? ` (${p.department})` : ''}
+            </option>
           ))}
         </select>
         {/* Date range */}

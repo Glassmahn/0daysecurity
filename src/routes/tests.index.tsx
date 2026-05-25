@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { TEST_STATUS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap, Target } from 'lucide-react';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, FlaskConical, Filter, Library, Cpu, User, Clock, Play, ChevronRight, Zap, Target, AlertCircle } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -31,7 +31,9 @@ const testFields: FieldDef[] = [
     { value: 'passing', label: 'Passing' }, { value: 'failing', label: 'Failing' }, { value: 'pending', label: 'Pending' }, { value: 'error', label: 'Error' }, { value: 'disabled', label: 'Disabled' },
   ]},
   { name: 'result', label: 'Result', type: 'text', placeholder: 'pass/fail', max: 50 },
-  { name: 'schedule', label: 'Schedule', type: 'text', placeholder: 'e.g. weekly, monthly', max: 50 },
+  { name: 'frequency', label: 'Frequency', type: 'text', placeholder: 'e.g. weekly, monthly', max: 50 },
+  { name: 'schedule', label: 'Schedule', type: 'text', placeholder: 'Cron or schedule expression', max: 100 },
+  { name: 'next_run', label: 'Next Run', type: 'date' },
 ];
 const testStatusOptions = testFields.find(f => f.name === 'status')!.options!;
 
@@ -54,7 +56,7 @@ const frameworkShortLabels: Record<string, string> = {
 
 function TestsIndexPage() {
   const navigate = useNavigate();
-  const { data: tests, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('tests');
+  const { data: tests, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('tests');
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -114,6 +116,17 @@ function TestsIndexPage() {
     await insert({ name: tmpl.name, description: tmpl.description, status: 'pending', schedule: tmpl.frequency.toLowerCase() });
   }
 
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+      <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+        <AlertCircle className="h-5 w-5 text-destructive" />
+      </div>
+      <p className="text-sm font-medium text-destructive">Failed to load tests</p>
+      <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+      <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+    </div>
+  );
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -140,7 +153,8 @@ function TestsIndexPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => exportToCsv('tests', filtered as Record<string, unknown>[], [
               { key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }, { key: 'result', label: 'Result' },
-              { key: 'schedule', label: 'Schedule' }, { key: 'last_run', label: 'Last Run' }, { key: 'description', label: 'Description' },
+              { key: 'frequency', label: 'Frequency' }, { key: 'schedule', label: 'Schedule' }, { key: 'last_run', label: 'Last Run' },
+              { key: 'next_run', label: 'Next Run' }, { key: 'description', label: 'Description' },
             ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
@@ -186,8 +200,10 @@ function TestsIndexPage() {
               <thead><tr className="border-b border-border/60 text-left bg-surface/50">
                 <th className="px-3 py-3.5 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
                 <SortableHeader label="Test Name" column="name" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-                <SortableHeader label="Schedule" column="schedule" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+                <SortableHeader label="Frequency" column="frequency" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+                <SortableHeader label="Schedule" column="schedule" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
                 <SortableHeader label="Last Run" column="last_run" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
+                <SortableHeader label="Next Run" column="next_run" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden xl:table-cell" />
                 <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
                 <SortableHeader label="Result" column="result" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
                 <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
@@ -197,13 +213,15 @@ function TestsIndexPage() {
                   onClick={() => navigate({ to: '/tests/$testId', params: { testId: t.id } })}>
                   <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(t.id)} onChange={() => bulk.toggle(t.id)} className="rounded-md border-border" /></td>
                   <td className="px-4 py-3.5"><div className="font-medium text-foreground">{t.name}</div><div className="text-xs text-muted-foreground line-clamp-1">{t.description}</div></td>
-                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden md:table-cell capitalize">{t.schedule ?? '—'}</td>
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden md:table-cell capitalize">{t.frequency ?? '—'}</td>
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden lg:table-cell">{t.schedule ?? '—'}</td>
                   <td className="px-4 py-3.5 text-muted-foreground text-xs hidden lg:table-cell">{t.last_run ? new Date(t.last_run).toLocaleDateString() : '—'}</td>
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden xl:table-cell">{t.next_run ? new Date(t.next_run).toLocaleDateString() : '—'}</td>
                   <td className="px-4 py-3.5"><span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusStyles[t.status] ?? 'bg-muted text-muted-foreground'}`}>{t.status}</span></td>
                   <td className="px-4 py-3.5 text-xs text-muted-foreground">{t.result ?? '—'}</td>
                   <td className="px-4 py-3.5"><div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <WriteGuard>
-                      <button onClick={() => { setEditing({ name: t.name, description: t.description, status: t.status, result: t.result, schedule: t.schedule, _id: t.id }); setFormOpen(true); }} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => { setEditing({ name: t.name, description: t.description, status: t.status, result: t.result, frequency: t.frequency, schedule: t.schedule, next_run: t.next_run ?? '', _id: t.id }); setFormOpen(true); }} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                       <button onClick={() => setDeleteTarget({ id: t.id, title: t.name })} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                     </WriteGuard>
                   </div></td>
@@ -368,7 +386,7 @@ function TestsIndexPage() {
                             <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-2">Test Steps</div>
                             <ol className="space-y-1.5">
                               {tmpl.steps.map((s, i) => (
-                                <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                                <li key={`${s}-${i}`} className="flex items-start gap-2 text-xs text-foreground">
                                   <span className="shrink-0 h-4 w-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                                   {s}
                                 </li>
@@ -381,7 +399,7 @@ function TestsIndexPage() {
                         <div className="space-y-3">
                           <div>
                             <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Expected Evidence</div>
-                            <ul className="space-y-1">{tmpl.expectedEvidence.map((e, i) => <li key={i} className="text-xs text-foreground font-mono">{e}</li>)}</ul>
+                            <ul className="space-y-1">{tmpl.expectedEvidence.map((e) => <li key={e} className="text-xs text-foreground font-mono">{e}</li>)}</ul>
                           </div>
                           <div>
                             <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Suggested Tools</div>
@@ -389,7 +407,7 @@ function TestsIndexPage() {
                           </div>
                           <div>
                             <div className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Prerequisites</div>
-                            <ul className="space-y-1">{tmpl.prerequisites.map((p, i) => <li key={i} className="text-xs text-muted-foreground">• {p}</li>)}</ul>
+                            <ul className="space-y-1">{tmpl.prerequisites.map((p) => <li key={p} className="text-xs text-muted-foreground">• {p}</li>)}</ul>
                           </div>
                           <WriteGuard>
                             <button onClick={() => instantiateTemplate(tmpl)} className="flex items-center gap-1.5 px-3.5 py-2 gradient-primary text-white rounded-xl text-xs font-medium hover:opacity-90 shadow-glow transition-all mt-2">
@@ -422,7 +440,7 @@ function TestsIndexPage() {
       </Tabs>
 
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Test' : 'New Test'} fields={testFields} initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'test'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>

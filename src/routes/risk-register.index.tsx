@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Plus, Loader2, Pencil, Trash2, Download, AlertOctagon } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Download, AlertOctagon, AlertCircle } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -31,17 +31,18 @@ const riskFields: FieldDef[] = [
   { name: 'category', label: 'Category', type: 'text', placeholder: 'e.g. Cybersecurity', max: 100 },
   { name: 'likelihood', label: 'Likelihood (1-5)', type: 'number', required: true, min: 1, max: 5 },
   { name: 'impact', label: 'Impact (1-5)', type: 'number', required: true, min: 1, max: 5 },
+  { name: 'owner_id', label: 'Owner', type: 'text', placeholder: 'Personnel ID', max: 50 },
   { name: 'status', label: 'Status', type: 'select', required: true, options: [
     { value: 'open', label: 'Open' }, { value: 'mitigated', label: 'Mitigated' }, { value: 'accepted', label: 'Accepted' }, { value: 'transferred', label: 'Transferred' }, { value: 'closed', label: 'Closed' },
   ]},
   { name: 'mitigation_plan', label: 'Mitigation Plan', type: 'textarea', placeholder: 'Mitigation strategy...', max: 5000 },
 ];
-const riskStatusOptions = riskFields.find(f => f.name === 'status')!.options!;
+const riskStatusOptions = riskFields.find(f => f.name === 'status')?.options ?? [];
 
 function RiskRegisterPage() {
   const [view, setView] = useState<'matrix' | 'table'>('matrix');
   const navigate = useNavigate();
-  const { data: risks, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('risks');
+  const { data: risks, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('risks');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
@@ -56,6 +57,17 @@ function RiskRegisterPage() {
     for (let l = 1; l <= 5; l++) for (let i = 1; i <= 5; i++) m[`${l}-${i}`] = risks.filter(r => r.likelihood === l && r.impact === i);
     return m;
   }, [risks]);
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+      <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+        <AlertCircle className="h-5 w-5 text-destructive" />
+      </div>
+      <p className="text-sm font-medium text-destructive">Failed to load risks</p>
+      <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+      <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+    </div>
+  );
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
@@ -80,9 +92,9 @@ function RiskRegisterPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 bg-card border border-border/60 rounded-xl p-1">
-            <button onClick={() => setView('matrix')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${view === 'matrix' ? 'gradient-primary text-white shadow-glow' : 'text-muted-foreground hover:text-foreground'}`}>Matrix</button>
-            <button onClick={() => setView('table')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${view === 'table' ? 'gradient-primary text-white shadow-glow' : 'text-muted-foreground hover:text-foreground'}`}>Table</button>
+          <div className="flex gap-1 bg-card border border-border/60 rounded-xl p-1" role="radiogroup" aria-label="View mode">
+            <button role="radio" aria-checked={view === 'matrix'} onClick={() => setView('matrix')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${view === 'matrix' ? 'gradient-primary text-white shadow-glow' : 'text-muted-foreground hover:text-foreground'}`}>Matrix</button>
+            <button role="radio" aria-checked={view === 'table'} onClick={() => setView('table')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${view === 'table' ? 'gradient-primary text-white shadow-glow' : 'text-muted-foreground hover:text-foreground'}`}>Table</button>
           </div>
           <button onClick={() => exportToCsv('risks', risks as Record<string, unknown>[], [
               { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'risk_score', label: 'Score' },
@@ -127,19 +139,20 @@ function RiskRegisterPage() {
       <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-card">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border/60 text-left bg-surface/50">
-            <th className="px-3 py-3.5 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
+            <th scope="col" className="px-3 py-3.5 w-10"><input type="checkbox" aria-label="Select all risks" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
             <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Category" column="category" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Score" column="risk_score" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="L" column="likelihood" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="I" column="impact" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-            <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+            <th scope="col" className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
           <tbody>{pagination.paged.map(r => (
-            <tr key={r.id} className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(r.id) ? 'bg-primary/5' : ''}`}
-              onClick={() => navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } })}>
-              <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={bulk.isSelected(r.id)} onChange={() => bulk.toggle(r.id)} className="rounded-md border-border" /></td>
+            <tr key={r.id} tabIndex={0} role="link" className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(r.id) ? 'bg-primary/5' : ''}`}
+              onClick={() => navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } })}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate({ to: '/risk-register/$riskId', params: { riskId: r.id } }); } }}>
+              <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" aria-label={`Select risk ${r.title}`} checked={bulk.isSelected(r.id)} onChange={() => bulk.toggle(r.id)} className="rounded-md border-border" /></td>
               <td className="px-4 py-3.5"><div className="font-medium text-foreground">{r.title}</div><div className="text-xs text-muted-foreground line-clamp-1">{r.description}</div></td>
               <td className="px-4 py-3.5 text-muted-foreground text-xs">{r.category}</td>
               <td className="px-4 py-3.5"><span className={`text-xs font-bold px-2 py-1 rounded-md ${scoreColor(r.risk_score)}`}>{r.risk_score ?? '—'}</span></td>
@@ -158,7 +171,7 @@ function RiskRegisterPage() {
         <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Risk' : 'Add Risk'} fields={riskFields} initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'risk'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>

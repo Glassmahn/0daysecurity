@@ -1,0 +1,3 @@
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS frequency TEXT;
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS next_run TIMESTAMPTZ;
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS result_history JSONB DEFAULT '[]'::jsonb;

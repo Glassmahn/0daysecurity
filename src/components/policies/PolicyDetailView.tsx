@@ -1,101 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { policies } from '@/lib/mock-data-extended';
-import { controls, frameworks } from '@/lib/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { Progress } from '@/components/ui/progress';
 import {
   ArrowLeft, FileText, Clock, User, Shield, CheckCircle2,
-  XCircle, AlertTriangle, GitBranch, CalendarDays, Send, Eye, PenLine
+  AlertTriangle, GitBranch, CalendarDays, Send, Loader2, Download
 } from 'lucide-react';
-
-// Enriched mock data for policy details
-const policyVersionHistory: Record<string, Array<{
-  version: string;
-  date: string;
-  author: string;
-  changes: string;
-  status: 'published' | 'approved' | 'archived';
-}>> = {
-  'pol-1': [
-    { version: '3.1', date: '2026-02-15', author: 'Sarah Chen', changes: 'Updated cloud security controls section; added AI/ML data handling', status: 'published' },
-    { version: '3.0', date: '2025-08-20', author: 'Sarah Chen', changes: 'Major revision — aligned with SOC 2 Type II requirements', status: 'archived' },
-    { version: '2.4', date: '2025-02-10', author: 'James Wilson', changes: 'Added remote work security addendum', status: 'archived' },
-    { version: '2.3', date: '2024-08-01', author: 'Sarah Chen', changes: 'Annual review — minor updates to incident reporting procedures', status: 'archived' },
-    { version: '2.0', date: '2024-01-15', author: 'Sarah Chen', changes: 'Restructured policy for HIPAA alignment', status: 'archived' },
-  ],
-  'pol-4': [
-    { version: '3.0', date: '2026-02-15', author: 'Maria Garcia', changes: 'Added AI-assisted triage procedures; updated SLA targets', status: 'published' },
-    { version: '2.2', date: '2025-09-10', author: 'Maria Garcia', changes: 'Updated escalation matrix for PHI-related incidents', status: 'archived' },
-    { version: '2.0', date: '2025-03-01', author: 'Sarah Chen', changes: 'Major overhaul after tabletop exercise findings', status: 'archived' },
-  ],
-};
-
-const policyApprovalWorkflow: Record<string, Array<{
-  step: string;
-  assignee: string;
-  status: 'completed' | 'current' | 'pending';
-  completedAt: string | null;
-  comment: string | null;
-}>> = {
-  'pol-1': [
-    { step: 'Draft', assignee: 'Sarah Chen', status: 'completed', completedAt: '2026-01-20', comment: 'Initial draft ready for review' },
-    { step: 'Peer Review', assignee: 'James Wilson', status: 'completed', completedAt: '2026-01-28', comment: 'Minor edits to Section 4.2 — cloud encryption requirements' },
-    { step: 'Legal Review', assignee: 'Amanda Martinez', status: 'completed', completedAt: '2026-02-05', comment: 'Approved — compliant with current regulations' },
-    { step: 'CISO Approval', assignee: 'Sarah Chen', status: 'completed', completedAt: '2026-02-12', comment: 'Approved for publication' },
-    { step: 'Board Sign-off', assignee: 'Carlos Ruiz', status: 'completed', completedAt: '2026-02-15', comment: 'Ratified' },
-  ],
-  'pol-6': [
-    { step: 'Draft', assignee: 'David Park', status: 'completed', completedAt: '2026-03-15', comment: 'Initial draft' },
-    { step: 'Peer Review', assignee: 'Alex Kim', status: 'completed', completedAt: '2026-03-25', comment: 'Needs more detail on rollback procedures' },
-    { step: 'Legal Review', assignee: 'Amanda Martinez', status: 'current', completedAt: null, comment: null },
-    { step: 'CISO Approval', assignee: 'Sarah Chen', status: 'pending', completedAt: null, comment: null },
-    { step: 'Board Sign-off', assignee: 'Carlos Ruiz', status: 'pending', completedAt: null, comment: null },
-  ],
-  'pol-7': [
-    { step: 'Draft', assignee: 'Alex Kim', status: 'completed', completedAt: '2026-03-01', comment: 'Initial draft' },
-    { step: 'Peer Review', assignee: 'David Park', status: 'completed', completedAt: '2026-03-12', comment: 'LGTM' },
-    { step: 'Legal Review', assignee: 'Amanda Martinez', status: 'completed', completedAt: '2026-03-22', comment: 'Approved' },
-    { step: 'CISO Approval', assignee: 'Sarah Chen', status: 'completed', completedAt: '2026-04-05', comment: 'Approved' },
-    { step: 'Board Sign-off', assignee: 'Carlos Ruiz', status: 'pending', completedAt: null, comment: null },
-  ],
-  'pol-8': [
-    { step: 'Draft', assignee: 'Sandra White', status: 'current', completedAt: null, comment: null },
-    { step: 'Peer Review', assignee: 'Sarah Chen', status: 'pending', completedAt: null, comment: null },
-    { step: 'Legal Review', assignee: 'Amanda Martinez', status: 'pending', completedAt: null, comment: null },
-    { step: 'CISO Approval', assignee: 'Sarah Chen', status: 'pending', completedAt: null, comment: null },
-    { step: 'Board Sign-off', assignee: 'Carlos Ruiz', status: 'pending', completedAt: null, comment: null },
-  ],
-};
-
-const policyControlMap: Record<string, string[]> = {
-  'pol-1': ['CC-6.1', 'CC-6.2', 'CC-6.3', 'CC-7.1', 'CC-7.2', 'CC-7.3', 'CC-6.6', 'CC-6.8'],
-  'pol-2': ['HP-1.1', 'HP-1.2', 'CC-6.8', 'CC-7.3'],
-  'pol-3': ['CC-6.1', 'CC-6.2', 'HP-2.1'],
-  'pol-4': ['HP-3.1', 'CC-7.3', 'CC-6.1', 'CC-6.6', 'CC-6.8', 'HP-1.1'],
-  'pol-5': ['CC-6.1', 'CC-6.2', 'CC-6.3', 'HP-1.1', 'CC-6.8'],
-  'pol-6': ['CC-6.3', 'CC-7.3', 'CC-6.6'],
-  'pol-7': ['CC-7.1', 'CC-7.2', 'HP-1.2', 'CC-6.8'],
-  'pol-8': ['CC-6.8', 'CC-6.6'],
-  'pol-9': ['HP-3.1', 'CC-7.3', 'CC-6.6', 'CC-6.8'],
-  'pol-10': ['HP-1.1', 'HP-1.2', 'CC-6.1', 'CC-6.3', 'CC-6.8', 'CC-7.2'],
-  'pol-11': ['CC-6.6'],
-  'pol-12': ['CC-6.1', 'CC-7.1'],
-};
-
-const policyFrameworkMap: Record<string, string[]> = {
-  'pol-1': ['SOC 2 Type II', 'HIPAA Security Rule'],
-  'pol-2': ['HIPAA Security Rule'],
-  'pol-3': ['SOC 2 Type II'],
-  'pol-4': ['SOC 2 Type II', 'HIPAA Security Rule'],
-  'pol-5': ['SOC 2 Type II', 'HIPAA Security Rule'],
-  'pol-6': ['SOC 2 Type II'],
-  'pol-7': ['SOC 2 Type II', 'HIPAA Security Rule'],
-  'pol-8': ['SOC 2 Type II'],
-  'pol-9': ['SOC 2 Type II'],
-  'pol-10': ['HIPAA Security Rule'],
-  'pol-11': ['SOC 2 Type II'],
-  'pol-12': ['SOC 2 Type II'],
-};
+import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
+import { format } from 'date-fns';
+import { PolicyAcknowledgmentPanel } from './PolicyAcknowledgmentPanel';
 
 const statusStyles: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -105,29 +20,133 @@ const statusStyles: Record<string, string> = {
   archived: 'bg-muted text-muted-foreground',
 };
 
-const controlStatusIcon: Record<string, typeof CheckCircle2> = {
-  implemented: CheckCircle2,
-  in_progress: Clock,
-  failing: XCircle,
-  not_implemented: AlertTriangle,
-  not_applicable: Eye,
-};
-
-const controlStatusStyle: Record<string, string> = {
-  implemented: 'text-status-passing',
-  in_progress: 'text-status-in-progress',
-  failing: 'text-severity-critical',
-  not_implemented: 'text-muted-foreground',
-  not_applicable: 'text-muted-foreground',
-};
-
 interface PolicyDetailViewProps {
   policyId: string;
 }
 
 export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
-  const policy = policies.find(p => p.id === policyId);
-  const [activeTab, setActiveTab] = useState<'versions' | 'approval' | 'controls' | 'frameworks'>('versions');
+  const [policy, setPolicy] = useState<Tables<'policies'> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'versions' | 'approval' | 'controls' | 'frameworks' | 'acknowledgments'>('versions');
+  const [ackCount, setAckCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error: err } = await supabase
+          .from('policies')
+          .select('*')
+          .eq('id', policyId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (err) { setError(err.message); setLoading(false); return; }
+        setPolicy(data);
+
+        const { count } = await supabase
+          .from('policy_acknowledgments')
+          .select('*', { count: 'exact', head: true })
+          .eq('policy_id', policyId);
+        if (!cancelled) setAckCount(count ?? 0);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load policy');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [policyId]);
+
+  function exportPdf() {
+    if (!policy) return;
+    try {
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      doc.setProperties({ title: policy.title, creator: 'ZeroDay Security' });
+
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 28, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(248, 250, 252);
+      doc.text('ZeroDay Security', 14, 11);
+      doc.setFontSize(10);
+      doc.setTextColor(59, 130, 246);
+      doc.text('Policy Document', 14, 19);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 196, 220);
+      doc.text(format(new Date(), 'MMMM d, yyyy'), doc.internal.pageSize.getWidth() - 14, 11, { align: 'right' });
+      doc.text(`v${policy.version ?? '1.0'}`, doc.internal.pageSize.getWidth() - 14, 19, { align: 'right' });
+
+      let y = 40;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(15, 23, 42);
+      doc.text(policy.title, 14, y);
+      y += 10;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Status: ${policy.status}  |  Version: ${policy.version ?? '1.0'}  |  Review Date: ${policy.review_date ? format(new Date(policy.review_date), 'MMM d, yyyy') : 'Not set'}`, 14, y);
+      y += 8;
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(14, y, doc.internal.pageSize.getWidth() - 14, y);
+      y += 8;
+
+      if (policy.content) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 41, 59);
+        const lines = doc.splitTextToSize(policy.content, doc.internal.pageSize.getWidth() - 28);
+        for (const line of lines) {
+          if (y > 280) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(line, 14, y);
+          y += 5;
+        }
+      }
+
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text('ZeroDay Security — Confidential', 14, doc.internal.pageSize.getHeight() - 6);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' });
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.3);
+        doc.line(14, doc.internal.pageSize.getHeight() - 10, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      const filename = `${policy.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_v${policy.version ?? '1.0'}.pdf`;
+      doc.save(filename);
+      toast.success('Policy exported as PDF');
+    } catch {
+      toast.error('Failed to generate PDF');
+    }
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <AlertTriangle className="h-12 w-12 text-severity-critical" />
+        <p className="text-sm text-severity-critical">{error}</p>
+        <Link to="/policies" className="text-primary hover:underline text-sm">← Back to Policies</Link>
+      </div>
+    );
+  }
 
   if (!policy) {
     return (
@@ -139,35 +158,29 @@ export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
     );
   }
 
-  const versions = policyVersionHistory[policyId] || [
-    { version: policy.version, date: policy.approvedAt || '—', author: policy.owner, changes: 'Current version', status: policy.status === 'published' ? 'published' as const : 'approved' as const },
+  const versions = [
+    { version: policy.version ?? '1.0', date: policy.updated_at ? new Date(policy.updated_at).toLocaleDateString('en-CA') : '—', author: policy.approved_by ?? 'Unknown', changes: 'Current version', status: policy.status === 'published' ? 'published' as const : 'approved' as const },
   ];
 
-  const workflow = policyApprovalWorkflow[policyId] || [
-    { step: 'Draft', assignee: policy.owner, status: policy.status === 'draft' ? 'current' as const : 'completed' as const, completedAt: null, comment: null },
-    { step: 'Peer Review', assignee: '—', status: 'pending' as const, completedAt: null, comment: null },
-    { step: 'Legal Review', assignee: '—', status: 'pending' as const, completedAt: null, comment: null },
-    { step: 'CISO Approval', assignee: '—', status: 'pending' as const, completedAt: null, comment: null },
-    { step: 'Board Sign-off', assignee: '—', status: 'pending' as const, completedAt: null, comment: null },
+  interface WorkflowStep { step: string; assignee: string; status: 'completed' | 'pending'; completedAt: string | null; comment: string | null; }
+  const workflow: WorkflowStep[] = [
+    { step: 'Draft', assignee: policy.owner_id ?? 'Unassigned', status: 'completed', completedAt: policy.created_at, comment: null },
+    { step: 'Peer Review', assignee: '—', status: 'pending', completedAt: null, comment: null },
+    { step: 'Legal Review', assignee: '—', status: 'pending', completedAt: null, comment: null },
+    { step: 'CISO Approval', assignee: '—', status: 'pending', completedAt: null, comment: null },
+    { step: 'Board Sign-off', assignee: '—', status: 'pending', completedAt: null, comment: null },
   ];
-
-  const linkedControlRefs = policyControlMap[policyId] || [];
-  const linkedControls = controls.filter(c => linkedControlRefs.includes(c.ref));
-  const linkedFrameworkNames = policyFrameworkMap[policyId] || [];
-  const linkedFrameworks = frameworks.filter(f => linkedFrameworkNames.includes(f.name));
 
   const completedSteps = workflow.filter(s => s.status === 'completed').length;
   const totalSteps = workflow.length;
   const approvalProgress = Math.round((completedSteps / totalSteps) * 100);
 
-  const passingControls = linkedControls.filter(c => c.status === 'implemented').length;
-  const controlHealth = linkedControls.length > 0 ? Math.round((passingControls / linkedControls.length) * 100) : 0;
-
   const tabs = [
     { key: 'versions' as const, label: 'Version History', count: versions.length },
     { key: 'approval' as const, label: 'Approval Workflow', count: null },
-    { key: 'controls' as const, label: 'Linked Controls', count: linkedControls.length },
-    { key: 'frameworks' as const, label: 'Frameworks', count: linkedFrameworks.length },
+    { key: 'controls' as const, label: 'Linked Controls', count: 0 },
+    { key: 'frameworks' as const, label: 'Frameworks', count: policy.framework_id ? 1 : 0 },
+    { key: 'acknowledgments' as const, label: 'Acknowledgments', count: ackCount },
   ];
 
   return (
@@ -181,18 +194,28 @@ export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-mono text-xs text-muted-foreground">{policy.id.toUpperCase()}</span>
+            <span className="font-mono text-xs text-muted-foreground">{policy.id.slice(0, 8)}</span>
             <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${statusStyles[policy.status]}`}>
               {policy.status}
             </span>
-            <span className="font-mono text-xs bg-secondary text-foreground px-2 py-0.5 rounded">v{policy.version}</span>
+            <span className="font-mono text-xs bg-secondary text-foreground px-2 py-0.5 rounded">v{policy.version ?? '1.0'}</span>
+            <button
+              onClick={exportPdf}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors ml-auto"
+            >
+              <Download className="h-3 w-3" /> Export PDF
+            </button>
           </div>
           <h1 className="text-lg font-bold text-foreground">{policy.title}</h1>
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
-            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" /> Owner: <strong className="text-foreground">{policy.owner}</strong></span>
-            <span className="flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> Category: <strong className="text-foreground">{policy.category}</strong></span>
-            <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Next Review: <strong className="text-foreground">{policy.nextReviewDate}</strong></span>
+            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" /> Owner: <strong className="text-foreground">{policy.owner_id ?? 'Unassigned'}</strong></span>
+            <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Next Review: <strong className="text-foreground">{policy.review_date ? new Date(policy.review_date).toLocaleDateString('en-CA') : 'Not set'}</strong></span>
           </div>
+          {policy.content && (
+            <div className="mt-3 p-4 rounded-lg bg-muted/30 border border-border">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{policy.content}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -205,23 +228,24 @@ export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
           <div className="text-xs text-muted-foreground mt-1">{approvalProgress}% complete</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Control Health</div>
-          <div className="text-2xl font-bold text-foreground">{controlHealth}%</div>
-          <Progress value={controlHealth} className="mt-2 h-1.5" />
-          <div className="text-xs text-muted-foreground mt-1">{passingControls} of {linkedControls.length} passing</div>
+          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Status</div>
+          <div className="text-2xl font-bold text-foreground capitalize">{policy.status}</div>
+          <div className="text-xs text-muted-foreground mt-3">Updated {new Date(policy.updated_at).toLocaleDateString('en-CA')}</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Versions</div>
-          <div className="text-2xl font-bold text-foreground">{versions.length}</div>
-          <div className="text-xs text-muted-foreground mt-3">Latest: v{policy.version}</div>
+          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Version</div>
+          <div className="text-2xl font-bold text-foreground">v{policy.version ?? '1.0'}</div>
+          <div className="text-xs text-muted-foreground mt-3">Created {new Date(policy.created_at).toLocaleDateString('en-CA')}</div>
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-secondary rounded-md p-0.5 overflow-x-auto">
+      <div className="flex gap-1 bg-secondary rounded-md p-0.5 overflow-x-auto" role="tablist">
         {tabs.map(t => (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={activeTab === t.key}
             onClick={() => setActiveTab(t.key)}
             className={`px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap ${activeTab === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
@@ -263,18 +287,17 @@ export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
             <Send className="h-4 w-4 text-muted-foreground" /> Approval Workflow
           </h3>
           <div className="space-y-3">
-            {workflow.map((step, i) => {
-              const StepIcon = step.status === 'completed' ? CheckCircle2 : step.status === 'current' ? PenLine : Clock;
-              const iconColor = step.status === 'completed' ? 'text-status-passing' : step.status === 'current' ? 'text-status-warning' : 'text-muted-foreground';
+            {workflow.map((step) => {
+              const StepIcon = step.status === 'completed' ? CheckCircle2 : Clock;
+              const iconColor = step.status === 'completed' ? 'text-status-passing' : 'text-muted-foreground';
               return (
-                <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${step.status === 'current' ? 'border-status-warning/30 bg-status-warning/5' : 'border-border'}`}>
+                <div key={step.step} className="flex items-start gap-3 p-3 rounded-lg border border-border">
                   <StepIcon className={`h-5 w-5 mt-0.5 shrink-0 ${iconColor}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-sm font-medium text-foreground">{step.step}</span>
-                      {step.completedAt && <span className="text-xs text-muted-foreground">{step.completedAt}</span>}
-                      {step.status === 'current' && <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-status-warning/15 text-status-warning">In Progress</span>}
-                      {step.status === 'pending' && <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Pending</span>}
+                      {step.completedAt && <span className="text-xs text-muted-foreground">{new Date(step.completedAt).toLocaleDateString('en-CA')}</span>}
+              {step.status === 'completed' ? <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-status-passing/15 text-status-passing">Complete</span> : <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Pending</span>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">Assignee: {step.assignee}</p>
                     {step.comment && <p className="text-xs text-foreground/80 mt-1 italic">"{step.comment}"</p>}
@@ -289,55 +312,7 @@ export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
       {/* Linked Controls */}
       {activeTab === 'controls' && (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-border">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground" /> Linked Controls ({linkedControls.length})
-            </h3>
-          </div>
-          {linkedControls.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">No controls linked to this policy</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground">Control</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground">Framework</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground">Status</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground">Impl.</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground">Last Tested</th>
-                </tr>
-              </thead>
-              <tbody>
-                {linkedControls.map(c => {
-                  const StatusIcon = controlStatusIcon[c.status] || Eye;
-                  return (
-                    <tr key={c.id} className="border-b border-border hover:bg-surface transition-colors">
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{c.ref}</span>
-                          <span className="font-medium text-foreground">{c.title}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">{c.framework}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`flex items-center gap-1 text-xs font-medium ${controlStatusStyle[c.status]}`}>
-                          <StatusIcon className="h-3.5 w-3.5" />
-                          {c.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <Progress value={c.implementationPct} className="h-1 w-16" />
-                          <span className="text-xs text-muted-foreground">{c.implementationPct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">{c.lastTested || '—'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <ControlsTab frameworkId={policy.framework_id} policyId={policyId} />
         </div>
       )}
 
@@ -345,30 +320,86 @@ export function PolicyDetailView({ policyId }: PolicyDetailViewProps) {
       {activeTab === 'frameworks' && (
         <div className="bg-card border border-border rounded-lg p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground" /> Applicable Frameworks ({linkedFrameworks.length})
+            <Shield className="h-4 w-4 text-muted-foreground" /> Applicable Frameworks
           </h3>
-          {linkedFrameworks.length === 0 ? (
-            <div className="text-center text-muted-foreground text-sm py-8">No frameworks linked</div>
+          {policy.framework_id ? (
+            <FrameworkBadge frameworkId={policy.framework_id} />
           ) : (
-            <div className="space-y-3">
-              {linkedFrameworks.map(fw => (
-                <div key={fw.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-surface transition-colors">
-                  <div>
-                    <div className="font-medium text-sm text-foreground">{fw.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {fw.controlCounts.passing + fw.controlCounts.failing + fw.controlCounts.inProgress} controls · Target: {fw.targetDate}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Progress value={fw.compliancePct} className="h-1.5 w-24" />
-                    <span className="text-sm font-bold text-foreground">{fw.compliancePct}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="text-center text-muted-foreground text-sm py-8">No frameworks linked</div>
           )}
         </div>
       )}
+
+      {/* Acknowledgments */}
+      {activeTab === 'acknowledgments' && (
+        <div className="bg-card border border-border rounded-lg p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" /> Acknowledgments
+          </h3>
+          <PolicyAcknowledgmentPanel policyId={policyId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ControlsTab({ frameworkId }: { frameworkId: string | null; policyId: string }) {
+  const [controls, setControls] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!frameworkId) { setLoading(false); return; }
+    supabase.from('controls').select('id, code, title, status, category').eq('framework_id', frameworkId).then(({ data }) => {
+      setControls(data ?? []);
+      setLoading(false);
+    });
+  }, [frameworkId]);
+
+  if (!frameworkId) return <div className="p-8 text-center text-muted-foreground text-sm">No framework linked — controls appear once a framework is assigned.</div>;
+  if (loading) return <div className="p-8 text-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto" /></div>;
+
+  if (controls.length === 0) return <div className="p-8 text-center text-muted-foreground text-sm">No controls found for the linked framework.</div>;
+
+  const ctrlStatusStyles: Record<string, string> = {
+    implemented: 'bg-status-passing/15 text-status-passing',
+    in_progress: 'bg-status-warning/15 text-status-warning',
+    failing: 'bg-status-critical/15 text-status-critical',
+    not_started: 'bg-muted text-muted-foreground',
+  };
+
+  return (
+    <div>
+      <div className="px-5 py-3 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Shield className="h-4 w-4 text-muted-foreground" /> Linked Controls ({controls.length})
+        </h3>
+      </div>
+      <div className="divide-y divide-border">
+        {controls.map(c => (
+          <div key={c.id} className="px-5 py-3 flex items-center justify-between hover:bg-surface transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
+              <span className="text-sm text-foreground">{c.title}</span>
+            </div>
+            <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${ctrlStatusStyles[c.status] ?? ''}`}>{c.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FrameworkBadge({ frameworkId }: { frameworkId: string }) {
+  const [fw, setFw] = useState<any>(null);
+  useEffect(() => {
+    supabase.from('frameworks').select('name, description').eq('id', frameworkId).maybeSingle().then(({ data }) => setFw(data));
+  }, [frameworkId]);
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-surface transition-colors">
+      <div>
+        <div className="font-medium text-sm text-foreground">{fw?.name ?? 'Unknown Framework'}</div>
+        {fw?.description && <div className="text-xs text-muted-foreground mt-0.5">{fw.description}</div>}
+      </div>
     </div>
   );
 }

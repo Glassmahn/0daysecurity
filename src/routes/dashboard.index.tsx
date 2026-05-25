@@ -9,6 +9,7 @@ import { ControlStatusDonut } from '@/components/dashboard/ControlStatusDonut';
 import { IncidentTrendChart } from '@/components/dashboard/IncidentTrendChart';
 import { VendorRiskRadar } from '@/components/dashboard/VendorRiskRadar';
 import { FrameworkScoreCards } from '@/components/dashboard/FrameworkScoreCards';
+import { ComplianceForecastCard } from '@/components/dashboard/ComplianceForecastCard';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
 import { Skeleton } from '@/components/ui/skeleton';
 export const Route = createFileRoute('/dashboard/')({
@@ -46,7 +47,7 @@ function DashboardHome() {
           {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
         </div>
       ) : (
-        <KPIStrip data={kpi.data ?? []} period="" />
+        <KPIStrip data={kpi.data ?? []} />
       )}
 
       {/* Row 1: Compliance Trend + Control Donut */}
@@ -54,30 +55,33 @@ function DashboardHome() {
         <div className="lg:col-span-2">
           <ComplianceTrendChart />
         </div>
-        <ControlStatusDonut data={controlDonut.data} isLoading={controlDonut.isLoading} />
+        <ControlStatusDonut data={controlDonut.data} isLoading={controlDonut.isLoading} isError={controlDonut.isError} />
       </div>
 
       {/* Row 2: Risk Heatmap + Security Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <RiskHeatmap data={riskHeatmap.data} isLoading={riskHeatmap.isLoading} />
-        <VendorRiskRadar />
+        <RiskHeatmap data={riskHeatmap.data} isLoading={riskHeatmap.isLoading} isError={riskHeatmap.isError} />
+        <VendorRiskRadar isLoading={riskHeatmap.isLoading} isError={riskHeatmap.isError} />
       </div>
 
       {/* Row 3: Incident Trends + Compliance Posture */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <IncidentTrendChart data={incidentTrend.data} isLoading={incidentTrend.isLoading} />
-        <CompliancePosture data={frameworkPosture.data ?? []} isLoading={frameworkPosture.isLoading} />
+        <IncidentTrendChart data={incidentTrend.data} isLoading={incidentTrend.isLoading} isError={incidentTrend.isError} />
+        <CompliancePosture data={frameworkPosture.data ?? []} isLoading={frameworkPosture.isLoading} isError={frameworkPosture.isError} />
       </div>
 
-      {/* Row 4: Framework Readiness + Priority Queue + Activity */}
+      {/* Row 4: Framework Readiness + Forecast + Priority Queue */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <FrameworkScoreCards data={frameworkPosture.data} isLoading={frameworkPosture.isLoading} />
+        <FrameworkScoreCards data={frameworkPosture.data} isLoading={frameworkPosture.isLoading} isError={frameworkPosture.isError} />
+        <ComplianceForecastCard />
         <div className="lg:col-span-1">
-          <PriorityQueue items={priorityQueue.data ?? []} />
+          <PriorityQueue items={priorityQueue.data ?? []} isLoading={priorityQueue.isLoading} isError={priorityQueue.isError} />
         </div>
-        <div className="lg:col-span-1">
-          <ActivityFeed items={activityFeed.data ?? []} />
-        </div>
+      </div>
+
+      {/* Row 5: Activity */}
+      <div className="grid grid-cols-1 gap-5">
+        <ActivityFeed items={activityFeed.data ?? []} isLoading={activityFeed.isLoading} />
       </div>
     </div>
   );

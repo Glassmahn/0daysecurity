@@ -13,7 +13,7 @@ test.describe('Login page', () => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Password' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   });
 
@@ -35,8 +35,8 @@ test.describe('Login page', () => {
   });
 
   test('shows an error message for invalid credentials', async ({ page }) => {
-    // Block OPTIONS preflight then return 400 for the token endpoint
-    await page.route(`${SUPABASE_URL}/auth/v1/token**`, route => {
+    // Intercept the password grant token endpoint specifically
+    await page.route((url) => url.href.includes('/auth/v1/token'), route => {
       if (route.request().method() === 'OPTIONS') {
         return route.fulfill({ status: 204, headers: CORS });
       }
@@ -49,7 +49,7 @@ test.describe('Login page', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill('bad@example.com');
-    await page.getByLabel('Password').fill('wrongpassword');
+    await page.getByRole('textbox', { name: 'Password' }).fill('wrongpassword');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
     // Supabase surfaces the error via setError(); match anything that could be an error div
@@ -60,7 +60,8 @@ test.describe('Login page', () => {
   });
 
   test('redirects to /dashboard after successful login', async ({ page }) => {
-    await page.route(`${SUPABASE_URL}/auth/v1/token**`, route => {
+    // Intercept the password grant token endpoint specifically
+    await page.route((url) => url.href.includes('/auth/v1/token'), route => {
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
       return route.fulfill({ headers: CORS, json: MOCK_SESSION });
     });
@@ -74,7 +75,7 @@ test.describe('Login page', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill('test@example.com');
-    await page.getByLabel('Password').fill('Password123!');
+    await page.getByRole('textbox', { name: 'Password' }).fill('Password123!');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 12_000 });

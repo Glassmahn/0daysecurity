@@ -1,14 +1,51 @@
-import '@/lib/env'; // validates required env vars at startup — throws with a clear message if any are missing
-import { initMonitoring } from '@/lib/monitoring';
+import '@/lib/env';
+import { initMonitoring, captureError } from '@/lib/monitoring';
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
-import { useState } from "react";
+import { useState, Component, type ReactNode, type ErrorInfo } from "react";
 
 initMonitoring();
 
 import appCss from "../styles.css?url";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    captureError(error, { context: 'ErrorBoundary', info });
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <div className="max-w-md text-center">
+            <h1 className="text-4xl font-bold text-destructive mb-4">Something went wrong</h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              {this.state.error.message}
+            </p>
+            <button
+              onClick={() => { this.setState({ error: null }); window.location.href = '/'; }}
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Go home
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function NotFoundComponent() {
   return (
@@ -64,7 +101,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Scripts />
       </body>
     </html>

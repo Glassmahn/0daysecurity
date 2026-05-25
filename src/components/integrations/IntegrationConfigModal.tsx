@@ -3,6 +3,7 @@ import { Loader2, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import type { Integration } from '@/hooks/use-integrations';
 import { PROVIDER_META } from './providerMeta';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   integration: Integration;
@@ -40,27 +41,35 @@ export function IntegrationConfigModal({ integration, open, onClose, onSave }: P
     if (ok) onClose();
   }
 
+  function findUrlValue(values: Record<string, string>, meta: typeof PROVIDER_META[string]): string | null {
+    const urlField = meta.fields.find(f => f.type === 'url');
+    if (!urlField) return null;
+    return values[urlField.key]?.trim() || null;
+  }
+
   async function handleTest() {
-    if (integration.provider !== 'slack') return;
-    const webhookUrl = values['webhook_url'];
-    if (!webhookUrl) {
-      toast.error('Enter a webhook URL first');
+    const pingUrl = findUrlValue(values, meta);
+    if (!pingUrl) {
+      toast.error('Enter a URL for this provider first');
       return;
     }
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: '✅ ZeroDay Security test connection — webhook is working.' }),
+      const { data, error } = await supabase.functions.invoke('webhook-test', {
+        body: { url: pingUrl, method: 'POST', body: { test: true, provider: integration.provider } },
       });
-      setTestResult(res.ok ? 'success' : 'failure');
-      if (res.ok) toast.success('Slack test message sent');
-      else toast.error('Slack returned an error — check the webhook URL');
-    } catch {
+      if (error) throw error;
+      if (data?.ok) {
+        setTestResult('success');
+        toast.success(`${meta.label} — ${data.status} in ${data.elapsed_ms}ms`);
+      } else {
+        setTestResult('failure');
+        toast.error(`${meta.label} returned ${data?.status ?? 'error'} — check connection`);
+      }
+    } catch (err: any) {
       setTestResult('failure');
-      toast.error('Could not reach Slack — check the URL and network access');
+      toast.error(`Could not reach ${meta.label}: ${err.message ?? 'Unknown error'}`);
     } finally {
       setTesting(false);
     }
@@ -103,19 +112,19 @@ export function IntegrationConfigModal({ integration, open, onClose, onSave }: P
             <ExternalLink className="h-3 w-3" />Setup guide
           </a>
 
-          {/* Slack test connection */}
+          {/* Test connection — pings the first URL field */}
           {meta.testable && (
             <div className="flex items-center gap-3 pt-1">
               <button
                 onClick={handleTest}
-                disabled={testing || !values['webhook_url']?.trim()}
+                disabled={testing || !findUrlValue(values, meta)}
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md text-xs font-medium hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                 Test Connection
               </button>
-              {testResult === 'success' && <span className="flex items-center gap-1 text-xs text-status-passing"><CheckCircle className="h-3.5 w-3.5" />Connected</span>}
-              {testResult === 'failure' && <span className="flex items-center gap-1 text-xs text-status-failing"><XCircle className="h-3.5 w-3.5" />Failed</span>}
+              {testResult === 'success' && <span className="flex items-center gap-1 text-xs text-status-passing"><CheckCircle className="h-3.5 w-3.5" />Reachable</span>}
+              {testResult === 'failure' && <span className="flex items-center gap-1 text-xs text-status-failing"><XCircle className="h-3.5 w-3.5" />Unreachable</span>}
             </div>
           )}
 

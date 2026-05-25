@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { risks } from '@/lib/mock-data-extended';
-import { controls } from '@/lib/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
+import { RiskTreatmentDialog } from '@/components/risks/RiskTreatmentDialog';
 import {
   ArrowLeft,
   Shield,
@@ -16,7 +17,13 @@ import {
   User,
   Calendar,
   FileText,
+  ClipboardCheck,
+  Loader2,
+  Download,
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 const statusStyles: Record<string, string> = {
   identified: 'bg-status-warning/15 text-status-warning border-status-warning/30',
@@ -46,60 +53,85 @@ function cellBg(score: number) {
   return 'bg-status-passing/10 border-status-passing/20';
 }
 
-// Enrichment: treatment plan steps per risk
-const treatmentPlans: Record<string, { id: string; step: string; done: boolean; dueDate: string }[]> = {
-  'r-1': [
-    { id: 'tp-1', step: 'Audit all S3 buckets for encryption status', done: true, dueDate: '2026-04-05' },
-    { id: 'tp-2', step: 'Enable SSE-S3 on identified unencrypted buckets', done: true, dueDate: '2026-04-08' },
-    { id: 'tp-3', step: 'Deploy AWS Config rule to enforce encryption', done: false, dueDate: '2026-04-15' },
-    { id: 'tp-4', step: 'Verify no public access via Access Analyzer', done: false, dueDate: '2026-04-18' },
-    { id: 'tp-5', step: 'Update data classification inventory', done: false, dueDate: '2026-04-22' },
-  ],
-  'r-2': [
-    { id: 'tp-6', step: 'Enumerate all admin accounts across systems', done: true, dueDate: '2026-04-02' },
-    { id: 'tp-7', step: 'Enforce MFA on all admin accounts', done: true, dueDate: '2026-04-06' },
-    { id: 'tp-8', step: 'Implement 90-day password rotation policy', done: false, dueDate: '2026-04-20' },
-    { id: 'tp-9', step: 'Deactivate stale admin accounts (>90 days inactive)', done: false, dueDate: '2026-04-25' },
-  ],
-  'r-3': [
-    { id: 'tp-10', step: 'Identify top 10 critical vendors', done: true, dueDate: '2026-03-30' },
-    { id: 'tp-11', step: 'Send security assessment questionnaires', done: true, dueDate: '2026-04-05' },
-    { id: 'tp-12', step: 'Review returned assessments and score vendors', done: false, dueDate: '2026-04-20' },
-    { id: 'tp-13', step: 'Establish contractual security requirements', done: false, dueDate: '2026-05-01' },
-  ],
-};
-
-// Map risk to control IDs for enrichment
-const riskControlMap: Record<string, string[]> = {
-  'r-1': ['c4', 'c5'],
-  'r-2': ['c1', 'c2', 'c3'],
-  'r-3': ['c8'],
-  'r-4': ['c1', 'c3'],
-  'r-5': ['c6', 'c7', 'c4'],
-  'r-6': ['c9', 'c10', 'c11', 'c12', 'c5'],
-  'r-7': ['c1', 'c2'],
-  'r-8': ['c11'],
-  'r-9': ['c6'],
-  'r-10': ['c8'],
-  'r-11': ['c7'],
-  'r-12': [],
-  'r-13': ['c4'],
-  'r-14': ['c1'],
-  'r-15': ['c11'],
-};
-
 const impactLabels = ['', 'Negligible', 'Minor', 'Moderate', 'Major', 'Catastrophic'];
 const likelihoodLabels = ['', 'Rare', 'Unlikely', 'Possible', 'Likely', 'Almost Certain'];
 
 export function RiskDetailView({ riskId }: { riskId: string }) {
-  const risk = risks.find((r) => r.id === riskId);
-  const defaultPlan = [
-    { id: 'tp-default', step: 'Define treatment actions', done: false, dueDate: '2026-05-01' },
-  ];
-  const plan = treatmentPlans[riskId] || defaultPlan;
-  const [checkState, setCheckState] = useState<Record<string, boolean>>(
-    Object.fromEntries(plan.map((s) => [s.id, s.done]))
-  );
+  const [risk, setRisk] = useState<Tables<'risks'> | null>(null);
+  const [allRisks, setAllRisks] = useState<Tables<'risks'>[]>([]);
+  const [linkedControls, setLinkedControls] = useState<Tables<'controls'>[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [treatmentOpen, setTreatmentOpen] = useState(false);
+  const [checkState, setCheckState] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(`risk-checklist-${riskId}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`risk-checklist-${riskId}`, JSON.stringify(checkState));
+    } catch { /* localStorage may be full */ }
+  }, [checkState, riskId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [riskRes, allRisksRes] = await Promise.all([
+          supabase.from('risks').select('id, title, description, category, likelihood, impact, risk_score, status, mitigation_plan, owner_id, residual_likelihood, residual_impact, created_at, updated_at').eq('id', riskId).maybeSingle(),
+          supabase.from('risks').select('id, title, description, category, likelihood, impact, risk_score, status, mitigation_plan, owner_id, residual_likelihood, residual_impact, created_at, updated_at'),
+        ]);
+        if (cancelled) return;
+
+        if (riskRes.error) {
+          setError(riskRes.error.message);
+          setLoading(false);
+          return;
+        }
+
+        setRisk(riskRes.data);
+        setAllRisks(allRisksRes.data ?? []);
+
+        if (riskRes.data) {
+          const controlsRes = await supabase.from('controls').select('id, code, title, description, category, framework_id, status, last_reviewed, owner_id, implementation_details, frameworks, created_at, updated_at');
+          if (!cancelled) {
+            setLinkedControls(controlsRes.data ?? []);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load risk');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [riskId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <AlertTriangle className="h-12 w-12 text-severity-critical" />
+        <p className="text-sm text-severity-critical">{error}</p>
+        <Link to="/risk-register" className="text-primary hover:underline text-sm">← Back to risk register</Link>
+      </div>
+    );
+  }
 
   if (!risk) {
     return (
@@ -111,16 +143,118 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
     );
   }
 
-  const linkedControlData = (riskControlMap[riskId] || [])
-    .map((cid) => controls.find((c) => c.id === cid))
-    .filter(Boolean);
+  const riskScore = risk.risk_score ?? 0;
+  const likelihood = risk.likelihood ?? 3;
+  const impact = risk.impact ?? 3;
+  const mitigationPlan = risk.mitigation_plan ?? 'No mitigation plan defined';
+  const ownerLabel = risk.owner_id ?? 'Unassigned';
 
+  const linkedControlData = linkedControls.filter(c => {
+    return c.framework_id === risk.category;
+  });
+
+  const plan = [
+    { id: 'tp-default', step: 'Define treatment actions', done: false, dueDate: 'Set target date' },
+  ];
   const completedSteps = Object.values(checkState).filter(Boolean).length;
   const totalSteps = plan.length;
 
-  // Residual score: reduce by treatment progress
-  const residualFactor = Math.max(0.3, 1 - (completedSteps / totalSteps) * 0.6);
-  const residualScore = Math.round(risk.riskScore * residualFactor);
+  const residualScore = risk.residual_likelihood != null && risk.residual_impact != null
+    ? risk.residual_likelihood * risk.residual_impact
+    : Math.round(riskScore * Math.max(0.3, 1 - (completedSteps / totalSteps) * 0.6));
+
+  function exportPdf() {
+    if (!risk) return;
+    try {
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      doc.setProperties({ title: risk.title, creator: 'ZeroDay Security' });
+
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 28, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(248, 250, 252);
+      doc.text('ZeroDay Security', 14, 11);
+      doc.setFontSize(10);
+      doc.setTextColor(59, 130, 246);
+      doc.text('Risk Assessment Report', 14, 19);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 196, 220);
+      doc.text(format(new Date(), 'MMMM d, yyyy'), doc.internal.pageSize.getWidth() - 14, 11, { align: 'right' });
+
+      let y = 40;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(15, 23, 42);
+      doc.text(risk.title, 14, y);
+      y += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Status: ${risk.status}  |  Score: ${riskScore}  |  Residual: ${residualScore}  |  Category: ${risk.category ?? 'Uncategorized'}`, 14, y);
+      y += 8;
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(14, y, doc.internal.pageSize.getWidth() - 14, y);
+      y += 8;
+
+      if (risk.description) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 41, 59);
+        const lines = doc.splitTextToSize(risk.description, doc.internal.pageSize.getWidth() - 28);
+        for (const line of lines) {
+          if (y > 270) { doc.addPage(); y = 20; }
+          doc.text(line, 14, y);
+          y += 5;
+        }
+        y += 4;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Risk Assessment', 14, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Likelihood: ${risk.likelihood ?? '—'}/5`, 14, y); y += 5;
+      doc.text(`Impact: ${risk.impact ?? '—'}/5`, 14, y); y += 5;
+      doc.text(`Inherent Risk Score: ${riskScore}`, 14, y); y += 5;
+      doc.text(`Residual Risk Score: ${residualScore}`, 14, y); y += 5;
+      doc.text(`Owner: ${ownerLabel}`, 14, y); y += 5;
+
+      if (risk.mitigation_plan) {
+        y += 4;
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, y, doc.internal.pageSize.getWidth() - 14, y);
+        y += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Mitigation Plan', 14, y);
+        y += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105);
+        const planLines = doc.splitTextToSize(risk.mitigation_plan, doc.internal.pageSize.getWidth() - 28);
+        for (const line of planLines) {
+          if (y > 270) { doc.addPage(); y = 20; }
+          doc.text(line, 14, y);
+          y += 5;
+        }
+      }
+
+      const filename = `${risk.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_risk_report.pdf`;
+      doc.save(filename);
+      toast.success('Risk report exported as PDF');
+    } catch {
+      toast.error('Failed to generate PDF');
+    }
+  }
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -133,16 +267,21 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-mono text-sm text-muted-foreground">{risk.id.toUpperCase()}</span>
-            <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${statusStyles[risk.status]}`}>
+            <span className="font-mono text-sm text-muted-foreground">{risk.id.slice(0, 8)}</span>
+            <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${statusStyles[risk.status] || ''}`}>
               {risk.status}
             </span>
-            <span className={`text-xs font-bold px-2 py-0.5 rounded ${scoreColor(risk.riskScore)}`}>
-              Score: {risk.riskScore}
+            <span className={`text-xs font-bold px-2 py-0.5 rounded ${scoreColor(riskScore)}`}>
+              Score: {riskScore}
             </span>
+            <button onClick={exportPdf} className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors ml-auto">
+              <Download className="h-3 w-3" /> PDF
+            </button>
           </div>
           <h1 className="text-lg font-bold text-foreground mt-1">{risk.title}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{risk.description}</p>
+          {risk.description && (
+            <p className="text-sm text-muted-foreground mt-1">{risk.description}</p>
+          )}
         </div>
       </div>
 
@@ -151,12 +290,12 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
           <span className="text-muted-foreground">Owner:</span>
-          <span className="font-medium text-foreground">{risk.owner}</span>
+          <span className="font-medium text-foreground">{ownerLabel}</span>
         </div>
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-muted-foreground" />
           <span className="text-muted-foreground">Category:</span>
-          <span className="font-medium text-foreground">{risk.category}</span>
+          <span className="font-medium text-foreground">{risk.category ?? 'Uncategorized'}</span>
         </div>
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-muted-foreground" />
@@ -176,7 +315,6 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
             </CardHeader>
             <CardContent>
               <div className="flex gap-3">
-                {/* Y-axis labels */}
                 <div className="flex flex-col-reverse justify-between py-0.5 pr-1 text-[10px] text-muted-foreground">
                   {[1, 2, 3, 4, 5].map((l) => (
                     <div key={l} className="h-12 flex items-center justify-end w-16 truncate">
@@ -188,16 +326,16 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
 
                 <div className="flex-1">
                   <div className="grid grid-cols-5 gap-1">
-                    {[5, 4, 3, 2, 1].map((likelihood) =>
-                      [1, 2, 3, 4, 5].map((impact) => {
-                        const score = likelihood * impact;
-                        const isCurrentRisk = risk.likelihood === likelihood && risk.impact === impact;
-                        const cellRisks = risks.filter(
-                          (r) => r.likelihood === likelihood && r.impact === impact
+                    {[5, 4, 3, 2, 1].map((lVal) =>
+                      [1, 2, 3, 4, 5].map((iVal) => {
+                        const score = lVal * iVal;
+                        const isCurrentRisk = likelihood === lVal && impact === iVal;
+                        const risksInCell = allRisks.filter(
+                          (r) => r.likelihood === lVal && r.impact === iVal
                         );
                         return (
                           <div
-                            key={`${likelihood}-${impact}`}
+                            key={`${lVal}-${iVal}`}
                             className={`h-12 rounded border ${cellBg(score)} flex items-center justify-center relative transition-all ${
                               isCurrentRisk ? 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-105' : ''
                             }`}
@@ -206,15 +344,14 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
                               <div className={`w-6 h-6 rounded-full ${scoreColor(score)} flex items-center justify-center`}>
                                 <span className="text-[9px] font-bold">{score}</span>
                               </div>
-                            ) : cellRisks.length > 0 ? (
-                              <span className="text-[10px] text-muted-foreground font-medium">{cellRisks.length}</span>
+                            ) : risksInCell.length > 0 ? (
+                              <span className="text-[10px] text-muted-foreground font-medium">{risksInCell.length}</span>
                             ) : null}
                           </div>
                         );
                       })
                     )}
                   </div>
-                  {/* X-axis labels */}
                   <div className="grid grid-cols-5 gap-1 mt-1">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <div key={i} className="text-center text-[10px] text-muted-foreground truncate">
@@ -237,8 +374,8 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 rounded-lg bg-muted/50 border border-border">
                   <p className="text-[10px] uppercase font-semibold text-muted-foreground mb-1">Inherent Risk</p>
-                  <p className={`text-2xl font-bold ${scoreLabelColor(risk.riskScore)}`}>{risk.riskScore}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">L{risk.likelihood} × I{risk.impact}</p>
+                  <p className={`text-2xl font-bold ${scoreLabelColor(riskScore)}`}>{riskScore}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">L{likelihood} × I{impact}</p>
                 </div>
                 <div className="flex items-center justify-center">
                   <TrendingDown className="h-6 w-6 text-muted-foreground" />
@@ -252,12 +389,12 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
 
               <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Likelihood: {likelihoodLabels[risk.likelihood]} ({risk.likelihood}/5)</p>
-                  <Progress value={risk.likelihood * 20} className="h-1.5" />
+                  <p className="text-xs text-muted-foreground mb-1">Likelihood: {likelihoodLabels[likelihood]} ({likelihood}/5)</p>
+                  <Progress value={likelihood * 20} className="h-1.5" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Impact: {impactLabels[risk.impact]} ({risk.impact}/5)</p>
-                  <Progress value={risk.impact * 20} className="h-1.5" />
+                  <p className="text-xs text-muted-foreground mb-1">Impact: {impactLabels[impact]} ({impact}/5)</p>
+                  <Progress value={impact * 20} className="h-1.5" />
                 </div>
               </div>
             </CardContent>
@@ -274,7 +411,6 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
               ) : (
                 <div className="space-y-2">
                   {linkedControlData.map((ctrl) => {
-                    if (!ctrl) return null;
                     const ctrlStatusStyle: Record<string, string> = {
                       implemented: 'bg-status-passing/15 text-status-passing',
                       in_progress: 'bg-status-in-progress/15 text-status-in-progress',
@@ -286,24 +422,20 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
                         <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground">{ctrl.ref}</span>
+                            <span className="text-xs font-mono text-muted-foreground">{ctrl.code}</span>
                             <span className="text-sm font-medium text-foreground truncate">{ctrl.title}</span>
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>{ctrl.framework}</span>
+                            <span>{ctrl.framework_id ?? 'N/A'}</span>
                             <span>·</span>
-                            <span>{ctrl.category}</span>
+                            <span>{ctrl.category ?? 'Uncategorized'}</span>
                             <span>·</span>
-                            <span>Last tested: {ctrl.lastTested || 'Never'}</span>
+                            <span>Last tested: {ctrl.last_reviewed ?? 'Never'}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Progress value={ctrl.implementationPct} className="w-16 h-1.5" />
-                          <span className="text-[10px] font-medium text-muted-foreground w-8">{ctrl.implementationPct}%</span>
-                          <Badge variant="outline" className={`text-[9px] h-5 ${ctrlStatusStyle[ctrl.status] || ''}`}>
-                            {ctrl.status.replace('_', ' ')}
-                          </Badge>
-                        </div>
+                        <Badge variant="outline" className={`text-[9px] h-5 ${ctrlStatusStyle[ctrl.status] || ''}`}>
+                          {ctrl.status.replace('_', ' ')}
+                        </Badge>
                       </div>
                     );
                   })}
@@ -317,7 +449,12 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
         <div className="space-y-6">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Treatment Plan</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold">Treatment Plan</CardTitle>
+                <button onClick={() => setTreatmentOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors">
+                  <ClipboardCheck className="h-3.5 w-3.5" /> Record Treatment
+                </button>
+              </div>
               <div className="w-full bg-muted rounded-full h-1.5 mt-2">
                 <div
                   className="bg-primary h-1.5 rounded-full transition-all duration-300"
@@ -360,7 +497,7 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
             <CardContent>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                 <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-sm text-foreground leading-relaxed">{risk.mitigationPlan}</p>
+                <p className="text-sm text-foreground leading-relaxed">{mitigationPlan}</p>
               </div>
             </CardContent>
           </Card>
@@ -373,7 +510,7 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Risk appetite</span>
-                <span className="font-medium text-foreground">{risk.riskScore <= 8 ? 'Within' : 'Exceeds'} tolerance</span>
+                <span className="font-medium text-foreground">{riskScore <= 8 ? 'Within' : 'Exceeds'} tolerance</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Treatment type</span>
@@ -381,7 +518,7 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Inherent score</span>
-                <span className={`font-bold ${scoreLabelColor(risk.riskScore)}`}>{risk.riskScore}</span>
+                <span className={`font-bold ${scoreLabelColor(riskScore)}`}>{riskScore}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Residual score</span>
@@ -390,13 +527,21 @@ export function RiskDetailView({ riskId }: { riskId: string }) {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Risk reduction</span>
                 <span className="font-medium text-status-passing">
-                  {risk.riskScore > 0 ? Math.round((1 - residualScore / risk.riskScore) * 100) : 0}%
+                  {riskScore > 0 ? Math.round((1 - residualScore / riskScore) * 100) : 0}%
                 </span>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      {treatmentOpen && (
+        <RiskTreatmentDialog
+          riskId={riskId}
+          riskTitle={risk.title}
+          onClose={() => setTreatmentOpen(false)}
+          onSaved={() => {}}
+        />
+      )}
     </div>
   );
 }

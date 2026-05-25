@@ -19,6 +19,13 @@ function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (success) navigate({ to: '/dashboard' });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [success, navigate]);
+
+  useEffect(() => {
     // Handle the recovery token from the URL hash
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     if (hashParams.get('type') === 'recovery') {
@@ -46,7 +53,6 @@ function ResetPasswordPage() {
     }
 
     setSuccess(true);
-    setTimeout(() => navigate({ to: '/dashboard' }), 2000);
   };
 
   return (

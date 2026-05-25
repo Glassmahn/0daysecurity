@@ -1,6 +1,6 @@
 import type { Page, Route } from '@playwright/test';
 
-const PROJECT_REF = process.env.VITE_SUPABASE_PROJECT_ID ?? 'meueuzgxtjnjyqjhbuql';
+const PROJECT_REF = process.env.VITE_SUPABASE_PROJECT_ID ?? 'sjtsnkxgxjigtrrvicfp';
 export const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? `https://${PROJECT_REF}.supabase.co`;
 
 const FAKE_TOKEN =

@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToCsv } from './export-csv';
 import { format } from 'date-fns';
-import { personnelMembers } from './mock-data-extended';
+
 
 // ─── Colour palette (RGB tuples for jsPDF) ────────────────────────────────────
 const C = {
@@ -524,17 +524,102 @@ export async function generateIncidentSummary() {
 // ─── Personnel Review Status CSV ─────────────────────────────────────────────
 
 async function generatePersonnelReview(): Promise<void> {
-  const rows = personnelMembers.map(p => ({
-    Name: p.name,
-    Email: p.email,
-    Department: p.department,
-    Title: p.title,
-    'Access Review': p.accessReviewStatus,
-    'Training Status': p.trainingStatus.replace(/_/g, ' '),
-    'Last Access Review': p.lastAccessReview ?? '',
-    'Last Training': p.lastTrainingCompleted ?? '',
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('display_name, job_title, department')
+    .order('display_name');
+
+  const rows = (profiles ?? []).map(p => ({
+    Name: p.display_name ?? '',
+    Email: '',
+    Department: p.department ?? '',
+    Title: p.job_title ?? '',
+    'Access Review': 'pending',
+    'Training Status': 'not_started',
+    'Last Access Review': '',
+    'Last Training': '',
   }));
   exportToCsv(`personnel-review_${format(new Date(), 'yyyy-MM-dd')}.csv`, rows);
+}
+
+// ─── Report: Audit Readiness ─────────────────────────────────────────────────
+
+export async function generateAuditReadiness() {
+  const [{ data: frameworks }, { data: controls }] = await Promise.all([
+    supabase.from('frameworks').select('name, standard, total_controls, passing_controls, score').eq('enabled', true).order('name'),
+    supabase.from('controls').select('code, title, status, framework_id'),
+  ]);
+
+  const doc = newDoc('Audit Readiness Report');
+  addHeader(doc, 'Audit Readiness Report', format(new Date(), 'yyyy-MM-dd'));
+
+  const total = controls?.length ?? 0;
+  const implemented = controls?.filter(c => c.status === 'implemented').length ?? 0;
+  const inProgress = controls?.filter(c => c.status === 'partially_implemented').length ?? 0;
+  const failing = controls?.filter(c => c.status === 'failing' || c.status === 'not_implemented').length ?? 0;
+  const overallScore = total > 0 ? Math.round((implemented / total) * 100) : 0;
+
+  autoTable(doc, {
+    ...tableStyles(),
+    head: [['Metric', 'Value']],
+    body: [
+      ['Overall Readiness', `${overallScore}%`],
+      ['Total Controls', String(total)],
+      ['Implemented', `${implemented} (${pct(implemented, total)})`],
+      ['In Progress', `${inProgress} (${pct(inProgress, total)})`],
+      ['Failing / Not Implemented', `${failing} (${pct(failing, total)})`],
+    ],
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 1) {
+        const raw = data.cell.raw as string;
+        const pctVal = parseInt(raw);
+        if (!isNaN(pctVal)) {
+          data.cell.styles.textColor = pctVal >= 80 ? C.success : pctVal >= 50 ? C.warning : C.danger;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
+    columnStyles: { 0: { cellWidth: 80 } },
+  });
+
+  const afterSummary = (doc as any).lastAutoTable.finalY + 8;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.bodyText);
+  doc.text('Framework Readiness', 14, afterSummary);
+
+  autoTable(doc, {
+    ...tableStyles(),
+    startY: afterSummary + 4,
+    head: [['Framework', 'Controls', 'Passing', 'Score', 'Status']],
+    body: (frameworks ?? []).map(fw => {
+      const fwControls = controls?.filter(c => c.framework_id === fw.standard) ?? [];
+      const fwPassing = fwControls.filter(c => c.status === 'implemented').length;
+      const score = fw.total_controls > 0 ? Math.round((fwPassing / fw.total_controls) * 100) : 0;
+      return [
+        fw.name,
+        String(fw.total_controls),
+        String(fwPassing),
+        `${score}%`,
+        score >= 80 ? 'Ready' : score >= 50 ? 'Needs Work' : 'At Risk',
+      ];
+    }),
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 3) {
+        const score = parseFloat(data.cell.raw as string);
+        data.cell.styles.textColor = score >= 80 ? C.success : score >= 50 ? C.warning : C.danger;
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.section === 'body' && data.column.index === 4) {
+        const status = data.cell.raw as string;
+        data.cell.styles.textColor = status === 'Ready' ? C.success : status === 'Needs Work' ? C.warning : C.danger;
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+
+  addFooter(doc);
+  doc.save(`audit-readiness_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
 
 // ─── Dispatch by report type ──────────────────────────────────────────────────
@@ -548,6 +633,7 @@ const GENERATORS: Record<string, () => Promise<void>> = {
   'rpt-6': generatePersonnelReview,
   'rpt-7': generateRiskAssessment,
   'rpt-8': generateExecutiveDashboard,
+  'rpt-9': generateAuditReadiness,
 };
 
 export async function generateReport(reportId: string): Promise<void> {

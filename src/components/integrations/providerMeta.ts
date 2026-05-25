@@ -33,11 +33,12 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'Cloud',
     description: 'Pull CloudTrail events, Config rules, and Security Hub findings to map against controls.',
     docsUrl: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'account_id', label: 'AWS Account ID', type: 'text', placeholder: '123456789012' },
       { key: 'region', label: 'Primary Region', type: 'text', placeholder: 'us-east-1' },
-      { key: 'role_arn', label: 'Cross-Account Role ARN', type: 'text', placeholder: 'arn:aws:iam::123456789012:role/ZeroDayReadOnly', hint: 'Create a read-only role and paste its ARN here' },
+      { key: 'access_key_id', label: 'Access Key ID', type: 'text', placeholder: 'AKIAIOSFODNN7EXAMPLE' },
+      { key: 'secret_access_key', label: 'Secret Access Key', type: 'password', placeholder: '…', hint: 'Create an IAM user with ReadOnlyAccess policy' },
     ],
   },
   github: {
@@ -56,7 +57,7 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'Identity',
     description: 'Sync users, groups, and MFA enrollment status. Pull access logs into the audit trail.',
     docsUrl: 'https://developer.okta.com/docs/reference/core-okta-api/',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'domain', label: 'Okta Domain', type: 'url', placeholder: 'https://your-org.okta.com' },
       { key: 'api_token', label: 'API Token', type: 'password', placeholder: 'SSWS …', hint: 'Generated in Okta Admin → Security → API' },
@@ -79,7 +80,7 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'Ticketing',
     description: 'Create and track remediation tickets. Sync finding status when tickets are closed.',
     docsUrl: 'https://developer.atlassian.com/cloud/jira/platform/rest/v3/',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'url', label: 'Jira URL', type: 'url', placeholder: 'https://your-org.atlassian.net' },
       { key: 'email', label: 'Account Email', type: 'text', placeholder: 'you@company.com' },
@@ -92,10 +93,10 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'Cloud',
     description: 'Pull Security Command Center findings, Cloud Audit Logs, and policy compliance results.',
     docsUrl: 'https://cloud.google.com/security-command-center/docs',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'project_id', label: 'GCP Project ID', type: 'text', placeholder: 'my-project-123' },
-      { key: 'service_account_email', label: 'Service Account Email', type: 'text', placeholder: 'zeroday@my-project.iam.gserviceaccount.com' },
+      { key: 'service_account_json', label: 'Service Account JSON', type: 'password', placeholder: '{ "type": "service_account", ... }', hint: 'Create a service account and download its JSON key' },
     ],
   },
   jamf: {
@@ -103,7 +104,7 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'MDM',
     description: 'Monitor device compliance, OS patch levels, and configuration profiles across managed endpoints.',
     docsUrl: 'https://developer.jamf.com/jamf-pro/docs',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'url', label: 'Jamf Pro URL', type: 'url', placeholder: 'https://your-org.jamfcloud.com' },
       { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'client-id-uuid' },
@@ -115,7 +116,7 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'Security',
     description: 'Pull EDR detection events, endpoint health, and threat intelligence into the alert feed.',
     docsUrl: 'https://falcon.crowdstrike.com/documentation/page/a2a7fc0e/crowdstrike-oauth2-based-apis',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'falcon-client-id' },
       { key: 'client_secret', label: 'Client Secret', type: 'password', placeholder: '…' },
@@ -127,7 +128,7 @@ export const PROVIDER_META: Record<string, ProviderMeta> = {
     category: 'Security',
     description: 'Import vulnerability scan findings to map against controls and drive remediation workflows.',
     docsUrl: 'https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf',
-    testable: false,
+    testable: true,
     fields: [
       { key: 'platform_url', label: 'Platform URL', type: 'url', placeholder: 'https://qualysapi.qualys.com' },
       { key: 'username', label: 'Username', type: 'text', placeholder: 'api-user' },

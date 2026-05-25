@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { checkRateLimit, recordAttempt, clearRateLimit, formatRetryAfter } from '@/lib/rate-limiter';
+import { captureError } from '@/lib/monitoring';
 import { useAuth } from '@/hooks/use-auth';
 
 const LOGIN_LIMIT = { maxAttempts: 5, windowMs: 15 * 60 * 1000 };
@@ -199,7 +200,8 @@ function LoginPage() {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
               });
               if (error) {
-                setError(error.message || 'Google sign-in is not available. Please use email/password.');
+                captureError(error, { context: 'Google OAuth' });
+                setError('Google sign-in is temporarily unavailable. Please use email/password or try again later.');
                 setLoading(false);
               }
             }}
@@ -226,7 +228,8 @@ function LoginPage() {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
               });
               if (error) {
-                setError(error.message || 'Microsoft sign-in is not available. Please use email/password.');
+                captureError(error, { context: 'Microsoft OAuth' });
+                setError('Microsoft sign-in is temporarily unavailable. Please use email/password or try again later.');
                 setLoading(false);
               }
             }}
@@ -261,7 +264,7 @@ function LoginPage() {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
               });
               if (ssoError) {
-                setError(ssoError.message);
+                setError('SSO sign-in is temporarily unavailable. Please try again or use email/password.');
                 setLoading(false);
                 return;
               }

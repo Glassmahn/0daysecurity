@@ -6,6 +6,7 @@ interface RoleContextValue {
   isLoading: boolean;
   isAdmin: boolean;
   isAnalyst: boolean;
+  isEditor: boolean;
   isAuditor: boolean;
   isViewer: boolean;
   canWrite: boolean;
@@ -17,6 +18,7 @@ const RoleContext = createContext<RoleContextValue>({
   isLoading: true,
   isAdmin: false,
   isAnalyst: false,
+  isEditor: false,
   isAuditor: false,
   isViewer: false,
   canWrite: false,

@@ -59,14 +59,14 @@ export function RBACManager() {
 
   const changeRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole, oldRole }: { userId: string; newRole: AppRole; oldRole: AppRole }) => {
-      // Delete existing role and insert new one
-      const { error: delErr } = await supabase.from('user_roles').delete().eq('user_id', userId);
-      if (delErr) throw delErr;
+      // Atomic update — single query avoids race condition of delete+insert
+      const { error: updErr } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+      if (updErr) throw updErr;
 
-      const { error: insErr } = await supabase.from('user_roles').insert({ user_id: userId, role: newRole });
-      if (insErr) throw insErr;
-
-      await logAudit({
+      logAudit({
         action: 'role_change',
         entity_type: 'role',
         entity_id: userId,

@@ -104,16 +104,6 @@ async function fetchRiskHeatmap() {
   }));
 }
 
-async function fetchControlStatusDonut() {
-  const counts = await fetchControlCounts();
-  return [
-    { name: 'Implemented', value: counts[CONTROL_STATUS.IMPLEMENTED] || 0, color: 'oklch(0.65 0.19 155)', filter: CONTROL_STATUS.IMPLEMENTED },
-    { name: 'In Progress', value: counts[CONTROL_STATUS.IN_PROGRESS] || 0, color: 'oklch(0.65 0.19 250)', filter: CONTROL_STATUS.IN_PROGRESS },
-    { name: 'Failing', value: counts[CONTROL_STATUS.FAILING] || 0, color: 'oklch(0.7 0.15 60)', filter: CONTROL_STATUS.FAILING },
-    { name: 'Not Started', value: (counts[CONTROL_STATUS.NOT_STARTED] || 0) + (counts[CONTROL_STATUS.NOT_IMPLEMENTED] || 0), color: 'oklch(0.4 0.02 250)', filter: CONTROL_STATUS.NOT_IMPLEMENTED },
-  ];
-}
-
 async function fetchPriorityQueue(): Promise<PriorityItem[]> {
   const items: PriorityItem[] = [];
 
@@ -200,14 +190,30 @@ function timeSince(dateStr: string): string {
   return `${days}d`;
 }
 
-// ---------- KPI builder ----------
+// ---------- Combined fetch — single round-trip ----------
 
-async function fetchKPIData(): Promise<KPIData[]> {
-  const [controlCounts, alertCounts, evidenceExpiring, frameworkPosture] = await Promise.all([
-    fetchControlCounts(),
+interface DashboardData {
+  kpiData: KPIData[];
+  controlDonutData: { name: string; value: number; color: string; filter: string }[];
+  frameworkPosture: Awaited<ReturnType<typeof fetchFrameworkPosture>>;
+  incidentTrend: Awaited<ReturnType<typeof fetchIncidentTrend>>;
+  riskHeatmap: Awaited<ReturnType<typeof fetchRiskHeatmap>>;
+  priorityQueue: PriorityItem[];
+  activityFeed: ActivityItem[];
+}
+
+async function fetchAllDashboardData(): Promise<DashboardData> {
+  const controlCountsPromise = fetchControlCounts();
+
+  const [controlCounts, alertCounts, evidenceExpiring, frameworkPosture, incidentTrend, riskHeatmap, priorityQueue, activityFeed] = await Promise.all([
+    controlCountsPromise,
     fetchAlertCounts(),
     fetchEvidenceExpiring(),
     fetchFrameworkPosture(),
+    fetchIncidentTrend(),
+    fetchRiskHeatmap(),
+    fetchPriorityQueue(),
+    fetchActivityFeed(),
   ]);
 
   const totalControls = Object.values(controlCounts).reduce((a, b) => a + b, 0) || 1;
@@ -215,28 +221,47 @@ async function fetchKPIData(): Promise<KPIData[]> {
   const failing = controlCounts[CONTROL_STATUS.FAILING] || 0;
   const compliancePct = Math.round((passing / totalControls) * 100);
 
-  return [
-    { label: 'Compliance Score', value: `${compliancePct}%`, delta: 0, deltaLabel: '', href: '/frameworks', icon: 'shield-check' },
-    { label: 'Controls Passing', value: passing, delta: 0, deltaLabel: '', href: '/controls', icon: 'check-circle' },
-    { label: 'Controls Failing', value: failing, delta: 0, deltaLabel: '', href: '/controls', icon: 'x-circle' },
-    { label: 'Open Critical', value: alertCounts.openCritical, delta: 0, deltaLabel: '', href: '/alerts', icon: 'alert-triangle' },
-    { label: 'Open High', value: alertCounts.openHigh, delta: 0, deltaLabel: '', href: '/alerts', icon: 'alert-circle' },
-    { label: 'Total Alerts', value: alertCounts.total, delta: 0, deltaLabel: '', href: '/alerts', icon: 'clock' },
-    { label: 'Evidence Expiring', value: evidenceExpiring, delta: 0, deltaLabel: 'next 30 days', href: '/evidence', icon: 'file-warning' },
-    { label: 'Frameworks', value: frameworkPosture.length, delta: 0, deltaLabel: '', href: '/frameworks', icon: 'shield-check' },
-  ];
+  return {
+    kpiData: [
+      { label: 'Compliance Score', value: `${compliancePct}%`, delta: 0, deltaLabel: '', href: '/frameworks', icon: 'shield-check', isPositive: true },
+      { label: 'Controls Passing', value: passing, delta: 0, deltaLabel: '', href: '/controls', icon: 'check-circle', isPositive: true },
+      { label: 'Controls Failing', value: failing, delta: 0, deltaLabel: '', href: '/controls', icon: 'x-circle', isPositive: false },
+      { label: 'Open Critical', value: alertCounts.openCritical, delta: 0, deltaLabel: '', href: '/alerts', icon: 'alert-triangle', isPositive: false },
+      { label: 'Open High', value: alertCounts.openHigh, delta: 0, deltaLabel: '', href: '/alerts', icon: 'alert-circle', isPositive: false },
+      { label: 'Total Alerts', value: alertCounts.total, delta: 0, deltaLabel: '', href: '/alerts', icon: 'clock', isPositive: false },
+      { label: 'Evidence Expiring', value: evidenceExpiring, delta: 0, deltaLabel: 'next 30 days', href: '/evidence', icon: 'file-warning', isPositive: false },
+      { label: 'Frameworks', value: frameworkPosture.length, delta: 0, deltaLabel: '', href: '/frameworks', icon: 'shield-check', isPositive: true },
+    ],
+    controlDonutData: [
+      { name: 'Implemented', value: controlCounts[CONTROL_STATUS.IMPLEMENTED] || 0, color: 'oklch(0.65 0.19 155)', filter: CONTROL_STATUS.IMPLEMENTED },
+      { name: 'In Progress', value: controlCounts[CONTROL_STATUS.IN_PROGRESS] || 0, color: 'oklch(0.65 0.19 250)', filter: CONTROL_STATUS.IN_PROGRESS },
+      { name: 'Failing', value: controlCounts[CONTROL_STATUS.FAILING] || 0, color: 'oklch(0.7 0.15 60)', filter: CONTROL_STATUS.FAILING },
+      { name: 'Not Started', value: (controlCounts[CONTROL_STATUS.NOT_STARTED] || 0) + (controlCounts[CONTROL_STATUS.NOT_IMPLEMENTED] || 0), color: 'oklch(0.4 0.02 250)', filter: CONTROL_STATUS.NOT_IMPLEMENTED },
+    ],
+    frameworkPosture,
+    incidentTrend,
+    riskHeatmap,
+    priorityQueue,
+    activityFeed,
+  };
 }
 
-// ---------- composite hook ----------
+// ---------- composite hook (single useQuery) ----------
 
 export function useDashboardData() {
-  const kpi = useQuery({ queryKey: ['dashboard', 'kpi'], queryFn: fetchKPIData, staleTime: 60_000 });
-  const controlDonut = useQuery({ queryKey: ['dashboard', 'controlDonut'], queryFn: fetchControlStatusDonut, staleTime: 60_000 });
-  const frameworkPosture = useQuery({ queryKey: ['dashboard', 'frameworkPosture'], queryFn: fetchFrameworkPosture, staleTime: 60_000 });
-  const incidentTrend = useQuery({ queryKey: ['dashboard', 'incidentTrend'], queryFn: fetchIncidentTrend, staleTime: 60_000 });
-  const riskHeatmap = useQuery({ queryKey: ['dashboard', 'riskHeatmap'], queryFn: fetchRiskHeatmap, staleTime: 60_000 });
-  const priorityQueue = useQuery({ queryKey: ['dashboard', 'priorityQueue'], queryFn: fetchPriorityQueue, staleTime: 60_000 });
-  const activityFeed = useQuery({ queryKey: ['dashboard', 'activityFeed'], queryFn: fetchActivityFeed, staleTime: 30_000 });
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard', 'all'],
+    queryFn: fetchAllDashboardData,
+    staleTime: 60_000,
+  });
 
-  return { kpi, controlDonut, frameworkPosture, incidentTrend, riskHeatmap, priorityQueue, activityFeed };
+  return {
+    kpi: { data: data?.kpiData, isLoading, isError },
+    controlDonut: { data: data?.controlDonutData, isLoading, isError },
+    frameworkPosture: { data: data?.frameworkPosture, isLoading, isError },
+    incidentTrend: { data: data?.incidentTrend, isLoading, isError },
+    riskHeatmap: { data: data?.riskHeatmap, isLoading, isError },
+    priorityQueue: { data: data?.priorityQueue, isLoading, isError },
+    activityFeed: { data: data?.activityFeed, isLoading, isError },
+  };
 }

@@ -100,12 +100,17 @@ test.describe('Controls list', () => {
   });
 });
 
-// ─── Control detail view (uses enrichedControls in-memory, not Supabase) ─────
+const MOCK_ENRICHED_CONTROLS = [
+  { id: 'ec-1', code: 'EC1', title: 'Logical Access Controls', status: 'implemented', category: 'Access Control', framework_id: 'f1', description: 'Controls for logical access management', implementation_details: 'SSO with MFA enforced', last_reviewed: '2026-03-01', owner_id: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+  { id: 'ec-2', code: 'EC2', title: 'Multi-Factor Authentication', status: 'implemented', category: 'Access Control', framework_id: 'f1', description: 'MFA required for all external access', implementation_details: 'TOTP and SMS verification', last_reviewed: '2026-02-15', owner_id: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+];
+
+// ─── Control detail view ──────────────────────────────────────────────────────
 
 test.describe('Control detail view', () => {
   test.beforeEach(async ({ page }) => {
     await injectAuthSession(page);
-    await mockSupabase(page);
+    await mockSupabase(page, { controls: MOCK_ENRICHED_CONTROLS, frameworks: MOCK_FRAMEWORKS });
   });
 
   test('loads ec-1 — Logical Access Controls', async ({ page }) => {

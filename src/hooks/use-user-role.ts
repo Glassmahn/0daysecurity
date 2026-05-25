@@ -12,25 +12,31 @@ export function useUserRole() {
     let cancelled = false;
 
     async function fetchRole() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user || cancelled) {
         setIsLoading(false);
         return;
       }
 
-      const { data } = await supabase
+      const { data: roles } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
 
       if (!cancelled) {
-        // Seed override: admin@zeroday.test (5518f727-...) is always admin.
-        // The user_roles UPDATE RLS blocks self-elevation (only admins can grant admin),
-        // so this provides the initial bootstrap until applied via Supabase SQL Editor.
-        const SEED_ADMIN_ID = '5518f727-04e8-468e-ad98-86dbca734490';
-        const resolvedRole = (user.id === SEED_ADMIN_ID ? 'admin' : (data?.role ?? 'viewer')) as AppRole;
-        setRole(resolvedRole);
+        // Seed admin override: only active when VITE_SEED_ADMIN_ID is set.
+        const SEED_ADMIN_ID = import.meta.env.VITE_SEED_ADMIN_ID ?? '';
+        if (SEED_ADMIN_ID && user.id === SEED_ADMIN_ID) {
+          setRole('admin');
+        } else if (roles && roles.length > 0) {
+          // Pick highest privilege role (ordered by privilege: admin > analyst > editor > auditor > viewer)
+          const hierarchy: Record<string, number> = { admin: 5, analyst: 4, editor: 3, auditor: 2, viewer: 1 };
+          const best = roles.reduce((a, b) => (hierarchy[a.role] ?? 0) > (hierarchy[b.role] ?? 0) ? a : b);
+          setRole(best.role as AppRole);
+        } else {
+          setRole('viewer');
+        }
         setIsLoading(false);
       }
     }
@@ -49,11 +55,12 @@ export function useUserRole() {
 
   const isAdmin = role === 'admin';
   const isAnalyst = role === 'analyst';
+  const isEditor = role === 'editor';
   const isAuditor = role === 'auditor';
   const isViewer = role === 'viewer';
 
-  const canWrite = isAdmin || isAnalyst;
+  const canWrite = isAdmin || isAnalyst || isEditor;
   const canManage = isAdmin;
 
-  return { role, isLoading, isAdmin, isAnalyst, isAuditor, isViewer, canWrite, canManage };
+  return { role, isLoading, isAdmin, isAnalyst, isEditor, isAuditor, isViewer, canWrite, canManage };
 }

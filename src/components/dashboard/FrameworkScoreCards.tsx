@@ -21,12 +21,27 @@ function scoreColor(score: number) {
   return 'text-status-failing';
 }
 
-export function FrameworkScoreCards({ data, isLoading }: { data?: FrameworkData[]; isLoading?: boolean }) {
-  if (isLoading || !data) {
+export function FrameworkScoreCards({ data, isLoading, isError }: { data?: FrameworkData[]; isLoading?: boolean; isError?: boolean }) {
+  if (isLoading) {
     return <Skeleton className="h-[400px] rounded-xl" />;
   }
 
-  if (data.length === 0) {
+  if (isError) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <h3 className="font-display font-semibold text-foreground mb-2">Framework Readiness</h3>
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm gap-2">
+          <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+            <Shield className="h-5 w-5 text-destructive" />
+          </div>
+          <p className="font-medium text-destructive">Failed to load framework data</p>
+          <p>Pull to retry or check your connection</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
     return (
       <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
         <h3 className="font-display font-semibold text-foreground mb-2">Framework Readiness</h3>

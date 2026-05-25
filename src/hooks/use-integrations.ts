@@ -26,16 +26,16 @@ export function useIntegrations() {
 
   const refetch = useCallback(async () => {
     setLoading(true);
-    const { data, error: err } = await (supabase as any)
+    const { data, error: err } = await supabase
       .from('integrations')
-      .select('*')
+      .select('id, provider, name, category, status, config, last_synced_at, controls_mapped, error_message, created_at, updated_at')
       .order('category', { ascending: true })
       .order('name', { ascending: true });
     if (err) {
       captureError(err, { operation: 'fetch_integrations' });
       setError(sanitizeError(err));
     } else {
-      setIntegrations((data ?? []) as Integration[]);
+      setIntegrations((data ?? []) as unknown as Integration[]);
     }
     setLoading(false);
   }, []);
@@ -89,5 +89,30 @@ export function useIntegrations() {
     await refetch();
   }, [refetch]);
 
-  return { integrations, loading, error, refetch, connect, disconnect, setError: setError_ };
+  const triggerSync = useCallback(async (id: string, provider: string): Promise<boolean> => {
+    // Mark as syncing
+    await (supabase as any)
+      .from('integrations')
+      .update({ status: 'syncing', error_message: null })
+      .eq('id', id);
+    refetch();
+
+    try {
+      const { data, error: fnError } = await (supabase as any).functions.invoke('run-integration-connectors', {
+        body: { integration_id: id },
+      });
+      if (fnError) throw fnError;
+      const result = data?.results?.find((r: any) => r.provider === provider);
+      if (result?.status === 'failure') throw new Error(result.error ?? 'Sync failed');
+      toast.success(`${provider} synced — evidence collected`);
+      await refetch();
+      return true;
+    } catch (err: any) {
+      toast.error(`Sync failed for ${provider}: ${err.message ?? 'Unknown error'}`);
+      await refetch();
+      return false;
+    }
+  }, [refetch]);
+
+  return { integrations, loading, error, refetch, connect, disconnect, setError: setError_, triggerSync };
 }

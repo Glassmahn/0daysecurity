@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { SEVERITY, SEVERITY_LEVELS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, AlertTriangle, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, AlertTriangle, Filter, AlertCircle, ChevronDown, ChevronRight, User, Monitor, Shield } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -49,36 +50,36 @@ const statusStyles: Record<string, string> = {
   dismissed: 'bg-muted text-muted-foreground',
 };
 
-const alertFields: FieldDef[] = [
-  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Alert title', max: 255 },
-  { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Alert details...', max: 2000 },
-  {
-    name: 'severity', label: 'Severity', type: 'select', required: true,
-    options: [
-      { value: 'critical', label: 'Critical' }, { value: 'high', label: 'High' },
-      { value: 'medium', label: 'Medium' }, { value: 'low', label: 'Low' }, { value: 'info', label: 'Info' },
-    ],
-  },
-  {
-    name: 'status', label: 'Status', type: 'select', required: true,
-    options: [
-      { value: 'new', label: 'New' }, { value: 'acknowledged', label: 'Acknowledged' },
-      { value: 'resolved', label: 'Resolved' }, { value: 'dismissed', label: 'Dismissed' },
-    ],
-  },
-  { name: 'source', label: 'Source', type: 'text', placeholder: 'e.g. security, infrastructure', max: 100 },
+const alertStatusOptions = [
+  { value: 'new', label: 'New' }, { value: 'acknowledged', label: 'Acknowledged' },
+  { value: 'resolved', label: 'Resolved' }, { value: 'dismissed', label: 'Dismissed' },
 ];
-
-const alertStatusOptions = alertFields.find(f => f.name === 'status')!.options!;
 
 function AlertsPage() {
   const navigate = useNavigate({ from: '/alerts/' });
   const { severity: severityFilter, status: statusFilter, q: search } = Route.useSearch();
-  const { data: alerts, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('alerts');
+  const { data: alerts, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('alerts');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [personnel, setPersonnel] = useState<{ id: string; name: string }[]>([]);
+  const [assetNames, setAssetNames] = useState<Record<string, string>>({});
+  const [controlNames, setControlNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase.from('personnel').select('id, name').order('name').then(({ data }) => setPersonnel(data ?? []));
+  }, []);
+
+  function resolveName(id: string | null, map: Record<string, string>): string {
+    return id ? map[id] ?? id.slice(0, 8) : '—';
+  }
+
+  async function handleAssign(alertId: string, userId: string) {
+    const ok = await update(alertId, { assigned_to: userId || null });
+    if (ok) refetch();
+  }
 
   const filtered = useMemo(() => {
     return alerts.filter(a => {
@@ -110,7 +111,54 @@ function AlertsPage() {
     [SEVERITY.LOW]: alerts.filter(a => a.severity === SEVERITY.LOW).length,
   }), [alerts]);
 
-  if (loading) {
+  const personnelOpts = personnel.map(p => ({ value: p.id, label: p.name }));
+  const controlOpts: { value: string; label: string }[] = [];
+  const assetOpts: { value: string; label: string }[] = [];
+
+  const alertFields: FieldDef[] = [
+    { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Alert title', max: 255 },
+    { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Alert details...', max: 2000 },
+    {
+      name: 'severity', label: 'Severity', type: 'select', required: true,
+      options: [
+        { value: 'critical', label: 'Critical' }, { value: 'high', label: 'High' },
+        { value: 'medium', label: 'Medium' }, { value: 'low', label: 'Low' }, { value: 'info', label: 'Info' },
+      ],
+    },
+    {
+      name: 'status', label: 'Status', type: 'select', required: true, options: alertStatusOptions,
+    },
+    { name: 'source', label: 'Source', type: 'text', placeholder: 'e.g. security, infrastructure', max: 100 },
+    { name: 'assigned_to', label: 'Assign To', type: 'select', options: personnelOpts },
+    { name: 'affected_control_id', label: 'Affected Control', type: 'select', options: controlOpts },
+    { name: 'affected_asset_id', label: 'Affected Asset', type: 'select', options: assetOpts },
+  ];
+
+  async function loadRelated(alert: any) {
+    if (alert.affected_asset_id && !assetNames[alert.affected_asset_id]) {
+      const { data } = await supabase.from('assets').select('id, name').eq('id', alert.affected_asset_id).maybeSingle();
+      if (data) setAssetNames(prev => ({ ...prev, [data.id]: data.name }));
+    }
+    if (alert.affected_control_id && !controlNames[alert.affected_control_id]) {
+      const { data } = await supabase.from('controls').select('id, code, title').eq('id', alert.affected_control_id).maybeSingle();
+      if (data) setControlNames(prev => ({ ...prev, [data.id]: `${data.code} — ${data.title}` }));
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+        <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+        </div>
+        <p className="text-sm font-medium text-destructive">Failed to load alerts</p>
+        <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+        <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+      </div>
+    );
+  }
+
+  if (loading && !alerts.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -132,7 +180,7 @@ function AlertsPage() {
           </div>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Alerts</h1>
-            <p className="text-sm text-muted-foreground">{alerts.length} total alerts</p>
+            <p className="text-sm text-muted-foreground">{alerts.length} total alerts{loading && <span className="inline-flex items-center gap-1 ml-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" />refreshing</span>}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -145,6 +193,7 @@ function AlertsPage() {
           <button onClick={() => exportToCsv('alerts', filtered as Record<string, unknown>[], [
               { key: 'title', label: 'Title' }, { key: 'severity', label: 'Severity' }, { key: 'status', label: 'Status' },
               { key: 'source', label: 'Source' }, { key: 'message', label: 'Message' }, { key: 'created_at', label: 'Created' },
+              { key: 'assigned_to', label: 'Assigned To' },
             ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
@@ -175,7 +224,7 @@ function AlertsPage() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search alerts..." value={search} onChange={e => updateSearch({ q: e.target.value })}
+          <input type="text" aria-label="Search alerts" placeholder="Search alerts..." value={search} onChange={e => updateSearch({ q: e.target.value })}
             className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" />
         </div>
         <select value={severityFilter} onChange={e => updateSearch({ severity: e.target.value })}
@@ -205,44 +254,99 @@ function AlertsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/60 text-left bg-surface/50">
-              <th className="px-3 py-3.5 w-10">
+              <th scope="col" className="px-3 py-3.5 w-10">
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
                   onChange={bulk.toggleAll} className="rounded-md border-border" />
               </th>
+              <th scope="col" className="px-2 py-3.5 w-8"></th>
               <SortableHeader label="Severity" column="severity" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Source" column="source" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
               <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
+              <SortableHeader label="Assigned" column="assigned_to" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
               <SortableHeader label="Age" column="created_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-              <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+              <th scope="col" className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
             {pagination.paged.map(alert => (
-              <tr key={alert.id} className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors ${bulk.isSelected(alert.id) ? 'bg-primary/5' : ''}`}>
-                <td className="px-3 py-3.5">
-                  <input type="checkbox" checked={bulk.isSelected(alert.id)} onChange={() => bulk.toggle(alert.id)} className="rounded-md border-border" />
-                </td>
-                <td className="px-4 py-3.5">
-                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${severityStyles[alert.severity] ?? ''}`}>{alert.severity}</span>
-                </td>
-                <td className="px-4 py-3.5 text-foreground font-medium">{alert.title}</td>
-                <td className="px-4 py-3.5 text-muted-foreground hidden md:table-cell">{alert.source ?? '—'}</td>
-                <td className="px-4 py-3.5">
-                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusStyles[alert.status] ?? ''}`}>{alert.status}</span>
-                </td>
-                <td className="px-4 py-3.5 text-muted-foreground text-xs">{formatDistanceToNow(new Date(alert.created_at), { addSuffix: false })}</td>
-                <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-1">
-                    <WriteGuard>
-                      <button onClick={() => { setEditing({ title: alert.title, message: alert.message, severity: alert.severity, status: alert.status, source: alert.source, _id: alert.id }); setFormOpen(true); }}
-                        className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => setDeleteTarget({ id: alert.id, title: alert.title })}
-                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                    </WriteGuard>
-                  </div>
-                </td>
-              </tr>
+              <Fragment key={alert.id}>
+                <tr className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(alert.id) ? 'bg-primary/5' : ''} ${expandedId === alert.id ? 'bg-primary/[0.02]' : ''}`}
+                  onClick={() => {
+                    const next = expandedId === alert.id ? null : alert.id;
+                    setExpandedId(next);
+                    if (next) loadRelated(alert);
+                  }}>
+                  <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
+                    <input type="checkbox" checked={bulk.isSelected(alert.id)} onChange={() => bulk.toggle(alert.id)} className="rounded-md border-border" />
+                  </td>
+                  <td className="px-2 py-3.5 text-muted-foreground">
+                    {expandedId === alert.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${severityStyles[alert.severity] ?? ''}`}>{alert.severity}</span>
+                  </td>
+                  <td className="px-4 py-3.5 text-foreground font-medium">{alert.title}</td>
+                  <td className="px-4 py-3.5 text-muted-foreground hidden md:table-cell">{alert.source ?? '—'}</td>
+                  <td className="px-4 py-3.5">
+                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusStyles[alert.status] ?? ''}`}>{alert.status}</span>
+                  </td>
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden lg:table-cell">{resolveName(alert.assigned_to, personMap(personnel))}</td>
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs">{formatDistanceToNow(new Date(alert.created_at), { addSuffix: false })}</td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <WriteGuard>
+                        <button onClick={() => { setEditing({ title: alert.title, message: alert.message, severity: alert.severity, status: alert.status, source: alert.source, assigned_to: alert.assigned_to ?? '', affected_control_id: alert.affected_control_id ?? '', affected_asset_id: alert.affected_asset_id ?? '', _id: alert.id }); setFormOpen(true); }}
+                          className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setDeleteTarget({ id: alert.id, title: alert.title })}
+                          className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </WriteGuard>
+                    </div>
+                  </td>
+                </tr>
+                {expandedId === alert.id && (
+                  <tr className="border-b border-border/40 bg-surface/30">
+                    <td colSpan={9} className="p-0">
+                      <div className="px-12 py-4 space-y-3 animate-slide-in">
+                        {alert.message && (
+                          <div>
+                            <p className="text-xs text-muted-foreground font-semibold uppercase mb-1">Description</p>
+                            <p className="text-sm text-foreground bg-card border border-border/60 rounded-lg p-3">{alert.message}</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="bg-card border border-border/60 rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold uppercase mb-1">
+                              <User className="h-3 w-3" /> Assigned To
+                            </div>
+                            <select
+                              value={alert.assigned_to ?? ''}
+                              onChange={e => handleAssign(alert.id, e.target.value)}
+                              className="w-full mt-1 px-2 py-1.5 text-sm bg-background border border-border/60 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <option value="">Unassigned</option>
+                              {personnel.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            </select>
+                          </div>
+                          <div className="bg-card border border-border/60 rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold uppercase mb-1">
+                              <Shield className="h-3 w-3" /> Affected Control
+                            </div>
+                            <p className="text-sm text-foreground mt-1">{resolveName(alert.affected_control_id, controlNames)}</p>
+                          </div>
+                          <div className="bg-card border border-border/60 rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold uppercase mb-1">
+                              <Monitor className="h-3 w-3" /> Affected Asset
+                            </div>
+                            <p className="text-sm text-foreground mt-1">{resolveName(alert.affected_asset_id, assetNames)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -261,7 +365,7 @@ function AlertsPage() {
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}
         title={editing ? 'Edit Alert' : 'New Alert'} fields={alertFields}
         initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
 
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title={deleteTarget?.title ?? 'alert'}
@@ -270,3 +374,11 @@ function AlertsPage() {
     </RouteGuard>
   );
 }
+
+function personMap(personnel: { id: string; name: string }[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const p of personnel) map[p.id] = p.name;
+  return map;
+}
+
+

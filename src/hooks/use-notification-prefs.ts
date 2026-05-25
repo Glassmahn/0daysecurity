@@ -46,9 +46,9 @@ export function useNotificationPrefs() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) { setLoading(false); return; }
 
-      const { data, error: err } = await (supabase as any)
+      const { data, error: err } = await supabase
         .from('notification_preferences')
-        .select('*')
+        .select('id, user_id, critical_alerts_email, critical_alerts_slack, high_alerts_email, high_alerts_slack, evidence_expiring_email, evidence_expiring_slack, access_review_email, access_review_slack, policy_review_email, policy_review_slack, weekly_digest_email, weekly_digest_slack, created_at, updated_at')
         .eq('user_id', user.id)
         .maybeSingle();
 

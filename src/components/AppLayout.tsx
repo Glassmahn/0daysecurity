@@ -1,14 +1,23 @@
-import { Outlet, Navigate } from '@tanstack/react-router';
+import { Outlet, Navigate, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
+import { AuditorBanner } from './AuditorBanner';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { useAuth } from '@/hooks/use-auth';
 import { RoleProvider } from '@/hooks/use-role-context';
+import { OrgProvider } from '@/hooks/use-org';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { Shield, Loader2 } from 'lucide-react';
 
 export function AppLayout() {
+  const navigate = useNavigate();
   const { open, setOpen } = useSidebarStore();
   const { isAuthenticated, isLoading } = useAuth();
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  useKeyboardShortcuts(navigate, () => setShortcutsOpen(o => !o));
 
   if (isLoading) {
     return (
@@ -32,6 +41,10 @@ export function AppLayout() {
 
   return (
     <RoleProvider>
+      <OrgProvider>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:text-sm focus:font-medium">
+        Skip to content
+      </a>
       <div className="flex h-screen w-full overflow-hidden bg-background">
         {open && (
           <div
@@ -48,11 +61,14 @@ export function AppLayout() {
         </div>
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+          <AuditorBanner />
+          <main id="main-content" className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             <Outlet />
           </main>
         </div>
       </div>
+      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      </OrgProvider>
     </RoleProvider>
   );
 }

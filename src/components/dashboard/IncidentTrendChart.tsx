@@ -11,11 +11,51 @@ interface TrendItem {
   low: number;
 }
 
-export function IncidentTrendChart({ data, isLoading }: { data?: TrendItem[]; isLoading?: boolean }) {
+export function IncidentTrendChart({ data, isLoading, isError }: { data?: TrendItem[]; isLoading?: boolean; isError?: boolean }) {
   const navigate = useNavigate();
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <Skeleton className="h-[340px] rounded-xl" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-foreground">Incident Trends</h3>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertTriangle className="h-8 w-8 text-destructive mb-3 opacity-60" />
+          <p className="text-sm font-medium text-destructive">Failed to load incident trends</p>
+          <p className="text-xs text-muted-foreground mt-1">Pull to retry or check your connection</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-severity-critical/10 flex items-center justify-center">
+            <AlertTriangle className="h-4 w-4 text-severity-critical" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-foreground">Incident Trends</h3>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertTriangle className="h-8 w-8 text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm text-muted-foreground">No incident trend data yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Incident data from the last 6 months will appear here</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -39,6 +79,7 @@ export function IncidentTrendChart({ data, isLoading }: { data?: TrendItem[]; is
           ))}
         </div>
       </div>
+      <div role="button" tabIndex={0} aria-label="Incident trends chart" onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate({ to: '/incidents' }); } }}>
       <ResponsiveContainer width="100%" height={230}>
         <BarChart data={data} barCategoryGap="20%" onClick={() => navigate({ to: '/incidents' })}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" strokeOpacity={0.5} />
@@ -51,6 +92,7 @@ export function IncidentTrendChart({ data, isLoading }: { data?: TrendItem[]; is
           <Bar dataKey="low" name="Low" fill="var(--color-severity-low)" radius={[4, 4, 0, 0]} stackId="a" className="cursor-pointer" />
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

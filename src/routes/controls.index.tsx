@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { CONTROL_STATUS } from '@/lib/constants';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, ListChecks, Filter } from 'lucide-react';
+import { frameworkCatalog } from '@/lib/framework-catalog';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, ListChecks, Filter, AlertCircle, Layers } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -15,11 +16,14 @@ import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDia
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
 import { WriteGuard } from '@/components/guards/RoleGuards';
+import { supabase } from '@/integrations/supabase/client';
 
 const controlsSearchSchema = z.object({
   status: fallback(z.string(), 'all').default('all'),
   category: fallback(z.string(), 'all').default('all'),
   q: fallback(z.string(), '').default(''),
+  owner: fallback(z.string(), 'all').default('all'),
+  framework: fallback(z.string(), 'all').default('all'),
 });
 
 export const Route = createFileRoute('/controls/')({
@@ -42,6 +46,8 @@ const statusStyles: Record<string, string> = {
   not_implemented: 'bg-status-failing/12 text-status-failing',
 };
 
+const enabledFrameworks = frameworkCatalog.filter(f => f.enabled);
+
 const controlFields: FieldDef[] = [
   { name: 'code', label: 'Code', type: 'text', required: true, placeholder: 'e.g. CC6.1', max: 50 },
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Control title', max: 255 },
@@ -58,35 +64,65 @@ const controlFields: FieldDef[] = [
       { value: 'failing', label: 'Failing' },
     ],
   },
+  {
+    name: 'frameworks', label: 'Frameworks', type: 'multi-select',
+    options: enabledFrameworks.map(f => ({ value: f.standard, label: f.name })),
+  },
 ];
 
 const statusOptions = controlFields.find(f => f.name === 'status')!.options!;
 
 function ControlsPage() {
   const navigate = useNavigate({ from: '/controls/' });
-  const { status: statusFilter, category: categoryFilter, q: search } = Route.useSearch();
-  const { data: controls, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('controls');
+  const { status: statusFilter, category: categoryFilter, q: search, owner: ownerFilter, framework: frameworkFilter } = Route.useSearch();
+  const { data: controls, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('controls');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [personnelList, setPersonnelList] = useState<string[]>([]);
+
+  useEffect(() => {
+    supabase.from('personnel').select('name').then(({ data }) => {
+      if (data) setPersonnelList(data.map(p => p.name).filter(Boolean) as string[]);
+    });
+  }, []);
+
+  const enabledFrameworkStandards = useMemo(
+    () => frameworkCatalog.filter(f => f.enabled),
+    []
+  );
 
   const usedCategories = useMemo(
     () => [...new Set(controls.map(c => c.category).filter(Boolean))].sort() as string[],
     [controls]
   );
 
+  const usedOwners = useMemo(
+    () => {
+      const all = new Set(controls.map(c => c.owner_id).filter((v): v is string => !!v));
+      personnelList.forEach(p => all.add(p));
+      return [...all].sort();
+    },
+    [controls, personnelList]
+  );
+
   const filtered = useMemo(() => {
     return controls.filter(c => {
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && c.category !== categoryFilter) return false;
+      if (ownerFilter !== 'all' && (c.owner_id ?? '') !== ownerFilter) return false;
+      if (frameworkFilter !== 'all') {
+        const cFrameworks = (c as unknown as Record<string, unknown>).frameworks;
+        if (!Array.isArray(cFrameworks) || !cFrameworks.includes(frameworkFilter)) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         return c.title.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || (c.description ?? '').toLowerCase().includes(q);
       }
       return true;
     });
-  }, [controls, search, statusFilter, categoryFilter]);
+  }, [controls, search, statusFilter, categoryFilter, ownerFilter, frameworkFilter]);
 
   const { sorted, sort, toggle: toggleSort } = useTableSort(filtered, 'code', 'asc');
   const pagination = usePagination(sorted);
@@ -104,9 +140,22 @@ function ControlsPage() {
     navigate({ search: (prev: Record<string, string>) => ({ ...prev, ...updates }) });
   };
 
-  const activeFilterCount = [statusFilter, categoryFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
+  const activeFilterCount = [statusFilter, categoryFilter, ownerFilter, frameworkFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
-  if (loading) {
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+        <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+        </div>
+        <p className="text-sm font-medium text-destructive">Failed to load controls</p>
+        <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+        <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+      </div>
+    );
+  }
+
+  if (loading && !controls.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -127,12 +176,12 @@ function ControlsPage() {
           </div>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Controls</h1>
-            <p className="text-sm text-muted-foreground">{controls.length} controls managed</p>
+            <p className="text-sm text-muted-foreground">{controls.length} controls managed{loading && <span className="inline-flex items-center gap-1 ml-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" />refreshing</span>}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
-            <button onClick={() => navigate({ search: { status: 'all', category: 'all', q: '' } })}
+            <button onClick={() => navigate({ search: { status: 'all', category: 'all', owner: 'all', framework: 'all', q: '' } })}
               className="text-xs text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
@@ -176,7 +225,7 @@ function ControlsPage() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search controls..." value={search} onChange={e => updateSearch({ q: e.target.value })}
+          <input type="text" aria-label="Search controls" placeholder="Search controls..." value={search} onChange={e => updateSearch({ q: e.target.value })}
             className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" />
         </div>
         <select value={statusFilter} onChange={e => updateSearch({ status: e.target.value })}
@@ -191,6 +240,16 @@ function ControlsPage() {
           className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${categoryFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Categories</option>
           {usedCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+        </select>
+        <select value={ownerFilter} onChange={e => updateSearch({ owner: e.target.value })}
+          className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${ownerFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+          <option value="all">All Owners</option>
+          {usedOwners.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <select value={frameworkFilter} onChange={e => updateSearch({ framework: e.target.value })}
+          className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${frameworkFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
+          <option value="all">All Frameworks</option>
+          {enabledFrameworkStandards.map(fw => <option key={fw.standard} value={fw.standard}>{fw.name}</option>)}
         </select>
       </div>
 
@@ -211,14 +270,15 @@ function ControlsPage() {
           <thead>
             <tr className="border-b border-border/60 text-left bg-surface/50">
               <th className="px-3 py-3.5 w-10">
-                <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
+                <input type="checkbox" aria-label="Select all controls" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
                   onChange={bulk.toggleAll} className="rounded-md border-border" />
               </th>
               <SortableHeader label="Code" column="code" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Title" column="title" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Category" column="category" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
+              <SortableHeader label="Frameworks" column="frameworks" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
               <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-              <SortableHeader label="Last Reviewed" column="last_reviewed" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
+              <SortableHeader label="Last Reviewed" column="last_reviewed" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden xl:table-cell" />
               <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
@@ -226,25 +286,36 @@ function ControlsPage() {
             {pagination.paged.map(c => (
               <tr key={c.id}
                 className={`border-b border-border/40 hover:bg-primary/[0.03] transition-colors cursor-pointer ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}
-                onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.code } })}>
+                onClick={() => navigate({ to: '/controls/$controlId', params: { controlId: c.id } })}>
                 <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
-                  <input type="checkbox" checked={bulk.isSelected(c.id)} onChange={() => bulk.toggle(c.id)} className="rounded-md border-border" />
+                  <input type="checkbox" aria-label={`Select control ${c.code}`} checked={bulk.isSelected(c.id)} onChange={() => bulk.toggle(c.id)} className="rounded-md border-border" />
                 </td>
                 <td className="px-4 py-3.5 font-mono text-xs text-primary font-medium">{c.code}</td>
                 <td className="px-4 py-3.5 text-foreground font-medium">{c.title}</td>
                 <td className="px-4 py-3.5 text-muted-foreground hidden md:table-cell">{c.category ?? '—'}</td>
+                <td className="px-4 py-3.5 hidden lg:table-cell">
+                  <div className="flex flex-wrap gap-1">
+                    {(Array.isArray(c.frameworks) ? c.frameworks : []).slice(0, 3).map(fw => (
+                      <span key={fw} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">{fw}</span>
+                    ))}
+                    {Array.isArray(c.frameworks) && c.frameworks.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground">+{c.frameworks.length - 3}</span>
+                    )}
+                    {(!Array.isArray(c.frameworks) || c.frameworks.length === 0) && <Layers className="h-3 w-3 text-muted-foreground/50" />}
+                  </div>
+                </td>
                 <td className="px-4 py-3.5">
                   <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusStyles[c.status] ?? 'bg-muted text-muted-foreground'}`}>
                     {c.status.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-4 py-3.5 text-muted-foreground text-xs hidden lg:table-cell">
+                <td className="px-4 py-3.5 text-muted-foreground text-xs hidden xl:table-cell">
                   {c.last_reviewed ? new Date(c.last_reviewed).toLocaleDateString() : '—'}
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <WriteGuard>
-                      <button onClick={() => { setEditing({ code: c.code, title: c.title, description: c.description, category: c.category, status: c.status, _id: c.id }); setFormOpen(true); }}
+                      <button onClick={() => { setEditing({ code: c.code, title: c.title, description: c.description, category: c.category, status: c.status, frameworks: c.frameworks, _id: c.id }); setFormOpen(true); }}
                         className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                       <button onClick={() => setDeleteTarget({ id: c.id, title: c.title })}
                         className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -261,7 +332,7 @@ function ControlsPage() {
               <Filter className="h-5 w-5 text-muted-foreground/50" />
             </div>
             <p>No controls match the current filters.</p>
-            <button onClick={() => navigate({ search: { status: 'all', category: 'all', q: '' } })} className="text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium text-xs">Clear filters</button>
+            <button onClick={() => navigate({ search: { status: 'all', category: 'all', owner: 'all', framework: 'all', q: '' } })} className="text-primary hover:text-primary-glow transition-colors cursor-pointer font-medium text-xs">Clear filters</button>
           </div>
         )}
         <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
@@ -270,7 +341,7 @@ function ControlsPage() {
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}
         title={editing ? 'Edit Control' : 'New Control'} fields={controlFields}
         initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
 
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title={deleteTarget?.title ?? 'control'}

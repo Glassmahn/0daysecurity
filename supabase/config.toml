@@ -1,1 +1,27 @@
 project_id = "meueuzgxtjnjyqjhbuql"
+
+[auth]
+enabled = true
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:3000", "https://*.lovable.app"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_confirmations = false
+
+[auth.sessions]
+timebox = 86400
+inactivity_timeout = 1800
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+
+[db]
+port = 54322
+# studio port = 54323
+
+[analytics]
+enabled = false

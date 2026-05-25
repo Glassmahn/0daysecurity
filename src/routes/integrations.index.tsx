@@ -9,7 +9,6 @@ import { IntegrationConfigModal } from '@/components/integrations/IntegrationCon
 import { PROVIDER_META, CATEGORY_ORDER } from '@/components/integrations/providerMeta';
 import { AdminGuard } from '@/components/guards/RoleGuards';
 import { format } from 'date-fns';
-
 export const Route = createFileRoute('/integrations/')({
   component: IntegrationsPage,
   head: () => ({ meta: [{ title: 'Integrations — ZeroDay Security' }] }),
@@ -38,16 +37,22 @@ function IntegrationCard({
   integration,
   onConfigure,
   onDisconnect,
+  onSync,
+  syncingId,
 }: {
   integration: Integration;
   onConfigure: (i: Integration) => void;
   onDisconnect: (i: Integration) => void;
+  onSync?: (i: Integration) => void;
+  syncingId?: string | null;
 }) {
   const cfg = statusConfig[integration.status] ?? statusConfig.disconnected;
   const StatusIcon = cfg.icon;
   const meta = PROVIDER_META[integration.provider];
   const catColor = CATEGORY_COLORS[integration.category] ?? 'bg-muted text-muted-foreground border-border';
   const isConnected = integration.status === 'connected';
+  const isSyncing = integration.status === 'syncing' || syncingId === integration.id;
+  const hasConnector = meta && ['aws', 'okta', 'github', 'datadog', 'gcp', 'crowdstrike', 'qualys', 'jamf', 'vanta', 'pagerduty'].includes(integration.provider);
 
   return (
     <div className={`bg-card border rounded-xl p-5 flex flex-col gap-4 transition-all hover:shadow-md ${isConnected ? 'border-primary/20' : 'border-border'}`}>
@@ -104,6 +109,16 @@ function IntegrationCard({
       <div className="flex gap-2 mt-auto pt-1">
         {isConnected ? (
           <>
+            {hasConnector && (
+              <button
+                onClick={() => onSync?.(integration)}
+                disabled={isSyncing}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-primary/30 rounded-lg text-xs font-medium hover:bg-primary/5 transition-colors text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing…' : 'Sync Now'}
+              </button>
+            )}
             <button
               onClick={() => onConfigure(integration)}
               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-accent transition-colors text-foreground"
@@ -112,7 +127,8 @@ function IntegrationCard({
             </button>
             <button
               onClick={() => onDisconnect(integration)}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-status-failing/30 rounded-lg text-xs font-medium hover:bg-status-failing/5 transition-colors text-status-failing"
+              disabled={isSyncing}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-status-failing/30 rounded-lg text-xs font-medium hover:bg-status-failing/5 transition-colors text-status-failing disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Link2Off className="h-3.5 w-3.5" />Disconnect
             </button>
@@ -131,9 +147,10 @@ function IntegrationCard({
 }
 
 function IntegrationsContent() {
-  const { integrations, loading, refetch, connect, disconnect } = useIntegrations();
+  const { integrations, loading, refetch, connect, disconnect, triggerSync } = useIntegrations();
   const [configTarget, setConfigTarget] = useState<Integration | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
 
   const categories = useMemo(() => {
@@ -152,6 +169,12 @@ function IntegrationsContent() {
     errors: integrations.filter(i => i.status === 'error').length,
     controls: integrations.reduce((s, i) => s + i.controls_mapped, 0),
   }), [integrations]);
+
+  async function handleSync(integration: Integration) {
+    setSyncingId(integration.id);
+    await triggerSync(integration.id, integration.provider);
+    setSyncingId(null);
+  }
 
   async function handleDisconnect(integration: Integration) {
     setDisconnecting(integration.id);
@@ -220,14 +243,35 @@ function IntegrationsContent() {
 
       {/* Integration grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtered.map(integration => (
-          <IntegrationCard
-            key={integration.id}
-            integration={integration}
-            onConfigure={setConfigTarget}
-            onDisconnect={handleDisconnect}
-          />
-        ))}
+        {filtered.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 gap-2">
+            <AlertCircle className="h-5 w-5 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {categoryFilter === 'All'
+                ? 'No integrations available'
+                : `No integrations match "${categoryFilter}"`}
+            </p>
+            {categoryFilter !== 'All' && (
+              <button
+                onClick={() => setCategoryFilter('All')}
+                className="text-xs text-primary hover:underline cursor-pointer"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        ) : (
+          filtered.map(integration => (
+            <IntegrationCard
+              key={integration.id}
+              integration={integration}
+              onConfigure={setConfigTarget}
+              onDisconnect={handleDisconnect}
+              onSync={handleSync}
+              syncingId={syncingId}
+            />
+          ))
+        )}
       </div>
 
       {disconnecting && (

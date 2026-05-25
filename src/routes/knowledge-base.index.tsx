@@ -3,7 +3,9 @@ import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Loader2, Plus, Pencil, Trash2, Download, BookOpen } from 'lucide-react';
+import { captureError } from '@/lib/monitoring';
+import { WriteGuard } from '@/components/guards/RoleGuards';
+import { Search, Loader2, Plus, Pencil, Trash2, Download, BookOpen, AlertCircle } from 'lucide-react';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
 import { useTableSort } from '@/hooks/use-table-sort';
@@ -14,6 +16,7 @@ import { EntityFormDialog, type FieldDef } from '@/components/crud/EntityFormDia
 import { DeleteConfirmDialog } from '@/components/crud/DeleteConfirmDialog';
 import { BulkActionBar } from '@/components/crud/BulkActionBar';
 import { exportToCsv } from '@/lib/export-csv';
+import { frameworkCatalog } from '@/lib/framework-catalog';
 
 const kbSearchSchema = z.object({
   category: fallback(z.string(), 'all').default('all'),
@@ -44,6 +47,10 @@ const statusStyles: Record<string, string> = {
   archived: 'bg-status-failing/15 text-status-failing',
 };
 
+const frameworkOptions = frameworkCatalog
+  .filter(f => f.enabled)
+  .map(f => ({ value: f.standard, label: `${f.name} (${f.standard})` }));
+
 const kbFields: FieldDef[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Article title', max: 255 },
   { name: 'content', label: 'Content', type: 'markdown' as const, placeholder: 'Write your article content in Markdown...', max: 50000 },
@@ -61,6 +68,10 @@ const kbFields: FieldDef[] = [
       { value: 'archived', label: 'Archived' },
     ],
   },
+  {
+    name: 'framework_ids', label: 'Linked Frameworks', type: 'multi-select',
+    options: frameworkOptions,
+  },
 ];
 
 const kbStatusOptions = kbFields.find(f => f.name === 'status')!.options!;
@@ -68,7 +79,7 @@ const kbStatusOptions = kbFields.find(f => f.name === 'status')!.options!;
 function KnowledgeBasePage() {
   const navigate = useNavigate({ from: '/knowledge-base/' });
   const { category: categoryFilter, q: search } = Route.useSearch();
-  const { data: articles, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('knowledge_base');
+  const { data: articles, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('knowledge_base');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -76,34 +87,41 @@ function KnowledgeBasePage() {
 
   // Full-text search results
   const [ftsResults, setFtsResults] = useState<Set<string> | null>(null);
-  const [, setFtsLoading] = useState(false);
+  const [ftsLoading, setFtsLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const ftsQueryRef = useRef('');
 
   const runFts = useCallback(async (q: string) => {
-    if (!q || q.length < 2) { setFtsResults(null); return; }
+    if (!q || q.length < 2) { setFtsResults(null); ftsQueryRef.current = ''; return; }
+    ftsQueryRef.current = q;
     setFtsLoading(true);
-    // Convert user query to tsquery format (prefix match on each word)
     const tsQuery = q.trim().split(/\s+/).map(w => `${w}:*`).join(' & ');
-    const { data } = await supabase
-      .from('knowledge_base' as any)
+    const { data, error } = await (supabase.from as (t: string) => any)('knowledge_base')
       .select('id')
       .textSearch('search_vector', tsQuery);
-    setFtsResults(new Set((data ?? []).map((r: any) => r.id)));
+    if (ftsQueryRef.current !== q) { setFtsLoading(false); return; }
+    if (error) {
+      captureError(error, { context: 'knowledge-base-fts' });
+      setFtsResults(null);
+      setFtsLoading(false);
+      return;
+    }
+    setFtsResults(new Set((data ?? []).map((r: Record<string, unknown>) => String(r.id))));
     setFtsLoading(false);
   }, []);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    if (!search || search.length < 2) { setFtsResults(null); return; }
+    if (!search || search.length < 2) { setFtsResults(null); ftsQueryRef.current = ''; return; }
     debounceRef.current = setTimeout(() => runFts(search), 250);
     return () => clearTimeout(debounceRef.current);
   }, [search, runFts]);
 
   const filtered = useMemo(() => {
-    return articles.filter((a: any) => {
+    return articles.filter(a => {
       if (categoryFilter !== 'all' && a.category !== categoryFilter) return false;
-      if (search && search.length >= 2 && ftsResults !== null) return ftsResults.has(a.id);
-      if (search && search.length < 2) {
+      if (search && search.length >= 2 && ftsResults !== null && ftsQueryRef.current === search) return ftsResults.has(a.id);
+      if (search) {
         const q = search.toLowerCase();
         return a.title.toLowerCase().includes(q);
       }
@@ -129,7 +147,20 @@ function KnowledgeBasePage() {
     checklist: articles.filter(a => a.category === 'checklist').length,
   }), [articles]);
 
-  if (loading) {
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+        <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+        </div>
+        <p className="text-sm font-medium text-destructive">Failed to load articles</p>
+        <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+        <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+      </div>
+    );
+  }
+
+  if (loading && !articles.length) {
     return <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
@@ -138,7 +169,7 @@ function KnowledgeBasePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Knowledge Base</h1>
-          <p className="text-sm text-muted-foreground">{articles.length} articles</p>
+          <p className="text-sm text-muted-foreground">{articles.length} articles{loading && <span className="inline-flex items-center gap-1 ml-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" />refreshing</span>}</p>
         </div>
         <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
@@ -153,10 +184,12 @@ function KnowledgeBasePage() {
             ])} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors text-foreground">
             <Download className="h-4 w-4" /> Export
           </button>
-          <button onClick={() => { setEditing(null); setFormOpen(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus className="h-4 w-4" /> New Article
-          </button>
+          <WriteGuard>
+            <button onClick={() => { setEditing(null); setFormOpen(true); }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+              <Plus className="h-4 w-4" /> New Article
+            </button>
+          </WriteGuard>
         </div>
       </div>
 
@@ -176,8 +209,9 @@ function KnowledgeBasePage() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search articles..." value={search} onChange={e => updateSearch({ q: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <input type="text" aria-label="Search articles" placeholder="Search articles..." value={search} onChange={e => updateSearch({ q: e.target.value })}
+            className="w-full pl-10 pr-8 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          {ftsLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
         </div>
         <select value={categoryFilter} onChange={e => updateSearch({ category: e.target.value })}
           className={`bg-card border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${categoryFilter !== 'all' ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}>
@@ -199,7 +233,7 @@ function KnowledgeBasePage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
-              <th className="px-3 py-3 w-10">
+              <th scope="col" className="px-3 py-3 w-10">
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
                   onChange={bulk.toggleAll} className="rounded border-border" />
               </th>
@@ -207,7 +241,7 @@ function KnowledgeBasePage() {
               <SortableHeader label="Category" column="category" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Updated" column="updated_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -238,10 +272,14 @@ function KnowledgeBasePage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => { setEditing({ title: article.title, content: article.content, category: article.category, status: article.status, _id: article.id }); setFormOpen(true); }}
-                      className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setDeleteTarget({ id: article.id, title: article.title })}
-                      className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <WriteGuard>
+                      <button onClick={() => { setEditing({ title: article.title, content: article.content, category: article.category, status: article.status, _id: article.id }); setFormOpen(true); }}
+                        className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                    </WriteGuard>
+                    <WriteGuard>
+                      <button onClick={() => setDeleteTarget({ id: article.id, title: article.title })}
+                        className="p-1.5 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </WriteGuard>
                   </div>
                 </td>
               </tr>
@@ -260,7 +298,7 @@ function KnowledgeBasePage() {
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}
         title={editing ? 'Edit Article' : 'New Article'} fields={kbFields}
         initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
 
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title={deleteTarget?.title ?? 'article'}

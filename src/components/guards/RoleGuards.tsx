@@ -12,7 +12,9 @@ interface WriteGuardProps {
 
 /** Renders children only if the current user has write access. */
 export function WriteGuard({ children, allowedRoles, fallback = null }: WriteGuardProps) {
-  const { role, canWrite } = useRole();
+  const { role, canWrite, isLoading } = useRole();
+  
+  if (isLoading) return null;
   
   if (allowedRoles) {
     return role && allowedRoles.includes(role) ? <>{children}</> : <>{fallback}</>;

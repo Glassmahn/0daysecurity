@@ -1,4 +1,4 @@
-const BASE_URL = 'https://zeroday.security';
+const BASE_URL = Deno.env.get('BASE_URL') ?? 'https://zeroday.security';
 
 function layout(title: string, body: string): string {
   return `<!DOCTYPE html>

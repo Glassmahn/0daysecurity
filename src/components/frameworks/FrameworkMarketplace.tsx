@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { Shield, Search, Plus, ChevronRight, Globe, Lock, Brain, Building, MapPin, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { Shield, Search, Plus, ChevronRight, Globe, Lock, Brain, Building, MapPin, Sparkles, TrendingUp, Calendar, XCircle } from 'lucide-react';
 import { frameworkCatalog, categoryLabels, type CatalogFramework } from '@/lib/framework-catalog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AddFrameworkWizard } from './AddFrameworkWizard';
+import { useComplianceForecast } from '@/hooks/use-compliance-forecast';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const categoryIcons: Record<CatalogFramework['category'], React.ElementType> = {
   commercial: Building,
@@ -22,10 +26,32 @@ const statusBadge: Record<string, string> = {
 };
 
 export function FrameworkMarketplace() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<CatalogFramework | null>(null);
   const [localCatalog, setLocalCatalog] = useState(frameworkCatalog);
+  const [dbLoading, setDbLoading] = useState(true);
+
+  const { forecasts } = useComplianceForecast();
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDbFrameworks() {
+      const { data: dbFrameworks } = await supabase
+        .from('frameworks')
+        .select('name, enabled');
+      if (cancelled || !dbFrameworks) { setDbLoading(false); return; }
+      const enabledNames = new Set(dbFrameworks.filter(f => f.enabled).map(f => f.name));
+      setLocalCatalog(prev => prev.map(fw => ({
+        ...fw,
+        enabled: enabledNames.has(fw.name) || fw.enabled,
+      })));
+      setDbLoading(false);
+    }
+    loadDbFrameworks();
+    return () => { cancelled = true; };
+  }, []);
 
   const categories: CatalogFramework['category'][] = ['commercial', 'federal', 'privacy', 'industry', 'ai_governance', 'regional'];
 
@@ -43,10 +69,40 @@ export function FrameworkMarketplace() {
     setWizardOpen(true);
   }
 
-  function handleWizardComplete(frameworkId: string) {
-    setLocalCatalog(prev => prev.map(fw =>
-      fw.id === frameworkId ? { ...fw, enabled: true, status: 'in_progress' as const, compliancePct: 0, targetDate: '2027-01-01' } : fw
+  async function handleDisableFramework(fw: CatalogFramework) {
+    setLocalCatalog(prev => prev.map(f =>
+      f.id === fw.id ? { ...f, enabled: false, status: 'not_started' as const, compliancePct: 0 } : f
     ));
+    const { error } = await supabase
+      .from('frameworks')
+      .update({ enabled: false })
+      .eq('name', fw.name);
+    if (error) toast.error('Failed to remove framework: ' + error.message);
+    else toast.success(`${fw.name} removed`);
+  }
+
+  async function handleWizardComplete(frameworkId: string) {
+    const fw = localCatalog.find(f => f.id === frameworkId);
+    if (!fw) return;
+
+    setLocalCatalog(prev => prev.map(f =>
+      f.id === frameworkId ? { ...f, enabled: true, status: 'in_progress' as const, compliancePct: 0, targetDate: '2027-01-01' } : f
+    ));
+
+    const { data: existing } = await supabase.from('frameworks').select('id').eq('name', fw.name).maybeSingle();
+    const { error } = existing
+      ? await supabase.from('frameworks').update({
+          name: fw.name, version: fw.standard, description: fw.description,
+          category: fw.category, total_controls: fw.controlCount, enabled: true,
+        }).eq('id', existing.id)
+      : await supabase.from('frameworks').insert({
+          name: fw.name, version: fw.standard, description: fw.description,
+          category: fw.category, total_controls: fw.controlCount, enabled: true,
+        });
+
+    if (error) toast.error('Failed to save framework: ' + error.message);
+    else toast.success(`${fw.name} enabled`);
+
     setWizardOpen(false);
     setSelectedFramework(null);
   }
@@ -74,12 +130,24 @@ export function FrameworkMarketplace() {
       </div>
 
       {/* Active Frameworks */}
-      {enabledFrameworks.length > 0 && (
+      {dbLoading && (
+        <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+          Loading enabled frameworks...
+        </div>
+      )}
+      {!dbLoading && enabledFrameworks.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Active Frameworks</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {enabledFrameworks.map(fw => (
-              <div key={fw.id} className="bg-card border border-border rounded-lg p-6 hover:border-primary/40 transition-all group cursor-pointer">
+              <div key={fw.id} onClick={() => navigate({ to: '/frameworks/$frameworkId', params: { frameworkId: fw.id } })} className="bg-card border border-border rounded-lg p-6 hover:border-primary/40 transition-all group cursor-pointer relative">
+                <button
+                  onClick={e => { e.stopPropagation(); handleDisableFramework(fw); }}
+                  className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
+                  title="Remove framework"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -101,11 +169,41 @@ export function FrameworkMarketplace() {
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-3xl font-bold text-foreground">{fw.compliancePct}%</span>
-                    {fw.targetDate && <span className="text-xs text-muted-foreground">Target: {fw.targetDate}</span>}
+                    <div className="flex items-center gap-2">
+                      {fw.targetDate && <span className="text-xs text-muted-foreground">Target: {fw.targetDate}</span>}
+                      {(() => {
+                        const fc = forecasts.find(f => f.frameworkId === fw.id);
+                        if (!fc?.projectedDate) return null;
+                        const daysLeft = Math.ceil((new Date(fc.projectedDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        return (
+                          <span className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded ${
+                            daysLeft < 90 ? 'bg-status-passing/15 text-status-passing' :
+                            daysLeft < 180 ? 'bg-status-in-progress/15 text-status-in-progress' :
+                            'bg-muted text-muted-foreground'
+                          }`} title={`R²: ${fc.confidence}`}>
+                            <TrendingUp className="h-3 w-3" />
+                            ~{daysLeft}d to 100%
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fw.compliancePct}%` }} />
                   </div>
+                  {(() => {
+                    const fc = forecasts.find(f => f.frameworkId === fw.id);
+                    if (!fc?.projectedDate) return null;
+                    return (
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>Projected ready: <strong className="text-foreground">{fc.projectedDate}</strong></span>
+                        {fc.scorePerDay !== null && (
+                          <span className="text-[11px] text-muted-foreground/70">(+{fc.scorePerDay}%/day)</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-4 gap-2 text-center">

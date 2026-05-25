@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2, Download, Filter } from 'lucide-react';
+import { Search, Loader2, Plus, Building2, ShieldCheck, ShieldAlert, AlertTriangle, Pencil, Trash2, Download, Filter, AlertCircle } from 'lucide-react';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -47,7 +47,7 @@ const vendorStatusOptions = vendorFields.find(f => f.name === 'status')!.options
 function VendorsIndexPage() {
   const navigate = useNavigate({ from: '/vendors/' });
   const { riskTier: riskTierFilter, status: statusFilter, q: search } = Route.useSearch();
-  const { data: vendors, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('vendors');
+  const { data: vendors, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('vendors');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
@@ -69,7 +69,18 @@ function VendorsIndexPage() {
   const expiringContracts = vendors.filter(v => { if (!v.contract_expiry) return false; const d = Math.ceil((new Date(v.contract_expiry).getTime() - Date.now()) / 86400000); return d > 0 && d <= 90; }).length;
   const activeFilterCount = [riskTierFilter, statusFilter].filter(f => f !== 'all').length + (search ? 1 : 0);
 
-  if (loading) return (
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+      <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+        <AlertCircle className="h-5 w-5 text-destructive" />
+      </div>
+      <p className="text-sm font-medium text-destructive">Failed to load vendors</p>
+      <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+      <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+    </div>
+  );
+
+  if (loading && !vendors.length) return (
     <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -89,7 +100,7 @@ function VendorsIndexPage() {
           </div>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Vendors</h1>
-            <p className="text-sm text-muted-foreground">Third-party vendor risk management</p>
+            <p className="text-sm text-muted-foreground">Third-party vendor risk management{loading && <span className="inline-flex items-center gap-1 ml-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" />refreshing</span>}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -132,7 +143,7 @@ function VendorsIndexPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input placeholder="Search vendors..." className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" value={search} onChange={e => updateSearch({ q: e.target.value })} />
+          <input aria-label="Search vendors" placeholder="Search vendors..." className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" value={search} onChange={e => updateSearch({ q: e.target.value })} />
         </div>
         <select value={riskTierFilter} onChange={e => updateSearch({ riskTier: e.target.value })} className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${riskTierFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Risk Tiers</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
@@ -151,13 +162,13 @@ function VendorsIndexPage() {
       <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-card">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border/60 text-left bg-surface/50">
-            <th className="px-3 py-3.5 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
+            <th scope="col" className="px-3 py-3.5 w-10"><input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }} onChange={bulk.toggleAll} className="rounded-md border-border" /></th>
             <SortableHeader label="Vendor" column="name" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Risk Tier" column="risk_tier" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
             <SortableHeader label="Contact" column="contact_email" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
             <SortableHeader label="Contract Expiry" column="contract_expiry" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
             <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
-            <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+            <th scope="col" className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
           </tr></thead>
           <tbody>
             {pagination.paged.map(v => (
@@ -188,7 +199,7 @@ function VendorsIndexPage() {
         <TablePagination page={pagination.page} totalPages={pagination.totalPages} total={pagination.total} pageSize={pagination.pageSize} onPageChange={pagination.goTo} />
       </div>
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? 'Edit Vendor' : 'Add Vendor'} fields={vendorFields} initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget?.title ?? 'vendor'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
     </div>

@@ -10,10 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
+import { Route as VendorPortalRouteImport } from './routes/vendor-portal'
+import { Route as TrustPortalRouteImport } from './routes/trust-portal'
+import { Route as TrainingRouteImport } from './routes/training'
 import { Route as TestsRouteImport } from './routes/tests'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RiskRegisterRouteImport } from './routes/risk-register'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PoliciesRouteImport } from './routes/policies'
@@ -28,13 +32,18 @@ import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ControlsRouteImport } from './routes/controls'
 import { Route as AuditsRouteImport } from './routes/audits'
+import { Route as AuditPrepRouteImport } from './routes/audit-prep'
+import { Route as AuditManagementRouteImport } from './routes/audit-management'
 import { Route as AssetsRouteImport } from './routes/assets'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VendorsIndexRouteImport } from './routes/vendors.index'
+import { Route as TrustPortalIndexRouteImport } from './routes/trust-portal.index'
+import { Route as TrainingIndexRouteImport } from './routes/training.index'
 import { Route as TestsIndexRouteImport } from './routes/tests.index'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as RiskRegisterIndexRouteImport } from './routes/risk-register.index'
+import { Route as ReviewsIndexRouteImport } from './routes/reviews.index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as PoliciesIndexRouteImport } from './routes/policies.index'
 import { Route as PersonnelIndexRouteImport } from './routes/personnel.index'
@@ -46,22 +55,47 @@ import { Route as EvidenceIndexRouteImport } from './routes/evidence.index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as ControlsIndexRouteImport } from './routes/controls.index'
 import { Route as AuditsIndexRouteImport } from './routes/audits.index'
+import { Route as AuditPrepIndexRouteImport } from './routes/audit-prep.index'
+import { Route as AuditManagementIndexRouteImport } from './routes/audit-management.index'
 import { Route as AssetsIndexRouteImport } from './routes/assets.index'
 import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
 import { Route as VendorsVendorIdRouteImport } from './routes/vendors.$vendorId'
+import { Route as VendorPortalTokenRouteImport } from './routes/vendor-portal.$token'
+import { Route as TrustPortalPublicRouteImport } from './routes/trust-portal.public'
+import { Route as TrustPortalShareIdRouteImport } from './routes/trust-portal.$shareId'
+import { Route as TrainingCourseIdRouteImport } from './routes/training.$courseId'
 import { Route as TestsTestIdRouteImport } from './routes/tests.$testId'
 import { Route as RiskRegisterRiskIdRouteImport } from './routes/risk-register.$riskId'
+import { Route as ReviewsCampaignIdRouteImport } from './routes/reviews.$campaignId'
 import { Route as PoliciesPolicyIdRouteImport } from './routes/policies.$policyId'
 import { Route as KnowledgeBaseArticleIdRouteImport } from './routes/knowledge-base.$articleId'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as HooksComplianceSnapshotRouteImport } from './routes/hooks/compliance-snapshot'
+import { Route as FrameworksFrameworkIdRouteImport } from './routes/frameworks.$frameworkId'
 import { Route as EvidenceEvidenceIdRouteImport } from './routes/evidence.$evidenceId'
 import { Route as ControlsControlIdRouteImport } from './routes/controls.$controlId'
+import { Route as AuditManagementAuditIdRouteImport } from './routes/audit-management.$auditId'
 import { Route as AssetsAssetIdRouteImport } from './routes/assets.$assetId'
+import { Route as TrainingCourseIdEditRouteImport } from './routes/training.$courseId.edit'
 
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorPortalRoute = VendorPortalRouteImport.update({
+  id: '/vendor-portal',
+  path: '/vendor-portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrustPortalRoute = TrustPortalRouteImport.update({
+  id: '/trust-portal',
+  path: '/trust-portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrainingRoute = TrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TestsRoute = TestsRouteImport.update({
@@ -82,6 +116,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RiskRegisterRoute = RiskRegisterRouteImport.update({
   id: '/risk-register',
   path: '/risk-register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -154,6 +193,16 @@ const AuditsRoute = AuditsRouteImport.update({
   path: '/audits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuditPrepRoute = AuditPrepRouteImport.update({
+  id: '/audit-prep',
+  path: '/audit-prep',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditManagementRoute = AuditManagementRouteImport.update({
+  id: '/audit-management',
+  path: '/audit-management',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AssetsRoute = AssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
@@ -174,6 +223,16 @@ const VendorsIndexRoute = VendorsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => VendorsRoute,
 } as any)
+const TrustPortalIndexRoute = TrustPortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TrustPortalRoute,
+} as any)
+const TrainingIndexRoute = TrainingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TrainingRoute,
+} as any)
 const TestsIndexRoute = TestsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -188,6 +247,11 @@ const RiskRegisterIndexRoute = RiskRegisterIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RiskRegisterRoute,
+} as any)
+const ReviewsIndexRoute = ReviewsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ReviewsRoute,
 } as any)
 const ReportsIndexRoute = ReportsIndexRouteImport.update({
   id: '/',
@@ -244,6 +308,16 @@ const AuditsIndexRoute = AuditsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuditsRoute,
 } as any)
+const AuditPrepIndexRoute = AuditPrepIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuditPrepRoute,
+} as any)
+const AuditManagementIndexRoute = AuditManagementIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuditManagementRoute,
+} as any)
 const AssetsIndexRoute = AssetsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -259,6 +333,26 @@ const VendorsVendorIdRoute = VendorsVendorIdRouteImport.update({
   path: '/$vendorId',
   getParentRoute: () => VendorsRoute,
 } as any)
+const VendorPortalTokenRoute = VendorPortalTokenRouteImport.update({
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => VendorPortalRoute,
+} as any)
+const TrustPortalPublicRoute = TrustPortalPublicRouteImport.update({
+  id: '/public',
+  path: '/public',
+  getParentRoute: () => TrustPortalRoute,
+} as any)
+const TrustPortalShareIdRoute = TrustPortalShareIdRouteImport.update({
+  id: '/$shareId',
+  path: '/$shareId',
+  getParentRoute: () => TrustPortalRoute,
+} as any)
+const TrainingCourseIdRoute = TrainingCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => TrainingRoute,
+} as any)
 const TestsTestIdRoute = TestsTestIdRouteImport.update({
   id: '/$testId',
   path: '/$testId',
@@ -268,6 +362,11 @@ const RiskRegisterRiskIdRoute = RiskRegisterRiskIdRouteImport.update({
   id: '/$riskId',
   path: '/$riskId',
   getParentRoute: () => RiskRegisterRoute,
+} as any)
+const ReviewsCampaignIdRoute = ReviewsCampaignIdRouteImport.update({
+  id: '/$campaignId',
+  path: '/$campaignId',
+  getParentRoute: () => ReviewsRoute,
 } as any)
 const PoliciesPolicyIdRoute = PoliciesPolicyIdRouteImport.update({
   id: '/$policyId',
@@ -289,6 +388,11 @@ const HooksComplianceSnapshotRoute = HooksComplianceSnapshotRouteImport.update({
   path: '/hooks/compliance-snapshot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FrameworksFrameworkIdRoute = FrameworksFrameworkIdRouteImport.update({
+  id: '/$frameworkId',
+  path: '/$frameworkId',
+  getParentRoute: () => FrameworksRoute,
+} as any)
 const EvidenceEvidenceIdRoute = EvidenceEvidenceIdRouteImport.update({
   id: '/$evidenceId',
   path: '/$evidenceId',
@@ -299,16 +403,28 @@ const ControlsControlIdRoute = ControlsControlIdRouteImport.update({
   path: '/$controlId',
   getParentRoute: () => ControlsRoute,
 } as any)
+const AuditManagementAuditIdRoute = AuditManagementAuditIdRouteImport.update({
+  id: '/$auditId',
+  path: '/$auditId',
+  getParentRoute: () => AuditManagementRoute,
+} as any)
 const AssetsAssetIdRoute = AssetsAssetIdRouteImport.update({
   id: '/$assetId',
   path: '/$assetId',
   getParentRoute: () => AssetsRoute,
+} as any)
+const TrainingCourseIdEditRoute = TrainingCourseIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => TrainingCourseIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRouteWithChildren
   '/assets': typeof AssetsRouteWithChildren
+  '/audit-management': typeof AuditManagementRouteWithChildren
+  '/audit-prep': typeof AuditPrepRouteWithChildren
   '/audits': typeof AuditsRouteWithChildren
   '/controls': typeof ControlsRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
@@ -323,23 +439,36 @@ export interface FileRoutesByFullPath {
   '/policies': typeof PoliciesRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/reviews': typeof ReviewsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
   '/tests': typeof TestsRouteWithChildren
+  '/training': typeof TrainingRouteWithChildren
+  '/trust-portal': typeof TrustPortalRouteWithChildren
+  '/vendor-portal': typeof VendorPortalRouteWithChildren
   '/vendors': typeof VendorsRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
+  '/audit-management/$auditId': typeof AuditManagementAuditIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
+  '/frameworks/$frameworkId': typeof FrameworksFrameworkIdRoute
   '/hooks/compliance-snapshot': typeof HooksComplianceSnapshotRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
+  '/reviews/$campaignId': typeof ReviewsCampaignIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
+  '/training/$courseId': typeof TrainingCourseIdRouteWithChildren
+  '/trust-portal/$shareId': typeof TrustPortalShareIdRoute
+  '/trust-portal/public': typeof TrustPortalPublicRoute
+  '/vendor-portal/$token': typeof VendorPortalTokenRoute
   '/vendors/$vendorId': typeof VendorsVendorIdRoute
   '/alerts/': typeof AlertsIndexRoute
   '/assets/': typeof AssetsIndexRoute
+  '/audit-management/': typeof AuditManagementIndexRoute
+  '/audit-prep/': typeof AuditPrepIndexRoute
   '/audits/': typeof AuditsIndexRoute
   '/controls/': typeof ControlsIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -351,10 +480,14 @@ export interface FileRoutesByFullPath {
   '/personnel/': typeof PersonnelIndexRoute
   '/policies/': typeof PoliciesIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/reviews/': typeof ReviewsIndexRoute
   '/risk-register/': typeof RiskRegisterIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/tests/': typeof TestsIndexRoute
+  '/training/': typeof TrainingIndexRoute
+  '/trust-portal/': typeof TrustPortalIndexRoute
   '/vendors/': typeof VendorsIndexRoute
+  '/training/$courseId/edit': typeof TrainingCourseIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -362,18 +495,28 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-portal': typeof VendorPortalRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
+  '/audit-management/$auditId': typeof AuditManagementAuditIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
+  '/frameworks/$frameworkId': typeof FrameworksFrameworkIdRoute
   '/hooks/compliance-snapshot': typeof HooksComplianceSnapshotRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
+  '/reviews/$campaignId': typeof ReviewsCampaignIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
+  '/training/$courseId': typeof TrainingCourseIdRouteWithChildren
+  '/trust-portal/$shareId': typeof TrustPortalShareIdRoute
+  '/trust-portal/public': typeof TrustPortalPublicRoute
+  '/vendor-portal/$token': typeof VendorPortalTokenRoute
   '/vendors/$vendorId': typeof VendorsVendorIdRoute
   '/alerts': typeof AlertsIndexRoute
   '/assets': typeof AssetsIndexRoute
+  '/audit-management': typeof AuditManagementIndexRoute
+  '/audit-prep': typeof AuditPrepIndexRoute
   '/audits': typeof AuditsIndexRoute
   '/controls': typeof ControlsIndexRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -385,16 +528,22 @@ export interface FileRoutesByTo {
   '/personnel': typeof PersonnelIndexRoute
   '/policies': typeof PoliciesIndexRoute
   '/reports': typeof ReportsIndexRoute
+  '/reviews': typeof ReviewsIndexRoute
   '/risk-register': typeof RiskRegisterIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/tests': typeof TestsIndexRoute
+  '/training': typeof TrainingIndexRoute
+  '/trust-portal': typeof TrustPortalIndexRoute
   '/vendors': typeof VendorsIndexRoute
+  '/training/$courseId/edit': typeof TrainingCourseIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRouteWithChildren
   '/assets': typeof AssetsRouteWithChildren
+  '/audit-management': typeof AuditManagementRouteWithChildren
+  '/audit-prep': typeof AuditPrepRouteWithChildren
   '/audits': typeof AuditsRouteWithChildren
   '/controls': typeof ControlsRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
@@ -409,23 +558,36 @@ export interface FileRoutesById {
   '/policies': typeof PoliciesRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/reviews': typeof ReviewsRouteWithChildren
   '/risk-register': typeof RiskRegisterRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
   '/tests': typeof TestsRouteWithChildren
+  '/training': typeof TrainingRouteWithChildren
+  '/trust-portal': typeof TrustPortalRouteWithChildren
+  '/vendor-portal': typeof VendorPortalRouteWithChildren
   '/vendors': typeof VendorsRouteWithChildren
   '/assets/$assetId': typeof AssetsAssetIdRoute
+  '/audit-management/$auditId': typeof AuditManagementAuditIdRoute
   '/controls/$controlId': typeof ControlsControlIdRoute
   '/evidence/$evidenceId': typeof EvidenceEvidenceIdRoute
+  '/frameworks/$frameworkId': typeof FrameworksFrameworkIdRoute
   '/hooks/compliance-snapshot': typeof HooksComplianceSnapshotRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/knowledge-base/$articleId': typeof KnowledgeBaseArticleIdRoute
   '/policies/$policyId': typeof PoliciesPolicyIdRoute
+  '/reviews/$campaignId': typeof ReviewsCampaignIdRoute
   '/risk-register/$riskId': typeof RiskRegisterRiskIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
+  '/training/$courseId': typeof TrainingCourseIdRouteWithChildren
+  '/trust-portal/$shareId': typeof TrustPortalShareIdRoute
+  '/trust-portal/public': typeof TrustPortalPublicRoute
+  '/vendor-portal/$token': typeof VendorPortalTokenRoute
   '/vendors/$vendorId': typeof VendorsVendorIdRoute
   '/alerts/': typeof AlertsIndexRoute
   '/assets/': typeof AssetsIndexRoute
+  '/audit-management/': typeof AuditManagementIndexRoute
+  '/audit-prep/': typeof AuditPrepIndexRoute
   '/audits/': typeof AuditsIndexRoute
   '/controls/': typeof ControlsIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -437,10 +599,14 @@ export interface FileRoutesById {
   '/personnel/': typeof PersonnelIndexRoute
   '/policies/': typeof PoliciesIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/reviews/': typeof ReviewsIndexRoute
   '/risk-register/': typeof RiskRegisterIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/tests/': typeof TestsIndexRoute
+  '/training/': typeof TrainingIndexRoute
+  '/trust-portal/': typeof TrustPortalIndexRoute
   '/vendors/': typeof VendorsIndexRoute
+  '/training/$courseId/edit': typeof TrainingCourseIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -448,6 +614,8 @@ export interface FileRouteTypes {
     | '/'
     | '/alerts'
     | '/assets'
+    | '/audit-management'
+    | '/audit-prep'
     | '/audits'
     | '/controls'
     | '/dashboard'
@@ -462,23 +630,36 @@ export interface FileRouteTypes {
     | '/policies'
     | '/reports'
     | '/reset-password'
+    | '/reviews'
     | '/risk-register'
     | '/settings'
     | '/signup'
     | '/tests'
+    | '/training'
+    | '/trust-portal'
+    | '/vendor-portal'
     | '/vendors'
     | '/assets/$assetId'
+    | '/audit-management/$auditId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
+    | '/frameworks/$frameworkId'
     | '/hooks/compliance-snapshot'
     | '/incidents/$incidentId'
     | '/knowledge-base/$articleId'
     | '/policies/$policyId'
+    | '/reviews/$campaignId'
     | '/risk-register/$riskId'
     | '/tests/$testId'
+    | '/training/$courseId'
+    | '/trust-portal/$shareId'
+    | '/trust-portal/public'
+    | '/vendor-portal/$token'
     | '/vendors/$vendorId'
     | '/alerts/'
     | '/assets/'
+    | '/audit-management/'
+    | '/audit-prep/'
     | '/audits/'
     | '/controls/'
     | '/dashboard/'
@@ -490,10 +671,14 @@ export interface FileRouteTypes {
     | '/personnel/'
     | '/policies/'
     | '/reports/'
+    | '/reviews/'
     | '/risk-register/'
     | '/settings/'
     | '/tests/'
+    | '/training/'
+    | '/trust-portal/'
     | '/vendors/'
+    | '/training/$courseId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -501,18 +686,28 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/vendor-portal'
     | '/assets/$assetId'
+    | '/audit-management/$auditId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
+    | '/frameworks/$frameworkId'
     | '/hooks/compliance-snapshot'
     | '/incidents/$incidentId'
     | '/knowledge-base/$articleId'
     | '/policies/$policyId'
+    | '/reviews/$campaignId'
     | '/risk-register/$riskId'
     | '/tests/$testId'
+    | '/training/$courseId'
+    | '/trust-portal/$shareId'
+    | '/trust-portal/public'
+    | '/vendor-portal/$token'
     | '/vendors/$vendorId'
     | '/alerts'
     | '/assets'
+    | '/audit-management'
+    | '/audit-prep'
     | '/audits'
     | '/controls'
     | '/dashboard'
@@ -524,15 +719,21 @@ export interface FileRouteTypes {
     | '/personnel'
     | '/policies'
     | '/reports'
+    | '/reviews'
     | '/risk-register'
     | '/settings'
     | '/tests'
+    | '/training'
+    | '/trust-portal'
     | '/vendors'
+    | '/training/$courseId/edit'
   id:
     | '__root__'
     | '/'
     | '/alerts'
     | '/assets'
+    | '/audit-management'
+    | '/audit-prep'
     | '/audits'
     | '/controls'
     | '/dashboard'
@@ -547,23 +748,36 @@ export interface FileRouteTypes {
     | '/policies'
     | '/reports'
     | '/reset-password'
+    | '/reviews'
     | '/risk-register'
     | '/settings'
     | '/signup'
     | '/tests'
+    | '/training'
+    | '/trust-portal'
+    | '/vendor-portal'
     | '/vendors'
     | '/assets/$assetId'
+    | '/audit-management/$auditId'
     | '/controls/$controlId'
     | '/evidence/$evidenceId'
+    | '/frameworks/$frameworkId'
     | '/hooks/compliance-snapshot'
     | '/incidents/$incidentId'
     | '/knowledge-base/$articleId'
     | '/policies/$policyId'
+    | '/reviews/$campaignId'
     | '/risk-register/$riskId'
     | '/tests/$testId'
+    | '/training/$courseId'
+    | '/trust-portal/$shareId'
+    | '/trust-portal/public'
+    | '/vendor-portal/$token'
     | '/vendors/$vendorId'
     | '/alerts/'
     | '/assets/'
+    | '/audit-management/'
+    | '/audit-prep/'
     | '/audits/'
     | '/controls/'
     | '/dashboard/'
@@ -575,16 +789,22 @@ export interface FileRouteTypes {
     | '/personnel/'
     | '/policies/'
     | '/reports/'
+    | '/reviews/'
     | '/risk-register/'
     | '/settings/'
     | '/tests/'
+    | '/training/'
+    | '/trust-portal/'
     | '/vendors/'
+    | '/training/$courseId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertsRoute: typeof AlertsRouteWithChildren
   AssetsRoute: typeof AssetsRouteWithChildren
+  AuditManagementRoute: typeof AuditManagementRouteWithChildren
+  AuditPrepRoute: typeof AuditPrepRouteWithChildren
   AuditsRoute: typeof AuditsRouteWithChildren
   ControlsRoute: typeof ControlsRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
@@ -599,10 +819,14 @@ export interface RootRouteChildren {
   PoliciesRoute: typeof PoliciesRouteWithChildren
   ReportsRoute: typeof ReportsRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ReviewsRoute: typeof ReviewsRouteWithChildren
   RiskRegisterRoute: typeof RiskRegisterRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
   SignupRoute: typeof SignupRoute
   TestsRoute: typeof TestsRouteWithChildren
+  TrainingRoute: typeof TrainingRouteWithChildren
+  TrustPortalRoute: typeof TrustPortalRouteWithChildren
+  VendorPortalRoute: typeof VendorPortalRouteWithChildren
   VendorsRoute: typeof VendorsRouteWithChildren
   HooksComplianceSnapshotRoute: typeof HooksComplianceSnapshotRoute
 }
@@ -614,6 +838,27 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor-portal': {
+      id: '/vendor-portal'
+      path: '/vendor-portal'
+      fullPath: '/vendor-portal'
+      preLoaderRoute: typeof VendorPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trust-portal': {
+      id: '/trust-portal'
+      path: '/trust-portal'
+      fullPath: '/trust-portal'
+      preLoaderRoute: typeof TrustPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/training': {
+      id: '/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof TrainingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tests': {
@@ -642,6 +887,13 @@ declare module '@tanstack/react-router' {
       path: '/risk-register'
       fullPath: '/risk-register'
       preLoaderRoute: typeof RiskRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -742,6 +994,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuditsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/audit-prep': {
+      id: '/audit-prep'
+      path: '/audit-prep'
+      fullPath: '/audit-prep'
+      preLoaderRoute: typeof AuditPrepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audit-management': {
+      id: '/audit-management'
+      path: '/audit-management'
+      fullPath: '/audit-management'
+      preLoaderRoute: typeof AuditManagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/assets': {
       id: '/assets'
       path: '/assets'
@@ -770,6 +1036,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorsIndexRouteImport
       parentRoute: typeof VendorsRoute
     }
+    '/trust-portal/': {
+      id: '/trust-portal/'
+      path: '/'
+      fullPath: '/trust-portal/'
+      preLoaderRoute: typeof TrustPortalIndexRouteImport
+      parentRoute: typeof TrustPortalRoute
+    }
+    '/training/': {
+      id: '/training/'
+      path: '/'
+      fullPath: '/training/'
+      preLoaderRoute: typeof TrainingIndexRouteImport
+      parentRoute: typeof TrainingRoute
+    }
     '/tests/': {
       id: '/tests/'
       path: '/'
@@ -790,6 +1070,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/risk-register/'
       preLoaderRoute: typeof RiskRegisterIndexRouteImport
       parentRoute: typeof RiskRegisterRoute
+    }
+    '/reviews/': {
+      id: '/reviews/'
+      path: '/'
+      fullPath: '/reviews/'
+      preLoaderRoute: typeof ReviewsIndexRouteImport
+      parentRoute: typeof ReviewsRoute
     }
     '/reports/': {
       id: '/reports/'
@@ -868,6 +1155,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuditsIndexRouteImport
       parentRoute: typeof AuditsRoute
     }
+    '/audit-prep/': {
+      id: '/audit-prep/'
+      path: '/'
+      fullPath: '/audit-prep/'
+      preLoaderRoute: typeof AuditPrepIndexRouteImport
+      parentRoute: typeof AuditPrepRoute
+    }
+    '/audit-management/': {
+      id: '/audit-management/'
+      path: '/'
+      fullPath: '/audit-management/'
+      preLoaderRoute: typeof AuditManagementIndexRouteImport
+      parentRoute: typeof AuditManagementRoute
+    }
     '/assets/': {
       id: '/assets/'
       path: '/'
@@ -889,6 +1190,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorsVendorIdRouteImport
       parentRoute: typeof VendorsRoute
     }
+    '/vendor-portal/$token': {
+      id: '/vendor-portal/$token'
+      path: '/$token'
+      fullPath: '/vendor-portal/$token'
+      preLoaderRoute: typeof VendorPortalTokenRouteImport
+      parentRoute: typeof VendorPortalRoute
+    }
+    '/trust-portal/public': {
+      id: '/trust-portal/public'
+      path: '/public'
+      fullPath: '/trust-portal/public'
+      preLoaderRoute: typeof TrustPortalPublicRouteImport
+      parentRoute: typeof TrustPortalRoute
+    }
+    '/trust-portal/$shareId': {
+      id: '/trust-portal/$shareId'
+      path: '/$shareId'
+      fullPath: '/trust-portal/$shareId'
+      preLoaderRoute: typeof TrustPortalShareIdRouteImport
+      parentRoute: typeof TrustPortalRoute
+    }
+    '/training/$courseId': {
+      id: '/training/$courseId'
+      path: '/$courseId'
+      fullPath: '/training/$courseId'
+      preLoaderRoute: typeof TrainingCourseIdRouteImport
+      parentRoute: typeof TrainingRoute
+    }
     '/tests/$testId': {
       id: '/tests/$testId'
       path: '/$testId'
@@ -902,6 +1231,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/risk-register/$riskId'
       preLoaderRoute: typeof RiskRegisterRiskIdRouteImport
       parentRoute: typeof RiskRegisterRoute
+    }
+    '/reviews/$campaignId': {
+      id: '/reviews/$campaignId'
+      path: '/$campaignId'
+      fullPath: '/reviews/$campaignId'
+      preLoaderRoute: typeof ReviewsCampaignIdRouteImport
+      parentRoute: typeof ReviewsRoute
     }
     '/policies/$policyId': {
       id: '/policies/$policyId'
@@ -931,6 +1267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksComplianceSnapshotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/frameworks/$frameworkId': {
+      id: '/frameworks/$frameworkId'
+      path: '/$frameworkId'
+      fullPath: '/frameworks/$frameworkId'
+      preLoaderRoute: typeof FrameworksFrameworkIdRouteImport
+      parentRoute: typeof FrameworksRoute
+    }
     '/evidence/$evidenceId': {
       id: '/evidence/$evidenceId'
       path: '/$evidenceId'
@@ -945,12 +1288,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ControlsControlIdRouteImport
       parentRoute: typeof ControlsRoute
     }
+    '/audit-management/$auditId': {
+      id: '/audit-management/$auditId'
+      path: '/$auditId'
+      fullPath: '/audit-management/$auditId'
+      preLoaderRoute: typeof AuditManagementAuditIdRouteImport
+      parentRoute: typeof AuditManagementRoute
+    }
     '/assets/$assetId': {
       id: '/assets/$assetId'
       path: '/$assetId'
       fullPath: '/assets/$assetId'
       preLoaderRoute: typeof AssetsAssetIdRouteImport
       parentRoute: typeof AssetsRoute
+    }
+    '/training/$courseId/edit': {
+      id: '/training/$courseId/edit'
+      path: '/edit'
+      fullPath: '/training/$courseId/edit'
+      preLoaderRoute: typeof TrainingCourseIdEditRouteImport
+      parentRoute: typeof TrainingCourseIdRoute
     }
   }
 }
@@ -978,6 +1335,32 @@ const AssetsRouteChildren: AssetsRouteChildren = {
 
 const AssetsRouteWithChildren =
   AssetsRoute._addFileChildren(AssetsRouteChildren)
+
+interface AuditManagementRouteChildren {
+  AuditManagementAuditIdRoute: typeof AuditManagementAuditIdRoute
+  AuditManagementIndexRoute: typeof AuditManagementIndexRoute
+}
+
+const AuditManagementRouteChildren: AuditManagementRouteChildren = {
+  AuditManagementAuditIdRoute: AuditManagementAuditIdRoute,
+  AuditManagementIndexRoute: AuditManagementIndexRoute,
+}
+
+const AuditManagementRouteWithChildren = AuditManagementRoute._addFileChildren(
+  AuditManagementRouteChildren,
+)
+
+interface AuditPrepRouteChildren {
+  AuditPrepIndexRoute: typeof AuditPrepIndexRoute
+}
+
+const AuditPrepRouteChildren: AuditPrepRouteChildren = {
+  AuditPrepIndexRoute: AuditPrepIndexRoute,
+}
+
+const AuditPrepRouteWithChildren = AuditPrepRoute._addFileChildren(
+  AuditPrepRouteChildren,
+)
 
 interface AuditsRouteChildren {
   AuditsIndexRoute: typeof AuditsIndexRoute
@@ -1031,10 +1414,12 @@ const EvidenceRouteWithChildren = EvidenceRoute._addFileChildren(
 )
 
 interface FrameworksRouteChildren {
+  FrameworksFrameworkIdRoute: typeof FrameworksFrameworkIdRoute
   FrameworksIndexRoute: typeof FrameworksIndexRoute
 }
 
 const FrameworksRouteChildren: FrameworksRouteChildren = {
+  FrameworksFrameworkIdRoute: FrameworksFrameworkIdRoute,
   FrameworksIndexRoute: FrameworksIndexRoute,
 }
 
@@ -1119,6 +1504,19 @@ const ReportsRouteChildren: ReportsRouteChildren = {
 const ReportsRouteWithChildren =
   ReportsRoute._addFileChildren(ReportsRouteChildren)
 
+interface ReviewsRouteChildren {
+  ReviewsCampaignIdRoute: typeof ReviewsCampaignIdRoute
+  ReviewsIndexRoute: typeof ReviewsIndexRoute
+}
+
+const ReviewsRouteChildren: ReviewsRouteChildren = {
+  ReviewsCampaignIdRoute: ReviewsCampaignIdRoute,
+  ReviewsIndexRoute: ReviewsIndexRoute,
+}
+
+const ReviewsRouteWithChildren =
+  ReviewsRoute._addFileChildren(ReviewsRouteChildren)
+
 interface RiskRegisterRouteChildren {
   RiskRegisterRiskIdRoute: typeof RiskRegisterRiskIdRoute
   RiskRegisterIndexRoute: typeof RiskRegisterIndexRoute
@@ -1157,6 +1555,59 @@ const TestsRouteChildren: TestsRouteChildren = {
 
 const TestsRouteWithChildren = TestsRoute._addFileChildren(TestsRouteChildren)
 
+interface TrainingCourseIdRouteChildren {
+  TrainingCourseIdEditRoute: typeof TrainingCourseIdEditRoute
+}
+
+const TrainingCourseIdRouteChildren: TrainingCourseIdRouteChildren = {
+  TrainingCourseIdEditRoute: TrainingCourseIdEditRoute,
+}
+
+const TrainingCourseIdRouteWithChildren =
+  TrainingCourseIdRoute._addFileChildren(TrainingCourseIdRouteChildren)
+
+interface TrainingRouteChildren {
+  TrainingCourseIdRoute: typeof TrainingCourseIdRouteWithChildren
+  TrainingIndexRoute: typeof TrainingIndexRoute
+}
+
+const TrainingRouteChildren: TrainingRouteChildren = {
+  TrainingCourseIdRoute: TrainingCourseIdRouteWithChildren,
+  TrainingIndexRoute: TrainingIndexRoute,
+}
+
+const TrainingRouteWithChildren = TrainingRoute._addFileChildren(
+  TrainingRouteChildren,
+)
+
+interface TrustPortalRouteChildren {
+  TrustPortalShareIdRoute: typeof TrustPortalShareIdRoute
+  TrustPortalPublicRoute: typeof TrustPortalPublicRoute
+  TrustPortalIndexRoute: typeof TrustPortalIndexRoute
+}
+
+const TrustPortalRouteChildren: TrustPortalRouteChildren = {
+  TrustPortalShareIdRoute: TrustPortalShareIdRoute,
+  TrustPortalPublicRoute: TrustPortalPublicRoute,
+  TrustPortalIndexRoute: TrustPortalIndexRoute,
+}
+
+const TrustPortalRouteWithChildren = TrustPortalRoute._addFileChildren(
+  TrustPortalRouteChildren,
+)
+
+interface VendorPortalRouteChildren {
+  VendorPortalTokenRoute: typeof VendorPortalTokenRoute
+}
+
+const VendorPortalRouteChildren: VendorPortalRouteChildren = {
+  VendorPortalTokenRoute: VendorPortalTokenRoute,
+}
+
+const VendorPortalRouteWithChildren = VendorPortalRoute._addFileChildren(
+  VendorPortalRouteChildren,
+)
+
 interface VendorsRouteChildren {
   VendorsVendorIdRoute: typeof VendorsVendorIdRoute
   VendorsIndexRoute: typeof VendorsIndexRoute
@@ -1174,6 +1625,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsRoute: AlertsRouteWithChildren,
   AssetsRoute: AssetsRouteWithChildren,
+  AuditManagementRoute: AuditManagementRouteWithChildren,
+  AuditPrepRoute: AuditPrepRouteWithChildren,
   AuditsRoute: AuditsRouteWithChildren,
   ControlsRoute: ControlsRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
@@ -1188,10 +1641,14 @@ const rootRouteChildren: RootRouteChildren = {
   PoliciesRoute: PoliciesRouteWithChildren,
   ReportsRoute: ReportsRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
+  ReviewsRoute: ReviewsRouteWithChildren,
   RiskRegisterRoute: RiskRegisterRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
   SignupRoute: SignupRoute,
   TestsRoute: TestsRouteWithChildren,
+  TrainingRoute: TrainingRouteWithChildren,
+  TrustPortalRoute: TrustPortalRouteWithChildren,
+  VendorPortalRoute: VendorPortalRouteWithChildren,
   VendorsRoute: VendorsRouteWithChildren,
   HooksComplianceSnapshotRoute: HooksComplianceSnapshotRoute,
 }

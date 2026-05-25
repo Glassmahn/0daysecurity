@@ -18,5 +18,5 @@ export function exportToCsv(filename: string, rows: Record<string, unknown>[], c
   a.href = url;
   a.download = `${filename}.csv`;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

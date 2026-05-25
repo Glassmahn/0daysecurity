@@ -11,11 +11,51 @@ interface PostureData {
   na: number;
 }
 
-export function CompliancePosture({ data, isLoading }: { data: PostureData[]; isLoading?: boolean }) {
+export function CompliancePosture({ data, isLoading, isError }: { data: PostureData[]; isLoading?: boolean; isError?: boolean }) {
   const navigate = useNavigate();
 
-  if (isLoading || data.length === 0) {
+  if (isLoading) {
     return <Skeleton className="h-[340px] rounded-xl" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-destructive" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-foreground">Compliance Posture</h3>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <BarChart3 className="h-8 w-8 text-destructive mb-3 opacity-60" />
+          <p className="text-sm font-medium text-destructive">Failed to load compliance data</p>
+          <p className="text-xs text-muted-foreground mt-1">Pull to retry or check your connection</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-card border border-border/60 rounded-xl p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-chart-1/10 flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-chart-1" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-foreground">Compliance Posture</h3>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <BarChart3 className="h-8 w-8 text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm text-muted-foreground">No compliance data yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Enable frameworks and assess controls to populate this chart</p>
+        </div>
+      </div>
+    );
   }
 
   return (

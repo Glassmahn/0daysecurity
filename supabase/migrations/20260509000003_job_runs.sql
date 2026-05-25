@@ -19,6 +19,8 @@ CREATE POLICY "Admins view job runs"
   USING (public.has_role(auth.uid(), 'admin'::app_role));
 
 -- compliance_snapshots: daily point-in-time compliance scores per framework.
+-- v1 table was created in 20260411142659 — drop it first to adopt v2 schema.
+DROP TABLE IF EXISTS public.compliance_snapshots CASCADE;
 CREATE TABLE public.compliance_snapshots (
   id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   snapshot_date   date        NOT NULL DEFAULT CURRENT_DATE,

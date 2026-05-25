@@ -35,7 +35,7 @@ test.describe('Login page', () => {
   test('shows email and password fields', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByLabel('Email')).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Password' })).toBeVisible();
   });
 
   test('shows Sign in button', async ({ page }) => {

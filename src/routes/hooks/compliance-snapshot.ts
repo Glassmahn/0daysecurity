@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
-import { CONTROL_STATUS } from '@/lib/constants'
 
 export const Route = createFileRoute('/hooks/compliance-snapshot')({
   server: {
@@ -32,64 +31,53 @@ export const Route = createFileRoute('/hooks/compliance-snapshot')({
           })
         }
 
-        const totalControls = controls?.length || 1
-        const passingControls = controls?.filter(
-          (c) => c.status === CONTROL_STATUS.IMPLEMENTED
-        ).length || 0
-        const controlsPct = Math.round((passingControls / totalControls) * 100)
+        // Group controls by framework
+        const byFramework = new Map<string, {
+          total: number; implemented: number; in_progress: number; failing: number; not_started: number
+        }>()
 
-        // Fetch evidence stats
-        const { count: totalEvidence } = await supabase
-          .from('evidence')
-          .select('id', { count: 'exact', head: true })
-        const { count: validEvidence } = await supabase
-          .from('evidence')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'valid')
-        const evidencePct = totalEvidence
-          ? Math.round(((validEvidence || 0) / totalEvidence) * 100)
-          : 0
+        for (const ctrl of controls ?? []) {
+          if (!byFramework.has(ctrl.framework_id)) {
+            byFramework.set(ctrl.framework_id, {
+              total: 0, implemented: 0, in_progress: 0, failing: 0, not_started: 0,
+            })
+          }
+          const bucket = byFramework.get(ctrl.framework_id)!
+          bucket.total++
+          const s = ctrl.status ?? 'not_started'
+          if (s === 'implemented') bucket.implemented++
+          else if (s === 'in_progress') bucket.in_progress++
+          else if (s === 'failing') bucket.failing++
+          else bucket.not_started++
+        }
 
-        // Overall score
-        const overallScore = Math.round((controlsPct + evidencePct) / 2)
-
-        // Per-framework breakdown
+        // Fetch framework names
         const { data: frameworks } = await supabase
           .from('frameworks')
-          .select('id, name, score, enabled')
-          .eq('enabled', true)
-        const frameworksData = (frameworks || []).map((fw) => {
-          const fwControls = controls?.filter(
-            (c) => c.framework_id === fw.id
-          ) || []
-          const fwTotal = fwControls.length || 1
-          const fwPassing = fwControls.filter(
-            (c) => c.status === CONTROL_STATUS.IMPLEMENTED
-          ).length
-          return {
-            id: fw.id,
-            name: fw.name,
-            score: fw.score,
-            controlsPct: Math.round((fwPassing / fwTotal) * 100),
-          }
-        })
+          .select('id, name')
 
-        // Upsert snapshot for today
-        const { error: insertErr } = await supabase
+        const fwName = new Map((frameworks ?? []).map(f => [f.id, f.name]))
+
+        const today = new Date().toISOString().split('T')[0]
+        const rows = [...byFramework.entries()].map(([fwId, b]) => ({
+          snapshot_date: today,
+          framework: fwName.get(fwId) ?? fwId,
+          total_controls: b.total,
+          implemented: b.implemented,
+          in_progress: b.in_progress,
+          failing: b.failing,
+          not_started: b.not_started,
+          score_pct: b.total > 0
+            ? Math.round((b.implemented / b.total) * 10000) / 100
+            : 0,
+        }))
+
+        const { error: upsertErr } = await supabase
           .from('compliance_snapshots')
-          .upsert(
-            {
-              snapshot_date: new Date().toISOString().split('T')[0],
-              overall_score: overallScore,
-              controls_passing_pct: controlsPct,
-              evidence_valid_pct: evidencePct,
-              frameworks_data: frameworksData,
-            },
-            { onConflict: 'snapshot_date' }
-          )
+          .upsert(rows, { onConflict: 'snapshot_date,framework' })
 
-        if (insertErr) {
-          return new Response(JSON.stringify({ error: insertErr.message }), {
+        if (upsertErr) {
+          return new Response(JSON.stringify({ error: upsertErr.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           })
@@ -98,11 +86,7 @@ export const Route = createFileRoute('/hooks/compliance-snapshot')({
         return new Response(
           JSON.stringify({
             success: true,
-            snapshot: {
-              overall_score: overallScore,
-              controls_passing_pct: controlsPct,
-              evidence_valid_pct: evidencePct,
-            },
+            snapshot: { snapshot_date: today, frameworks: rows.length },
           }),
           { headers: { 'Content-Type': 'application/json' } }
         )

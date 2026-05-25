@@ -15,6 +15,8 @@ export function SortableHeader({ label, column, currentColumn, direction, onSort
 
   return (
     <th
+      scope="col"
+      aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
       className={`px-4 py-3 text-xs font-semibold text-muted-foreground select-none cursor-pointer hover:text-foreground transition-colors ${className}`}
       onClick={() => onSort(column)}
     >

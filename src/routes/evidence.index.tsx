@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ElementType } from 'react';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
 import { useBulkSelection } from '@/hooks/use-bulk-selection';
-import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2, Download, Paperclip, Filter } from 'lucide-react';
+import { Search, Loader2, CheckCircle, Clock, XCircle, AlertTriangle, FileText, Plus, Pencil, Trash2, Download, Paperclip, Filter, AlertCircle, Package } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { exportToCsv } from '@/lib/export-csv';
 import { usePagination } from '@/hooks/use-pagination';
 import { TablePagination } from '@/components/crud/TablePagination';
@@ -33,11 +34,12 @@ export const Route = createFileRoute('/evidence/')({
   }),
 });
 
-const statusConfig: Record<string, { style: string; icon: React.ElementType; label: string }> = {
+const statusConfig: Record<string, { style: string; icon: ElementType; label: string }> = {
   valid: { style: 'bg-status-passing/12 text-status-passing', icon: CheckCircle, label: 'Valid' },
   pending_review: { style: 'bg-status-in-progress/12 text-status-in-progress', icon: Clock, label: 'Pending Review' },
   expired: { style: 'bg-status-failing/12 text-status-failing', icon: XCircle, label: 'Expired' },
   rejected: { style: 'bg-muted text-muted-foreground', icon: AlertTriangle, label: 'Rejected' },
+  needs_recollection: { style: 'bg-chart-5/15 text-chart-5', icon: AlertTriangle, label: 'Needs Recollection' },
 };
 
 const evidenceFields: FieldDef[] = [
@@ -63,6 +65,7 @@ const evidenceFields: FieldDef[] = [
     name: 'source', label: 'Source', type: 'select', required: true,
     options: [{ value: 'manual', label: 'Manual Upload' }, { value: 'auto', label: 'Auto-Collected' }],
   },
+  { name: 'file_url', label: 'Attach File', type: 'file' },
 ];
 
 const evidenceStatusOptions = evidenceFields.find(f => f.name === 'status')!.options!;
@@ -70,18 +73,18 @@ const evidenceStatusOptions = evidenceFields.find(f => f.name === 'status')!.opt
 function EvidencePage() {
   const navigate = useNavigate({ from: '/evidence/' });
   const { status: statusFilter, type: typeFilter, source: sourceFilter, q: search } = Route.useSearch();
-  const { data: evidence, loading, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('evidence');
+  const { data: evidence, loading, error, refetch, insert, update, remove, bulkRemove, bulkUpdate } = useSupabaseCrud('evidence');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [packageDialog, setPackageDialog] = useState<{ open: boolean; loading: boolean; url: string | null; error: string | null }>({ open: false, loading: false, url: null, error: null });
 
   const filtered = useMemo(() => {
     return evidence.filter(e => {
       if (statusFilter !== 'all' && e.status !== statusFilter) return false;
       if (typeFilter !== 'all' && e.type !== typeFilter) return false;
-      if (sourceFilter === 'auto' && e.source !== 'auto') return false;
-      if (sourceFilter === 'manual' && e.source !== 'manual') return false;
+      if (sourceFilter !== 'all' && e.source !== sourceFilter) return false;
       if (search) return e.title.toLowerCase().includes(search.toLowerCase());
       return true;
     });
@@ -107,7 +110,20 @@ function EvidencePage() {
 
   const usedTypes = useMemo(() => [...new Set(evidence.map(e => e.type))].sort(), [evidence]);
 
-  if (loading) {
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
+        <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+        </div>
+        <p className="text-sm font-medium text-destructive">Failed to load evidence</p>
+        <p className="text-xs text-muted-foreground max-w-md text-center">{error}</p>
+        <button onClick={refetch} className="text-xs text-primary hover:underline cursor-pointer">Try again</button>
+      </div>
+    );
+  }
+
+  if (loading && !evidence.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 animate-fade-up">
         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -128,7 +144,7 @@ function EvidencePage() {
           </div>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground tracking-tight">Evidence</h1>
-            <p className="text-sm text-muted-foreground">{evidence.length} items collected</p>
+            <p className="text-sm text-muted-foreground">{evidence.length} items collected{loading && <span className="inline-flex items-center gap-1 ml-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" />refreshing</span>}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -143,6 +159,14 @@ function EvidencePage() {
               { key: 'source', label: 'Source' }, { key: 'collected_at', label: 'Collected' }, { key: 'expires_at', label: 'Expires' },
             ])} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
             <Download className="h-4 w-4" /> Export
+          </button>
+          <button onClick={async () => {
+            setPackageDialog({ open: true, loading: true, url: null, error: null });
+            const { data, error: fnError } = await supabase.functions.invoke('generate-evidence-package', { body: {} });
+            if (fnError) setPackageDialog({ open: true, loading: false, url: null, error: fnError.message });
+            else setPackageDialog({ open: true, loading: false, url: data.url, error: null });
+          }} className="flex items-center gap-1.5 px-3.5 py-2 border border-border/60 rounded-xl text-sm font-medium hover:bg-accent hover:border-primary/30 transition-all text-foreground">
+            <Package className="h-4 w-4" /> Export Package
           </button>
           <WriteGuard>
             <button onClick={() => { setEditing(null); setFormOpen(true); }}
@@ -173,14 +197,14 @@ function EvidencePage() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search evidence..." value={search} onChange={e => updateSearch({ q: e.target.value })}
+          <input type="text" aria-label="Search evidence" placeholder="Search evidence..." value={search} onChange={e => updateSearch({ q: e.target.value })}
             className="w-full pl-10 pr-4 py-2.5 bg-card border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all" />
         </div>
         <select value={statusFilter} onChange={e => updateSearch({ status: e.target.value })}
           className={`bg-card border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${statusFilter !== 'all' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
           <option value="all">All Statuses</option>
           <option value="valid">Valid</option><option value="pending_review">Pending Review</option>
-          <option value="expired">Expired</option><option value="rejected">Rejected</option>
+          <option value="expired">Expired</option><option value="rejected">Rejected</option><option value="needs_recollection">Needs Recollection</option>
         </select>
         {usedTypes.length > 1 && (
           <select value={typeFilter} onChange={e => updateSearch({ type: e.target.value })}
@@ -209,7 +233,7 @@ function EvidencePage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/60 text-left bg-surface/50">
-              <th className="px-3 py-3.5 w-10">
+              <th scope="col" className="px-3 py-3.5 w-10">
                 <input type="checkbox" checked={bulk.allSelected} ref={el => { if (el) el.indeterminate = bulk.someSelected; }}
                   onChange={bulk.toggleAll} className="rounded-md border-border" />
               </th>
@@ -218,7 +242,7 @@ function EvidencePage() {
               <SortableHeader label="Source" column="source" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden md:table-cell" />
               <SortableHeader label="Status" column="status" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} />
               <SortableHeader label="Collected" column="collected_at" currentColumn={sort.column} direction={sort.direction} onSort={toggleSort} className="hidden lg:table-cell" />
-              <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
+              <th scope="col" className="px-4 py-3.5 text-xs font-semibold text-muted-foreground w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -231,7 +255,10 @@ function EvidencePage() {
                   <td className="px-3 py-3.5" onClick={ev => ev.stopPropagation()}>
                     <input type="checkbox" checked={bulk.isSelected(e.id)} onChange={() => bulk.toggle(e.id)} className="rounded-md border-border" />
                   </td>
-                  <td className="px-4 py-3.5 text-foreground font-medium">{e.title}</td>
+                  <td className="px-4 py-3.5 text-foreground font-medium">
+                    {e.title}
+                    {e.file_url && <Paperclip className="h-3 w-3 inline ml-1.5 text-muted-foreground" />}
+                  </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5 text-muted-foreground" />
@@ -277,11 +304,44 @@ function EvidencePage() {
       <EntityFormDialog open={formOpen} onOpenChange={setFormOpen}
         title={editing ? 'Edit Evidence' : 'Add Evidence'} fields={evidenceFields}
         initialValues={editing ?? undefined}
-        onSubmit={async (vals) => { const { _id, ...data } = vals as any; if (_id) return update(String(_id), data); return insert(data); }} />
+        onSubmit={async (vals) => { const { _id, ...data } = vals; if (_id) return update(String(_id), data); return insert(data); }} />
 
       <DeleteConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title={deleteTarget?.title ?? 'evidence'}
         onConfirm={async () => deleteTarget ? remove(deleteTarget.id) : false} />
+
+      {packageDialog.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-labelledby="evidence-package-title" onClick={() => setPackageDialog({ ...packageDialog, open: false })}>
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-foreground mb-2" id="evidence-package-title">Evidence Package</h3>
+            {packageDialog.loading && (
+              <div className="flex items-center gap-3 py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Generating evidence package...</p>
+              </div>
+            )}
+            {packageDialog.error && (
+              <div className="py-4">
+                <p className="text-sm text-destructive mb-2">Failed to generate package</p>
+                <p className="text-xs text-muted-foreground">{packageDialog.error}</p>
+              </div>
+            )}
+            {packageDialog.url && (
+              <div className="py-4 space-y-3">
+                <p className="text-sm text-status-passing">Package generated successfully!</p>
+                <a href={packageDialog.url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors w-fit">
+                  <Download className="h-4 w-4" /> Download PDF
+                </a>
+              </div>
+            )}
+            <button onClick={() => setPackageDialog({ ...packageDialog, open: false })}
+              className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

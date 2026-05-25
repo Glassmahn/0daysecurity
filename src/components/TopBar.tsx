@@ -1,10 +1,11 @@
-import { Search, Bell, Sun, Moon, Menu, LogOut } from 'lucide-react';
+import { Search, Bell, Sun, Moon, Menu, LogOut, Building2, Check, ChevronsUpDown } from 'lucide-react';
 import { CommandSearch } from './CommandSearch';
 import { useThemeStore } from '@/hooks/use-theme';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from '@tanstack/react-router';
 import { useSupabaseCrud } from '@/hooks/use-supabase-crud';
+import { useOrg } from '@/hooks/use-org';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ export function TopBar() {
   const navigate = useNavigate();
   const { data: alerts } = useSupabaseCrud('alerts');
   const openAlertCount = alerts?.filter((a: { status: string }) => a.status === 'open').length ?? 0;
+  const { currentOrg, orgs, switchOrg } = useOrg();
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
@@ -34,6 +36,32 @@ export function TopBar() {
           >
             <Menu className="h-5 w-5 text-foreground" />
           </button>
+
+          {currentOrg && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/5 border border-primary/10 rounded-lg hover:bg-primary/10 transition-all cursor-pointer">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium text-foreground">{currentOrg.name}</span>
+                  {orgs.length > 1 && <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />}
+                </button>
+              </DropdownMenuTrigger>
+              {orgs.length > 1 && (
+                <DropdownMenuContent align="start" className="w-56 rounded-xl p-1.5">
+                  {orgs.map((org) => (
+                    <DropdownMenuItem
+                      key={org.id}
+                      onClick={() => switchOrg(org.id)}
+                      className="flex items-center justify-between rounded-lg"
+                    >
+                      <span className="text-sm">{org.name}</span>
+                      {org.id === currentOrg.id && <Check className="h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              )}
+            </DropdownMenu>
+          )}
 
           <button
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}

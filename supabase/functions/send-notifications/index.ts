@@ -1,8 +1,9 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders, handleCors, errorResponse } from '../_shared/cors.ts';
 import { buildCriticalAlertEmail, buildEvidenceExpiryEmail, buildWeeklyDigestEmail } from './email-templates.ts';
 
-const RESEND_API_URL = 'https://api.resend.com/emails';
-const FROM_ADDRESS = 'ZeroDay Security <notifications@zeroday.security>';
+const RESEND_API_URL = Deno.env.get('RESEND_API_URL') ?? 'https://api.resend.com/emails';
+const FROM_ADDRESS = Deno.env.get('FROM_ADDRESS') ?? 'ZeroDay Security <notifications@zeroday.security>';
 
 interface NotificationPrefs {
   user_id: string;
@@ -14,13 +15,20 @@ interface NotificationPrefs {
 }
 
 Deno.serve(async (req) => {
-  // Only accept POST from our own service-role caller (pg_cron / manual trigger).
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
+  const corsRes = handleCors(req);
+  if (corsRes) return corsRes;
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  if (req.headers.get('Authorization') !== `Bearer ${serviceKey}`) {
+    return errorResponse('Unauthorized', 401);
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
+    }
   const resendKey   = Deno.env.get('RESEND_API_KEY');
 
   if (!resendKey) {
@@ -46,7 +54,7 @@ Deno.serve(async (req) => {
 
   if (prefsError) {
     console.error('Failed to fetch notification_preferences:', prefsError);
-    return new Response(JSON.stringify({ error: prefsError.message }), { status: 500 });
+    return errorResponse(prefsError.message, 500);
   }
 
   // Resolve email addresses from auth.users for each user_id.
@@ -54,7 +62,7 @@ Deno.serve(async (req) => {
   const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
   if (authError) {
     console.error('Failed to list auth users:', authError);
-    return new Response(JSON.stringify({ error: authError.message }), { status: 500 });
+    return errorResponse(authError.message, 500);
   }
 
   const emailMap = new Map<string, string>(
@@ -152,6 +160,11 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({ sent }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('send-notifications error:', message);
+    return errorResponse(message, 500);
+  }
 });

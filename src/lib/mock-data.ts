@@ -7,6 +7,7 @@ export interface KPIData {
   deltaLabel: string;
   href: string;
   icon: string;
+  isPositive: boolean;
 }
 
 export interface Alert {
@@ -87,14 +88,14 @@ export interface PriorityItem {
 }
 
 export const kpiData: KPIData[] = [
-  { label: 'Compliance Score', value: '73%', delta: 4.2, deltaLabel: 'vs last period', href: '/frameworks', icon: 'shield-check' },
-  { label: 'Controls Passing', value: 31, delta: 3, deltaLabel: 'vs last period', href: '/controls', icon: 'check-circle' },
-  { label: 'Controls Failing', value: 8, delta: -2, deltaLabel: 'vs last period', href: '/controls', icon: 'x-circle' },
-  { label: 'Open Critical', value: 20, delta: 5, deltaLabel: 'vs last period', href: '/alerts', icon: 'alert-triangle' },
-  { label: 'Open High', value: 30, delta: -3, deltaLabel: 'vs last period', href: '/alerts', icon: 'alert-circle' },
-  { label: 'MTTA', value: '12m', delta: -18, deltaLabel: '% vs last period', href: '/alerts', icon: 'clock' },
-  { label: 'Evidence Expiring', value: 14, delta: 6, deltaLabel: 'next 30 days', href: '/evidence', icon: 'file-warning' },
-  { label: 'Overdue Reviews', value: 5, delta: 2, deltaLabel: 'vs last period', href: '/personnel', icon: 'user-x' },
+  { label: 'Compliance Score', value: '73%', delta: 4.2, deltaLabel: 'vs last period', href: '/frameworks', icon: 'shield-check', isPositive: true },
+  { label: 'Controls Passing', value: 31, delta: 3, deltaLabel: 'vs last period', href: '/controls', icon: 'check-circle', isPositive: true },
+  { label: 'Controls Failing', value: 8, delta: -2, deltaLabel: 'vs last period', href: '/controls', icon: 'x-circle', isPositive: false },
+  { label: 'Open Critical', value: 20, delta: 5, deltaLabel: 'vs last period', href: '/alerts', icon: 'alert-triangle', isPositive: false },
+  { label: 'Open High', value: 30, delta: -3, deltaLabel: 'vs last period', href: '/alerts', icon: 'alert-circle', isPositive: false },
+  { label: 'MTTA', value: '12m', delta: -18, deltaLabel: '% vs last period', href: '/alerts', icon: 'clock', isPositive: false },
+  { label: 'Evidence Expiring', value: 14, delta: 6, deltaLabel: 'next 30 days', href: '/evidence', icon: 'file-warning', isPositive: false },
+  { label: 'Overdue Reviews', value: 5, delta: 2, deltaLabel: 'vs last period', href: '/personnel', icon: 'user-x', isPositive: false },
 ];
 
 export const frameworkPostureData = [

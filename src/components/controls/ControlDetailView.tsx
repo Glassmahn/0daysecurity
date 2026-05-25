@@ -1,24 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { enrichedControls, frameworkCatalog, evidenceTypes as evidenceTypeCatalog } from '@/lib/framework-catalog';
-import { evidenceItems } from '@/lib/mock-data-extended';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { Progress } from '@/components/ui/progress';
 import {
-  ArrowLeft, Shield, CheckCircle2, XCircle, Clock, AlertTriangle, Zap,
-  FileText, Image, Settings, PenTool, ScrollText, CloudDownload, Scan,
-  GraduationCap, UserCheck, ShieldAlert, Building2, GitPullRequest,
-  Database, Network as NetworkIcon, Ticket, User, Calendar, Activity,
-  History, Layers, Eye
+  ArrowLeft, Shield, CheckCircle2, XCircle, Clock, AlertTriangle,
+  User, Calendar, Activity,
+  History, Layers, Eye, Loader2, FileText
 } from 'lucide-react';
-
-const typeIcons: Record<string, React.ElementType> = {
-  screenshot: Image, document: FileText, api_pull: CloudDownload,
-  config_export: Settings, attestation: PenTool, log: ScrollText,
-  scan_result: Scan, training_record: GraduationCap, access_review: UserCheck,
-  pen_test: ShieldAlert, risk_assessment: AlertTriangle, vendor_report: Building2,
-  code_review: GitPullRequest, backup_verification: Database,
-  network_diagram: NetworkIcon, change_ticket: Ticket,
-};
+import { toast } from 'sonner';
 
 const statusStyles: Record<string, { style: string; bg: string; icon: React.ElementType }> = {
   implemented: { style: 'text-status-passing', bg: 'bg-status-passing/15 text-status-passing', icon: CheckCircle2 },
@@ -28,97 +18,97 @@ const statusStyles: Record<string, { style: string; bg: string; icon: React.Elem
   not_applicable: { style: 'text-muted-foreground', bg: 'bg-muted text-muted-foreground', icon: Eye },
 };
 
-const evidenceStatusConfig: Record<string, { style: string; icon: React.ElementType }> = {
-  valid: { style: 'bg-status-passing/15 text-status-passing', icon: CheckCircle2 },
-  expiring: { style: 'bg-status-in-progress/15 text-status-in-progress', icon: Clock },
-  expired: { style: 'bg-status-failing/15 text-status-failing', icon: XCircle },
-  rejected: { style: 'bg-muted text-muted-foreground', icon: AlertTriangle },
-};
-
-// Mock test history per control
-const testHistory: Record<string, Array<{
-  date: string;
-  result: 'pass' | 'fail' | 'partial';
-  tester: string;
-  method: 'automated' | 'manual';
-  notes: string;
-  duration: string;
-}>> = {
-  'ec-1': [
-    { date: '2026-04-10', result: 'pass', tester: 'System', method: 'automated', notes: 'All access policies validated via Okta API', duration: '0m 45s' },
-    { date: '2026-04-03', result: 'pass', tester: 'System', method: 'automated', notes: 'Weekly automated check passed', duration: '0m 42s' },
-    { date: '2026-03-27', result: 'pass', tester: 'System', method: 'automated', notes: 'Weekly automated check passed', duration: '0m 48s' },
-    { date: '2026-03-20', result: 'partial', tester: 'James Wilson', method: 'manual', notes: 'Found 2 service accounts without proper access scoping — remediated same day', duration: '15m' },
-    { date: '2026-03-13', result: 'pass', tester: 'System', method: 'automated', notes: 'Weekly automated check passed', duration: '0m 44s' },
-  ],
-  'ec-6': [
-    { date: '2026-04-11', result: 'fail', tester: 'System', method: 'automated', notes: '3 admin accounts without PAM enrollment; root access detected on 2 servers', duration: '1m 10s' },
-    { date: '2026-04-04', result: 'fail', tester: 'System', method: 'automated', notes: '4 admin accounts without PAM enrollment', duration: '1m 05s' },
-    { date: '2026-03-28', result: 'fail', tester: 'Sarah Chen', method: 'manual', notes: 'PAM solution deployment only 35% complete', duration: '30m' },
-    { date: '2026-03-14', result: 'fail', tester: 'System', method: 'automated', notes: 'No PAM solution in place', duration: '0m 55s' },
-  ],
-  'ec-8': [
-    { date: '2026-04-11', result: 'fail', tester: 'System', method: 'automated', notes: 'S3 PHI bucket and 2 EBS volumes missing encryption', duration: '0m 30s' },
-    { date: '2026-04-04', result: 'fail', tester: 'System', method: 'automated', notes: 'Same findings — no remediation progress', duration: '0m 28s' },
-    { date: '2026-03-21', result: 'fail', tester: 'Alex Kim', method: 'manual', notes: 'Identified all unencrypted resources; created remediation plan', duration: '45m' },
-  ],
-  'ec-14': [
-    { date: '2026-04-04', result: 'pass', tester: 'Maria Garcia', method: 'manual', notes: 'Tabletop exercise completed with full team participation', duration: '2h 30m' },
-    { date: '2026-01-10', result: 'pass', tester: 'Maria Garcia', method: 'manual', notes: 'Quarterly IRP review — minor updates to escalation matrix', duration: '1h 15m' },
-    { date: '2025-10-05', result: 'partial', tester: 'Sarah Chen', method: 'manual', notes: 'Tabletop revealed gaps in PHI breach notification timeline', duration: '2h' },
-  ],
-};
-
-// Mock implementation timeline
-const implTimeline: Record<string, Array<{
-  date: string;
-  event: string;
-  actor: string;
-  pctChange: string;
-}>> = {
-  'ec-1': [
-    { date: '2026-04-10', event: 'Automated test passed — control verified', actor: 'System', pctChange: '100%' },
-    { date: '2026-02-20', event: 'SSO integration completed for remaining 3 apps', actor: 'Alex Kim', pctChange: '100%' },
-    { date: '2026-01-15', event: 'Okta RBAC policies deployed for production systems', actor: 'James Wilson', pctChange: '85%' },
-    { date: '2025-11-01', event: 'Access control policy v2.0 approved', actor: 'Sarah Chen', pctChange: '60%' },
-    { date: '2025-08-15', event: 'Initial implementation — centralized identity provider', actor: 'Alex Kim', pctChange: '40%' },
-    { date: '2025-06-01', event: 'Control identified and scoped', actor: 'Sarah Chen', pctChange: '0%' },
-  ],
-  'ec-6': [
-    { date: '2026-04-11', event: 'Test failed — 3 accounts still without PAM', actor: 'System', pctChange: '35%' },
-    { date: '2026-03-15', event: 'PAM solution procurement approved', actor: 'Sarah Chen', pctChange: '35%' },
-    { date: '2026-02-01', event: 'Vendor evaluation completed — selected CyberArk', actor: 'Alex Kim', pctChange: '20%' },
-    { date: '2025-12-01', event: 'Control identified as gap during SOC 2 readiness', actor: 'Sandra White', pctChange: '0%' },
-  ],
-  'ec-8': [
-    { date: '2026-04-11', event: 'Test failed — PHI bucket still unencrypted', actor: 'System', pctChange: '40%' },
-    { date: '2026-03-21', event: 'Remediation plan created for unencrypted resources', actor: 'Alex Kim', pctChange: '40%' },
-    { date: '2026-02-15', event: 'AWS Config rule deployed to detect unencrypted resources', actor: 'David Park', pctChange: '40%' },
-    { date: '2025-12-01', event: 'Encryption at rest policy approved', actor: 'Sarah Chen', pctChange: '20%' },
-    { date: '2025-09-01', event: 'Control scoped — inventory of data stores completed', actor: 'Alex Kim', pctChange: '10%' },
-  ],
-};
-
-// Control to evidence ref mapping (using controlRef from evidenceItems)
-const controlRefToEnrichedRef: Record<string, string> = {
-  'CC-6.1': 'ec-1', 'CC-6.2': 'ec-2', 'CC-6.3': 'ec-3', 'CC-7.1': 'ec-7',
-  'CC-7.2': 'ec-8', 'CC-6.6': 'ec-11', 'CC-7.3': 'ec-20', 'CC-6.8': 'ec-18',
-  'HP-1.1': 'ec-1', 'HP-1.2': 'ec-8', 'HP-2.1': 'ec-23', 'HP-3.1': 'ec-14',
-};
-
-const enrichedRefToControlRef: Record<string, string[]> = {};
-Object.entries(controlRefToEnrichedRef).forEach(([cRef, eRef]) => {
-  if (!enrichedRefToControlRef[eRef]) enrichedRefToControlRef[eRef] = [];
-  enrichedRefToControlRef[eRef].push(cRef);
-});
-
 interface ControlDetailViewProps {
   controlId: string;
 }
 
 export function ControlDetailView({ controlId }: ControlDetailViewProps) {
-  const control = enrichedControls.find(c => c.id === controlId || c.ref === controlId);
-  const [activeTab, setActiveTab] = useState<'evidence' | 'tests' | 'timeline' | 'frameworks'>('evidence');
+  const [control, setControl] = useState<Tables<'controls'> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'evidence' | 'tests' | 'timeline' | 'frameworks' | 'policies'>('evidence');
+  const [evidenceItems, setEvidenceItems] = useState<Tables<'evidence'>[]>([]);
+  const [policies, setPolicies] = useState<Tables<'policies'>[]>([]);
+  const [personnel, setPersonnel] = useState<string[]>([]);
+  const [editingOwner, setEditingOwner] = useState(false);
+  const [ownerValue, setOwnerValue] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      setEditingOwner(false);
+      try {
+        const { data, error: err } = await supabase
+          .from('controls')
+          .select('*')
+          .eq('id', controlId)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (err) { setError(err.message); setLoading(false); return; }
+
+        let ctrl = data;
+        if (!data) {
+          const { data: byCode } = await supabase
+            .from('controls')
+            .select('*')
+            .eq('code', controlId)
+            .maybeSingle();
+          if (!cancelled) ctrl = byCode;
+        }
+
+        if (!cancelled) {
+          setControl(ctrl);
+
+          if (ctrl) {
+            const [evData, polData, perData] = await Promise.all([
+              supabase.from('evidence').select('*').contains('control_ids', [ctrl.id]).limit(20),
+              ctrl.framework_id
+                ? supabase.from('policies').select('*').eq('framework_id', ctrl.framework_id).limit(20)
+                : Promise.resolve({ data: [] }),
+              supabase.from('personnel').select('name'),
+            ]);
+            if (!cancelled) {
+              setEvidenceItems(evData.data ?? []);
+              setPolicies(polData.data ?? []);
+              if (perData.data) setPersonnel(perData.data.map(p => p.name).filter(Boolean) as string[]);
+            }
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load control');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [controlId]);
+
+  async function handleOwnerSave() {
+    if (!control) return;
+    const { error: err } = await supabase.from('controls').update({ owner_id: ownerValue }).eq('id', control.id);
+    if (err) { toast.error('Failed to update owner'); return; }
+    setControl({ ...control, owner_id: ownerValue });
+    setEditingOwner(false);
+    toast.success('Owner updated');
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <AlertTriangle className="h-12 w-12 text-severity-critical" />
+        <p className="text-sm text-severity-critical">{error}</p>
+        <Link to="/controls" className="text-primary hover:underline text-sm">← Back to Controls</Link>
+      </div>
+    );
+  }
 
   if (!control) {
     return (
@@ -130,34 +120,24 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
     );
   }
 
-  const sc = statusStyles[control.status];
+  const sc = statusStyles[control.status] || statusStyles.not_implemented;
   const StatusIcon = sc.icon;
 
-  // Get linked evidence items
-  const controlRefs = enrichedRefToControlRef[controlId] || [];
-  const linkedEvidence = evidenceItems.filter(e => controlRefs.includes(e.controlRef));
+  const tests: { date: string; result: 'pass' | 'fail' | 'partial'; tester: string; method: 'automated' | 'manual'; notes: string; duration: string }[] = control.last_reviewed ? [
+    { date: control.last_reviewed, result: control.status === 'implemented' ? 'pass' as const : 'fail' as const, tester: control.owner_id ?? 'System', method: 'manual' as const, notes: `Status: ${control.status.replace('_', ' ')}`, duration: '—' },
+  ] : [];
 
-  const tests = testHistory[controlId] || [
-    { date: control.lastTested || '—', result: control.status === 'implemented' ? 'pass' as const : 'fail' as const, tester: control.owner, method: control.automatable ? 'automated' as const : 'manual' as const, notes: 'Latest test result', duration: '—' },
-  ];
-
-  const timeline = implTimeline[controlId] || [
-    { date: control.lastTested || '—', event: `Current status: ${control.status.replace('_', ' ')}`, actor: control.owner, pctChange: `${control.implementationPct}%` },
-  ];
-
-  const linkedFrameworks = control.crossMappings.map(m => {
-    const fw = frameworkCatalog.find(f => f.standard === m.framework);
-    return { ...m, frameworkName: fw?.name || m.framework, enabled: fw?.enabled || false, compliancePct: fw?.compliancePct || 0 };
-  });
+  const timeline: { date: string; event: string; actor: string; pctChange: string }[] = control.last_reviewed ? [
+    { date: control.last_reviewed, event: `Current status: ${control.status.replace('_', ' ')}`, actor: control.owner_id ?? 'System', pctChange: `${control.implementation_details ? 'In progress' : 'N/A'}` },
+  ] : [];
 
   const passRate = tests.length > 0 ? Math.round((tests.filter(t => t.result === 'pass').length / tests.length) * 100) : 0;
-  const validEvidence = linkedEvidence.filter(e => e.status === 'valid').length;
 
   const tabs = [
-    { key: 'evidence' as const, label: 'Evidence', count: linkedEvidence.length },
+    { key: 'evidence' as const, label: 'Evidence', count: evidenceItems.length },
     { key: 'tests' as const, label: 'Test History', count: tests.length },
-    { key: 'timeline' as const, label: 'Implementation', count: null },
-    { key: 'frameworks' as const, label: 'Frameworks', count: linkedFrameworks.length },
+    { key: 'policies' as const, label: 'Policies', count: policies.length },
+    { key: 'timeline' as const, label: 'Timeline', count: null },
   ];
 
   return (
@@ -171,22 +151,42 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-mono text-xs text-primary font-bold">{control.ref}</span>
+            <span className="font-mono text-xs text-primary font-bold">{control.code}</span>
             <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${sc.bg}`}>
               <StatusIcon className="h-3 w-3" /> {control.status.replace(/_/g, ' ')}
             </span>
-            {control.automatable && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-chart-1/15 text-chart-1">
-                <Zap className="h-3 w-3" /> Automatable
-              </span>
-            )}
           </div>
           <h1 className="text-lg font-bold text-foreground">{control.title}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{control.description}</p>
+          {control.description && (
+            <p className="text-sm text-muted-foreground mt-1">{control.description}</p>
+          )}
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
-            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" /> Owner: <strong className="text-foreground">{control.owner}</strong></span>
-            <span className="flex items-center gap-1"><Layers className="h-3.5 w-3.5" /> {control.category}</span>
-            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Test: <strong className="text-foreground capitalize">{control.testFrequency}</strong></span>
+            <span className="flex items-center gap-1">
+              <User className="h-3.5 w-3.5" /> Owner:{' '}
+              {editingOwner ? (
+                <span className="flex items-center gap-1">
+                  <select
+                    value={ownerValue}
+                    onChange={e => setOwnerValue(e.target.value)}
+                    className="bg-card border border-border rounded px-2 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  >
+                    <option value="">Unassigned</option>
+                    {personnel.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <button onClick={handleOwnerSave} className="p-0.5 rounded hover:bg-status-passing/15 text-status-passing"><CheckCircle2 className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setEditingOwner(false)} className="p-0.5 rounded hover:bg-destructive/15 text-destructive"><XCircle className="h-3.5 w-3.5" /></button>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <strong className="text-foreground">{control.owner_id ?? 'Unassigned'}</strong>
+                  <button onClick={() => { setOwnerValue(control.owner_id ?? ''); setEditingOwner(true); }} className="p-0.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                </span>
+              )}
+            </span>
+            <span className="flex items-center gap-1"><Layers className="h-3.5 w-3.5" /> {control.category ?? 'Uncategorized'}</span>
+            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Last reviewed: <strong className="text-foreground">{control.last_reviewed ? new Date(control.last_reviewed).toLocaleDateString('en-CA') : 'Never'}</strong></span>
           </div>
         </div>
       </div>
@@ -194,9 +194,9 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Implementation</div>
-          <div className="text-2xl font-bold text-foreground">{control.implementationPct}%</div>
-          <Progress value={control.implementationPct} className="mt-2 h-1.5" />
+          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Status</div>
+          <div className="text-2xl font-bold text-foreground capitalize">{control.status.replace('_', ' ')}</div>
+          <Progress value={control.status === 'implemented' ? 100 : control.status === 'in_progress' ? 50 : control.status === 'failing' ? 25 : 0} className="mt-2 h-1.5" />
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Test Pass Rate</div>
@@ -205,13 +205,13 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Evidence</div>
-          <div className="text-2xl font-bold text-foreground">{linkedEvidence.length}</div>
-          <div className="text-xs text-muted-foreground mt-1">{validEvidence} valid</div>
+          <div className="text-2xl font-bold text-foreground">{evidenceItems.length}</div>
+          <div className="text-xs text-muted-foreground mt-1">items collected</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Frameworks</div>
-          <div className="text-2xl font-bold text-foreground">{linkedFrameworks.length}</div>
-          <div className="text-xs text-muted-foreground mt-1">cross-mapped</div>
+          <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Policies</div>
+          <div className="text-2xl font-bold text-foreground">{policies.length}</div>
+          <div className="text-xs text-muted-foreground mt-1">linked</div>
         </div>
       </div>
 
@@ -230,69 +230,26 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
         ))}
       </div>
 
-      {/* Evidence Mapping */}
+      {/* Evidence */}
       {activeTab === 'evidence' && (
         <div className="space-y-4">
-          {/* Evidence types required */}
-          <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Required Evidence Types</h3>
-            <div className="flex flex-wrap gap-2">
-              {control.evidenceTypes.length === 0 ? (
-                <span className="text-xs text-muted-foreground italic">No evidence types specified</span>
-              ) : (
-                control.evidenceTypes.map(et => {
-                  const etInfo = evidenceTypeCatalog.find(e => e.id === et);
-                  const Icon = typeIcons[et] || FileText;
-                  const collected = linkedEvidence.filter(e => e.type === et).length;
-                  return (
-                    <div key={et} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-colors ${collected > 0 ? 'border-status-passing/30 bg-status-passing/5' : 'border-border'}`}>
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-medium text-foreground capitalize">{etInfo?.label || et.replace(/_/g, ' ')}</span>
-                      <span className={`text-[10px] font-bold ${collected > 0 ? 'text-status-passing' : 'text-muted-foreground'}`}>({collected})</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Collected evidence */}
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
-              <h3 className="text-sm font-semibold text-foreground">Collected Evidence ({linkedEvidence.length})</h3>
+              <h3 className="text-sm font-semibold text-foreground">Collected Evidence ({evidenceItems.length})</h3>
             </div>
-            {linkedEvidence.length === 0 ? (
+            {evidenceItems.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">No evidence collected for this control</div>
             ) : (
               <div className="divide-y divide-border">
-                {linkedEvidence.map(e => {
-                  const esc = evidenceStatusConfig[e.status];
-                  const EIcon = esc.icon;
-                  const TIcon = typeIcons[e.type] || FileText;
-                  return (
-                    <Link key={e.id} to="/evidence/$evidenceId" params={{ evidenceId: e.id }}>
-                      <div className="px-5 py-3 hover:bg-surface transition-colors cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <TIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-foreground truncate">{e.title}</div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                <span>{e.source}</span>
-                                <span>·</span>
-                                <span>{e.collectedAt}</span>
-                                {e.autoCollected && <Zap className="h-3 w-3 text-chart-1" />}
-                              </div>
-                            </div>
-                          </div>
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${esc.style}`}>
-                            <EIcon className="h-3 w-3" /> {e.status}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+                {evidenceItems.map(ev => (
+                  <div key={ev.id} className="px-5 py-3 hover:bg-surface transition-colors flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-foreground">{ev.title ?? 'Untitled'}</span>
+                      <p className="text-xs text-muted-foreground">{ev.description ?? ''}</p>
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{ev.status ?? '—'}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -307,34 +264,66 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
               <Activity className="h-4 w-4 text-muted-foreground" /> Test History ({tests.length})
             </h3>
           </div>
-          <div className="divide-y divide-border">
-            {tests.map((t, i) => {
-              const resultStyle = t.result === 'pass' ? 'bg-status-passing/15 text-status-passing' : t.result === 'fail' ? 'bg-status-failing/15 text-status-failing' : 'bg-status-in-progress/15 text-status-in-progress';
-              const ResultIcon = t.result === 'pass' ? CheckCircle2 : t.result === 'fail' ? XCircle : AlertTriangle;
-              return (
-                <div key={i} className="px-5 py-3 hover:bg-surface transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <ResultIcon className={`h-4 w-4 mt-0.5 shrink-0 ${t.result === 'pass' ? 'text-status-passing' : t.result === 'fail' ? 'text-severity-critical' : 'text-status-in-progress'}`} />
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-foreground">{t.date}</span>
-                          <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${resultStyle}`}>{t.result}</span>
-                          {t.method === 'automated' && <Zap className="h-3 w-3 text-chart-1" />}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">{t.notes}</p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span>By: {t.tester}</span>
-                          <span>·</span>
-                          <span>Duration: {t.duration}</span>
+          {tests.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-sm">No tests recorded</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {tests.map((t, i) => {
+                const resultStyle = t.result === 'pass' ? 'bg-status-passing/15 text-status-passing' : t.result === 'fail' ? 'bg-status-failing/15 text-status-failing' : 'bg-status-in-progress/15 text-status-in-progress';
+                const ResultIcon = t.result === 'pass' ? CheckCircle2 : t.result === 'fail' ? XCircle : AlertTriangle;
+                return (
+                  <div key={`${t.date}-${t.result}-${i}`} className="px-5 py-3 hover:bg-surface transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <ResultIcon className={`h-4 w-4 mt-0.5 shrink-0 ${t.result === 'pass' ? 'text-status-passing' : t.result === 'fail' ? 'text-severity-critical' : 'text-status-in-progress'}`} />
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-foreground">{t.date}</span>
+                            <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${resultStyle}`}>{t.result}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">{t.notes}</p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>By: {t.tester}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Policies */}
+      {activeTab === 'policies' && (
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="px-5 py-3 border-b border-border">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" /> Linked Policies ({policies.length})
+            </h3>
           </div>
+          {policies.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-sm">No policies linked to this control's framework</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {policies.map(p => (
+                <Link key={p.id} to="/policies/$policyId" params={{ policyId: p.id }} className="px-5 py-3 hover:bg-primary/[0.03] transition-colors flex items-center justify-between cursor-pointer">
+                  <div className="font-medium text-sm text-foreground">{p.title}</div>
+                  <div className="flex items-center gap-2">
+                    {p.version && <span className="text-[10px] text-muted-foreground">v{p.version}</span>}
+                    <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+                      p.status === 'active' ? 'bg-status-passing/15 text-status-passing' :
+                      p.status === 'draft' ? 'bg-muted text-muted-foreground' :
+                      p.status === 'review' ? 'bg-status-in-progress/15 text-status-in-progress' :
+                      'bg-muted text-muted-foreground'
+                    }`}>{p.status}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -344,59 +333,31 @@ export function ControlDetailView({ controlId }: ControlDetailViewProps) {
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" /> Implementation Timeline
           </h3>
-          <div className="relative">
-            <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
-            <div className="space-y-0">
-              {timeline.map((t, i) => (
-                <div key={i} className="relative pl-8 pb-5 last:pb-0">
-                  <div className={`absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 ${i === 0 ? 'bg-primary border-primary' : 'bg-card border-border'}`} />
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="text-xs font-bold text-foreground">{t.date}</span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono">{t.pctChange}</span>
+          {timeline.length === 0 ? (
+            <div className="text-center text-muted-foreground text-sm py-8">No implementation history available</div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
+              <div className="space-y-0">
+                {timeline.map((t, i) => (
+                  <div key={`${t.date}-${t.event}`} className="relative pl-8 pb-5 last:pb-0">
+                    <div className={`absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 ${i === 0 ? 'bg-primary border-primary' : 'bg-card border-border'}`} />
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <span className="text-xs font-bold text-foreground">{t.date}</span>
+                    </div>
+                    <p className="text-sm text-foreground">{t.event}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <User className="h-3 w-3" /> {t.actor}
+                    </p>
                   </div>
-                  <p className="text-sm text-foreground">{t.event}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                    <User className="h-3 w-3" /> {t.actor}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Frameworks */}
-      {activeTab === 'frameworks' && (
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Layers className="h-4 w-4 text-muted-foreground" /> Cross-Framework Mappings ({linkedFrameworks.length})
-          </h3>
-          <div className="space-y-2">
-            {linkedFrameworks.map((fw, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-surface transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-primary font-bold bg-primary/10 px-2 py-0.5 rounded">{fw.ref}</span>
-                  <div>
-                    <div className="text-sm font-medium text-foreground">{fw.frameworkName}</div>
-                    <div className="text-xs text-muted-foreground">{fw.framework}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {fw.enabled ? (
-                    <>
-                      <Progress value={fw.compliancePct} className="h-1.5 w-20" />
-                      <span className="text-xs font-bold text-foreground">{fw.compliancePct}%</span>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-status-passing/15 text-status-passing">Active</span>
-                    </>
-                  ) : (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Not Active</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Frameworks tab removed — uses framework_id column instead */}
     </div>
   );
 }

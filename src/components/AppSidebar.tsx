@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import {
   LayoutDashboard, Shield, ListChecks, Paperclip, AlertTriangle, Flame,
   Monitor, Users, FileText, AlertOctagon, ClipboardCheck, BarChart3,
-  Plug, Settings, ChevronLeft, ChevronRight, FlaskConical, Building2, BookOpen,
+  Plug, Settings, ChevronLeft, ChevronRight, FlaskConical, Building2, BookOpen, Eye, Globe, UserCheck, ClipboardList,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
@@ -23,17 +23,22 @@ const navItems: NavItem[] = [
   { label: 'Controls', icon: ListChecks, to: '/controls', group: 'Compliance' },
   { label: 'Evidence', icon: Paperclip, to: '/evidence', group: 'Compliance' },
   { label: 'Policies', icon: FileText, to: '/policies', group: 'Compliance' },
-  { label: 'Tests', icon: FlaskConical, to: '/tests', roles: ['admin', 'analyst'], group: 'Compliance' },
-  { label: 'Alerts', icon: AlertTriangle, to: '/alerts', roles: ['admin', 'analyst'], group: 'Operations' },
-  { label: 'Incidents', icon: Flame, to: '/incidents', roles: ['admin', 'analyst'], group: 'Operations' },
+  { label: 'Tests', icon: FlaskConical, to: '/tests', roles: ['admin', 'analyst', 'editor'], group: 'Compliance' },
+  { label: 'Alerts', icon: AlertTriangle, to: '/alerts', roles: ['admin', 'analyst', 'editor'], group: 'Operations' },
+  { label: 'Incidents', icon: Flame, to: '/incidents', roles: ['admin', 'analyst', 'editor'], group: 'Operations' },
   { label: 'Risk Register', icon: AlertOctagon, to: '/risk-register', group: 'Operations' },
-  { label: 'Assets', icon: Monitor, to: '/assets', roles: ['admin', 'analyst'], group: 'Management' },
-  { label: 'Vendors', icon: Building2, to: '/vendors', roles: ['admin', 'analyst'], group: 'Management' },
-  { label: 'Personnel', icon: Users, to: '/personnel', roles: ['admin'], group: 'Management' },
+  { label: 'Assets', icon: Monitor, to: '/assets', roles: ['admin', 'analyst', 'editor'], group: 'Management' },
+  { label: 'Vendors', icon: Building2, to: '/vendors', roles: ['admin', 'analyst', 'editor'], group: 'Management' },
+  { label: 'Access Reviews', icon: UserCheck, to: '/reviews', roles: ['admin'], group: 'Management' },
+  { label: 'Audits', icon: ClipboardList, to: '/audit-management', roles: ['admin', 'analyst', 'editor'], group: 'Management' },
+  { label: 'Training', icon: BookOpen, to: '/training', roles: ['admin', 'analyst', 'editor'], group: 'Management' },
+  { label: 'Personnel', icon: Users, to: '/personnel', roles: ['admin', 'analyst', 'editor', 'auditor'], group: 'Management' },
   { label: 'Audit Trail', icon: ClipboardCheck, to: '/audits', group: 'Insights' },
+  { label: 'Audit Prep', icon: Eye, to: '/audit-prep', group: 'Insights' },
   { label: 'Knowledge Base', icon: BookOpen, to: '/knowledge-base', group: 'Insights' },
   { label: 'Reports', icon: BarChart3, to: '/reports', group: 'Insights' },
   { label: 'Integrations', icon: Plug, to: '/integrations', roles: ['admin'], group: 'System' },
+  { label: 'Trust Portal', icon: Globe, to: '/trust-portal', roles: ['admin', 'auditor'], group: 'System' },
   { label: 'Settings', icon: Settings, to: '/settings', roles: ['admin'], group: 'System' },
 ];
 

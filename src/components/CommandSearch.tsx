@@ -70,32 +70,29 @@ export function CommandSearch() {
   async function searchAll(q: string) {
     setSearching(true);
     const allResults: SearchResult[] = [];
-    const limit = 4;
+    const perCategoryLimit = 4;
+    const maxResults = 20;
 
     const promises = Object.entries(CATEGORY_CONFIG).map(async ([category, cfg]) => {
+      if (allResults.length >= maxResults) return;
       const cols = [cfg.titleCol, ...cfg.subtitleCols, 'id'].join(',');
       const { data } = await supabase
         .from(cfg.table as any)
         .select(cols)
         .ilike(cfg.titleCol, `%${q}%`)
-        .limit(limit);
+        .limit(perCategoryLimit);
 
       if (data) {
         for (const row of data as any[]) {
+          if (allResults.length >= maxResults) break;
           const subtitle = cfg.subtitleCols.map(c => row[c] ?? '—').join(' · ');
-          let href = cfg.hrefPrefix;
-          if (cfg.paramName) {
-            href = cfg.hrefPrefix;
-          } else {
-            href = cfg.hrefPrefix;
-          }
           allResults.push({
             id: `${cfg.table}-${row.id}`,
             title: row[cfg.titleCol],
             subtitle,
             category,
             icon: cfg.icon,
-            href,
+            href: cfg.hrefPrefix,
             // Store ID for parameterized links
             ...(cfg.paramName ? { _entityId: row.id, _paramName: cfg.paramName } as any : {}),
           });
@@ -112,14 +109,19 @@ export function CommandSearch() {
   const grouped = groupResults(results);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (results.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex(i => Math.min(i + 1, results.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const el = listRef.current?.querySelector(`[data-index="${selectedIndex}"]`);
+      (el as HTMLElement)?.click();
     }
-  }, [results.length]);
+  }, [results.length, selectedIndex]);
 
   useEffect(() => {
     const el = listRef.current?.querySelector(`[data-index="${selectedIndex}"]`);

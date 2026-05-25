@@ -7,6 +7,24 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/errors';
 import { format } from 'date-fns';
 import type { Database } from '@/integrations/supabase/types';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -71,17 +89,19 @@ export function UserManagement() {
     onError: (err) => toast.error(sanitizeError(err)),
   });
 
-  const filtered = users.filter(u => {
+  const userList = Array.isArray(users) ? users : [];
+
+  const filtered = userList.filter(u => {
     if (!search) return true;
     const s = search.toLowerCase();
     return u.displayName.toLowerCase().includes(s) || u.email.toLowerCase().includes(s);
   });
 
   const stats = {
-    total: users.length,
-    active: users.filter(u => u.status === 'active').length,
-    invited: users.filter(u => u.status === 'invited').length,
-    deactivated: users.filter(u => u.status === 'deactivated').length,
+    total: userList.length,
+    active: userList.filter(u => u.status === 'active').length,
+    invited: userList.filter(u => u.status === 'invited').length,
+    deactivated: userList.filter(u => u.status === 'deactivated').length,
   };
 
   return (
@@ -154,15 +174,19 @@ export function UserManagement() {
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Role</label>
-              <select
+              <Select
                 value={inviteForm.role}
-                onChange={e => setInviteForm(prev => ({ ...prev, role: e.target.value as AppRole }))}
-                className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                onValueChange={v => setInviteForm(prev => ({ ...prev, role: v as AppRole }))}
               >
-                {allRoles.map(r => (
-                  <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {allRoles.map(r => (
+                    <SelectItem key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -243,18 +267,34 @@ export function UserManagement() {
                           <UserCheck className="h-3.5 w-3.5" /> Reactivate
                         </button>
                       ) : (
-                        <button
-                          onClick={() => {
-                            if (confirm(`Deactivate ${u.displayName}? They will no longer be able to sign in.`)) {
-                              deactivateMutation.mutate(u.id);
-                            }
-                          }}
-                          disabled={deactivateMutation.isPending}
-                          className="flex items-center gap-1 text-xs text-status-failing font-medium hover:underline disabled:opacity-50"
-                          title="Deactivate user"
-                        >
-                          <UserX className="h-3.5 w-3.5" /> Deactivate
-                        </button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              disabled={deactivateMutation.isPending}
+                              className="flex items-center gap-1 text-xs text-status-failing font-medium hover:underline disabled:opacity-50"
+                              title="Deactivate user"
+                            >
+                              <UserX className="h-3.5 w-3.5" /> Deactivate
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Deactivate {u.displayName}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                They will no longer be able to sign in. Their data and assignments will be preserved.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => deactivateMutation.mutate(u.id)}
+                              >
+                                Deactivate
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </div>
                   </td>
